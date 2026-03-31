@@ -166,3 +166,57 @@
   word-break: break-all;
   color: #333;
 }
+
+/* ── Scanner status ───────────────────────────── */
+.scannerConnected,
+.scannerDisconnected {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+}
+
+.scannerConnected {
+  background: #e6f9ed;
+  color: #0a7c3e;
+}
+
+.scannerDisconnected {
+  background: #fde8e8;
+  color: #b91c1c;
+}
+
+.scannerDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.scannerConnected .scannerDot {
+  background: #0a7c3e;
+}
+
+.scannerDisconnected .scannerDot {
+  background: #b91c1c;
+}
+
+.scannerText {
+  letter-spacing: 0.02em;
+}
+
+/* ── Scan phase indicator ─────────────────────── */
+.scanStatus {
+  background: #f0f4ff;
+  color: #2c5364;
+  padding: 0.6rem 0.8rem;
+  border-radius: 6px;
+  margin-bottom: 1rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-align: center;
+}

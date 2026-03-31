@@ -37,9 +37,11 @@ class MemberResponse(BaseModel):
 # ── Biometric ─────────────────────────────────────────────────
 class BiometricCaptureRequest(BaseModel):
     member_id: uuid.UUID
-    fingerprint_template_b64: str  # base64-encoded template from device SDK
+    fingerprint_template_b64: str  # base64-encoded ANSI 378 template from FS80H
     finger_position: str = "right_thumb"
     nin: str | None = None
+    lfd_passed: bool = True        # Live Finger Detection result from scanner agent
+    image_quality: int = 0         # NFIQ quality score (0-100)
 
 
 class BiometricCaptureResponse(BaseModel):
@@ -52,7 +54,9 @@ class BiometricCaptureResponse(BaseModel):
 # ── Fingerprint Validation ────────────────────────────────────
 class FingerprintValidateRequest(BaseModel):
     member_id: uuid.UUID
-    fingerprint_template_b64: str  # base64-encoded live scan
+    fingerprint_template_b64: str  # base64-encoded live scan from FS80H
+    lfd_passed: bool = True        # Live Finger Detection result from scanner agent
+    image_quality: int = 0         # NFIQ quality score (0-100)
 
 
 class FingerprintValidateResponse(BaseModel):

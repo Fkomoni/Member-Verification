@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useAuth } from "../context/AuthContext";
+import ScannerStatus from "../components/ScannerStatus";
 import MemberSearch from "../components/MemberSearch";
 import MemberCard from "../components/MemberCard";
 import BiometricCapture from "../components/BiometricCapture";
@@ -30,6 +31,8 @@ export default function DashboardPage() {
       </header>
 
       <main className={styles.main}>
+        <ScannerStatus />
+
         {/* Step 1: Search member */}
         {!member && <MemberSearch onFound={setMember} />}
 

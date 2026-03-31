@@ -6,27 +6,36 @@ import styles from "./shared.module.css";
 export default function BiometricCapture({ member, onComplete }) {
   const [nin, setNin] = useState("");
   const [scanning, setScanning] = useState(false);
+  const [scanPhase, setScanPhase] = useState("");
   const [error, setError] = useState("");
 
   const handleCapture = async () => {
     setError("");
     setScanning(true);
+    setScanPhase("Place finger on the FS80H scanner...");
     try {
-      // Step 1: capture from fingerprint device
-      const templateB64 = await captureFromDevice();
+      // Step 1: capture from Futronic FS80H via scanner agent
+      const { template, imageQuality, lfdPassed } = await captureFromDevice({
+        requireLFD: true,
+      });
 
-      // Step 2: send to backend for enrollment
+      setScanPhase("Enrolling biometric...");
+
+      // Step 2: send to backend for enrollment (includes LFD + quality metadata)
       const { data } = await captureBiometric(
         member.member_id,
-        templateB64,
+        template,
         "right_thumb",
-        nin || null
+        nin || null,
+        lfdPassed,
+        imageQuality
       );
       onComplete(data);
     } catch (err) {
       setError(err.response?.data?.detail || err.message || "Capture failed");
     } finally {
       setScanning(false);
+      setScanPhase("");
     }
   };
 
@@ -34,7 +43,8 @@ export default function BiometricCapture({ member, onComplete }) {
     <div className={styles.card}>
       <h3 className={styles.cardTitle}>Biometric Enrollment</h3>
       <p className={styles.cardSubtitle}>
-        No biometric on file. Capture fingerprint to register this member.
+        No biometric on file. Place the member's finger on the Futronic FS80H
+        scanner to register.
       </p>
 
       {error && <div className={styles.error}>{error}</div>}
@@ -50,12 +60,14 @@ export default function BiometricCapture({ member, onComplete }) {
         />
       </label>
 
+      {scanPhase && <div className={styles.scanStatus}>{scanPhase}</div>}
+
       <button
         onClick={handleCapture}
         disabled={scanning}
         className={styles.primaryBtn}
       >
-        {scanning ? "Scanning fingerprint..." : "Capture Fingerprint"}
+        {scanning ? "Scanning..." : "Capture Fingerprint"}
       </button>
     </div>
   );

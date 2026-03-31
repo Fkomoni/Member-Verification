@@ -22,18 +22,22 @@ export const verifyMember = (enrolleeId) =>
   api.post("/verify-member", { enrollee_id: enrolleeId });
 
 // ── Biometrics ────────────────────────────────────
-export const captureBiometric = (memberId, templateB64, fingerPosition, nin) =>
+export const captureBiometric = (memberId, templateB64, fingerPosition, nin, lfdPassed, imageQuality) =>
   api.post("/capture-biometric", {
     member_id: memberId,
     fingerprint_template_b64: templateB64,
     finger_position: fingerPosition || "right_thumb",
     nin: nin || null,
+    lfd_passed: lfdPassed ?? true,
+    image_quality: imageQuality ?? 0,
   });
 
-export const validateFingerprint = (memberId, templateB64) =>
+export const validateFingerprint = (memberId, templateB64, lfdPassed, imageQuality) =>
   api.post("/validate-fingerprint", {
     member_id: memberId,
     fingerprint_template_b64: templateB64,
+    lfd_passed: lfdPassed ?? true,
+    image_quality: imageQuality ?? 0,
   });
 
 // ── Visits / Claims ──────────────────────────────
