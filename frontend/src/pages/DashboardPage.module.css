@@ -2,44 +2,90 @@
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  background: var(--lw-light-grey, #F4F5F7);
 }
 
+/* ── Header ───────────────────────────────────── */
 .header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1rem 2rem;
-  background: #2c5364;
-  color: #fff;
+  padding: 0.75rem 2rem;
+  background: #fff;
+  border-bottom: 3px solid #C61531;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
 }
 
-.logo {
-  font-size: 1.2rem;
+.headerLeft {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.headerLogo {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.headerBrand {
+  font-size: 1rem;
+  font-weight: 800;
+  color: #263626;
+  letter-spacing: 0.04em;
+}
+
+.headerBrandHealth {
+  font-size: 0.95rem;
   font-weight: 700;
+  color: #C61531;
+}
+
+.headerDivider {
+  width: 1px;
+  height: 24px;
+  background: #ddd;
+}
+
+.headerPortal {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #666;
+}
+
+.headerRight {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
 }
 
 .providerName {
   font-size: 0.85rem;
-  opacity: 0.8;
+  font-weight: 600;
+  color: #444;
 }
 
 .logoutBtn {
-  background: rgba(255, 255, 255, 0.15);
-  color: #fff;
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  padding: 0.4rem 1rem;
+  background: transparent;
+  color: #C61531;
+  border: 1.5px solid #C61531;
+  padding: 0.35rem 1rem;
   border-radius: 6px;
-  font-size: 0.85rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  transition: all 0.2s;
 }
 
 .logoutBtn:hover {
-  background: rgba(255, 255, 255, 0.25);
+  background: #C61531;
+  color: #fff;
 }
 
+/* ── Main ─────────────────────────────────────── */
 .main {
   flex: 1;
-  padding: 2rem;
-  max-width: 720px;
+  padding: 1.5rem 2rem;
+  max-width: 780px;
   margin: 0 auto;
   width: 100%;
 }
@@ -47,5 +93,5 @@
 .flowContainer {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 1.25rem;
 }

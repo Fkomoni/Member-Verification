@@ -22,9 +22,10 @@ class Settings(BaseSettings):
     FUTRONIC_MATCH_THRESHOLD: int = 800   # 0-10000, higher = stricter
     REQUIRE_LFD: bool = True              # enforce Live Finger Detection
 
-    # Prognosis core system integration
-    PROGNOSIS_BASE_URL: str = "https://prognosis.example.com/api/v1"
-    PROGNOSIS_API_KEY: str = ""
+    # Prognosis core system integration (Leadway Health)
+    PROGNOSIS_BASE_URL: str = "https://prognosis-api.leadwayhealth.com"
+    PROGNOSIS_USERNAME: str = ""
+    PROGNOSIS_PASSWORD: str = ""
 
     model_config = {"env_file": ".env"}
 

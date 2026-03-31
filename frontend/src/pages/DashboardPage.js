@@ -20,28 +20,55 @@ export default function DashboardPage() {
 
   return (
     <div className={styles.page}>
+      {/* ── Header ─────────────────────────────────── */}
       <header className={styles.header}>
-        <div>
-          <h1 className={styles.logo}>Verification Portal</h1>
-          <span className={styles.providerName}>{provider?.provider_name}</span>
+        <div className={styles.headerLeft}>
+          <div className={styles.headerLogo}>
+            <svg viewBox="0 0 40 40" width="32" height="32">
+              <circle cx="20" cy="20" r="18" fill="url(#hdrGrad)" />
+              <defs>
+                <linearGradient id="hdrGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#F15A24" />
+                  <stop offset="100%" stopColor="#FFCE07" />
+                </linearGradient>
+              </defs>
+            </svg>
+            <div>
+              <span className={styles.headerBrand}>LEADWAY</span>
+              <span className={styles.headerBrandHealth}> Health</span>
+            </div>
+          </div>
+          <span className={styles.headerDivider} />
+          <span className={styles.headerPortal}>Verification Portal</span>
         </div>
-        <button onClick={logout} className={styles.logoutBtn}>
-          Logout
-        </button>
+        <div className={styles.headerRight}>
+          <span className={styles.providerName}>{provider?.provider_name}</span>
+          <button onClick={logout} className={styles.logoutBtn}>
+            Sign Out
+          </button>
+        </div>
       </header>
 
+      {/* ── Main Content ───────────────────────────── */}
       <main className={styles.main}>
         <ScannerStatus />
 
-        {/* Step 1: Search member */}
         {!member && <MemberSearch onFound={setMember} />}
 
-        {/* Step 2: Show member info + appropriate action */}
         {member && !result && (
           <div className={styles.flowContainer}>
             <MemberCard member={member} />
 
-            {!member.biometric_registered ? (
+            {member.verification_status === "INELIGIBLE" ? (
+              <VerificationResult
+                result={{
+                  status: "ineligible",
+                  message: member.verification_reason,
+                  prognosis_data: member.prognosis_data,
+                }}
+                onReset={resetFlow}
+              />
+            ) : !member.biometric_registered ? (
               <BiometricCapture
                 member={member}
                 onComplete={(res) => {
@@ -57,9 +84,11 @@ export default function DashboardPage() {
                 member={member}
                 onResult={(res) =>
                   setResult({
-                    status: res.match ? "approved" : "denied",
+                    status: res.verification_status?.toLowerCase() || (res.match ? "eligible" : "denied"),
                     message: res.message,
                     verificationToken: res.verification_token,
+                    verificationReason: res.verification_reason,
+                    prognosisData: res.prognosis_data,
                   })
                 }
               />
@@ -67,10 +96,7 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {/* Step 3: Show result */}
-        {result && (
-          <VerificationResult result={result} onReset={resetFlow} />
-        )}
+        {result && <VerificationResult result={result} onReset={resetFlow} />}
       </main>
     </div>
   );

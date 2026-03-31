@@ -24,21 +24,23 @@ export default function MemberSearch({ onFound }) {
   return (
     <div className={styles.card}>
       <h2 className={styles.cardTitle}>Member Verification</h2>
-      <p className={styles.cardSubtitle}>Enter the member's Enrollee ID to begin</p>
+      <p className={styles.cardSubtitle}>
+        Enter the enrollee CIF number to check eligibility and begin verification.
+      </p>
 
       {error && <div className={styles.error}>{error}</div>}
 
       <form onSubmit={handleSearch} className={styles.row}>
         <input
           type="text"
-          placeholder="Enrollee ID"
+          placeholder="Enrollee CIF Number (e.g. 1738)"
           value={enrolleeId}
           onChange={(e) => setEnrolleeId(e.target.value)}
           required
           className={styles.input}
         />
         <button type="submit" disabled={loading} className={styles.primaryBtn}>
-          {loading ? "Searching..." : "Verify Member"}
+          {loading ? "Checking..." : "Verify Member"}
         </button>
       </form>
     </div>

@@ -15,6 +15,7 @@ export function AuthProvider({ children }) {
     const providerData = {
       provider_id: data.provider_id,
       provider_name: data.provider_name,
+      prognosis_provider_id: data.prognosis_provider_id,
     };
     localStorage.setItem("provider", JSON.stringify(providerData));
     setProvider(providerData);

@@ -70,6 +70,9 @@ class Provider(Base):
     name: Mapped[str] = mapped_column(String(200), nullable=False)
     email: Mapped[str] = mapped_column(String(200), unique=True, nullable=False)
     hashed_password: Mapped[str] = mapped_column(Text, nullable=False)
+    prognosis_provider_id: Mapped[str] = mapped_column(
+        String(50), nullable=False, comment="Provider ID in the Prognosis system"
+    )
     location: Mapped[str] = mapped_column(String(300), nullable=True)
     device_id: Mapped[str | None] = mapped_column(String(100), nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)

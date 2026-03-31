@@ -1,43 +1,58 @@
+/* ══════════════════════════════════════════════════
+   Leadway Health — Shared Component Styles
+   Brand: Crimson #C61531 / Orange #F15A24 / Dark #263626
+   ══════════════════════════════════════════════════ */
+
 /* ── Card ─────────────────────────────────────── */
 .card {
   background: #fff;
-  border-radius: 10px;
+  border-radius: 12px;
   padding: 1.75rem;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 1px 8px rgba(0, 0, 0, 0.06);
+  border: 1px solid #eee;
 }
 
 .cardTitle {
-  font-size: 1.15rem;
-  margin-bottom: 0.25rem;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #263626;
+  margin-bottom: 0.2rem;
 }
 
 .cardSubtitle {
-  color: #666;
+  color: #777;
   font-size: 0.85rem;
   margin-bottom: 1.25rem;
+  line-height: 1.5;
 }
 
 /* ── Inputs ───────────────────────────────────── */
 .input {
   display: block;
   width: 100%;
-  padding: 0.6rem 0.75rem;
-  border: 1px solid #ccc;
-  border-radius: 6px;
+  padding: 0.65rem 0.85rem;
+  border: 1.5px solid #ddd;
+  border-radius: 8px;
   font-size: 0.95rem;
   margin-top: 0.25rem;
+  transition: border-color 0.2s, box-shadow 0.2s;
 }
 
 .input:focus {
   outline: none;
-  border-color: #2c5364;
-  box-shadow: 0 0 0 2px rgba(44, 83, 100, 0.2);
+  border-color: #C61531;
+  box-shadow: 0 0 0 3px rgba(198, 21, 49, 0.1);
+}
+
+.input::placeholder {
+  color: #bbb;
 }
 
 .label {
   display: block;
-  font-size: 0.85rem;
+  font-size: 0.82rem;
   font-weight: 600;
+  color: #444;
   margin-bottom: 1rem;
 }
 
@@ -53,118 +68,173 @@
 
 /* ── Buttons ──────────────────────────────────── */
 .primaryBtn {
-  padding: 0.65rem 1.5rem;
-  background: #2c5364;
+  padding: 0.7rem 1.75rem;
+  background: #C61531;
   color: #fff;
   border: none;
-  border-radius: 6px;
+  border-radius: 8px;
   font-size: 0.95rem;
-  font-weight: 600;
+  font-weight: 700;
   white-space: nowrap;
+  transition: background 0.2s;
 }
 
 .primaryBtn:hover {
-  background: #203a43;
+  background: #A11028;
 }
 
 .primaryBtn:disabled {
-  opacity: 0.6;
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 
 .secondaryBtn {
-  padding: 0.6rem 1.25rem;
+  padding: 0.65rem 1.5rem;
   background: transparent;
-  color: #2c5364;
-  border: 1px solid #2c5364;
-  border-radius: 6px;
+  color: #C61531;
+  border: 1.5px solid #C61531;
+  border-radius: 8px;
   font-size: 0.9rem;
   font-weight: 600;
   margin-top: 1rem;
+  transition: all 0.2s;
 }
 
 .secondaryBtn:hover {
-  background: #f0f4f6;
+  background: #FFF0F0;
 }
 
 /* ── Detail grid ──────────────────────────────── */
 .detailGrid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 0.75rem 1.5rem;
+  gap: 0.85rem 1.5rem;
+  margin-top: 0.5rem;
 }
 
 .detailLabel {
   display: block;
-  font-size: 0.75rem;
-  color: #888;
+  font-size: 0.7rem;
+  color: #999;
   text-transform: uppercase;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.06em;
+  font-weight: 600;
 }
 
 .detailValue {
-  font-weight: 600;
-  font-size: 0.95rem;
+  font-weight: 700;
+  font-size: 0.92rem;
+  color: #263626;
 }
 
 .detailValueWarn {
-  font-weight: 600;
-  font-size: 0.95rem;
-  color: #c57600;
+  font-weight: 700;
+  font-size: 0.92rem;
+  color: #F15A24;
 }
 
 /* ── Alerts ───────────────────────────────────── */
 .error {
-  background: #fee;
-  color: #c00;
-  padding: 0.6rem 0.8rem;
-  border-radius: 6px;
+  background: #FFF0F0;
+  color: #C61531;
+  padding: 0.65rem 0.85rem;
+  border-radius: 8px;
   margin-bottom: 1rem;
   font-size: 0.85rem;
+  border-left: 3px solid #C61531;
 }
 
 /* ── Result banners ───────────────────────────── */
-.successBanner {
-  background: #e6f9ed;
-  color: #0a7c3e;
-  padding: 0.75rem 1rem;
-  border-radius: 8px;
+.eligibleBanner {
+  background: #E8F8EE;
+  color: #0A7C3E;
+  padding: 1rem;
+  border-radius: 10px;
   margin-bottom: 1rem;
   text-align: center;
+  border: 1px solid #B5E8C9;
 }
 
-.errorBanner {
-  background: #fde8e8;
-  color: #b91c1c;
-  padding: 0.75rem 1rem;
-  border-radius: 8px;
+.unverifiedBanner {
+  background: #FFF8E6;
+  color: #8B6914;
+  padding: 1rem;
+  border-radius: 10px;
   margin-bottom: 1rem;
   text-align: center;
+  border: 1px solid #F5DFA0;
+}
+
+.deniedBanner {
+  background: #FFF0F0;
+  color: #C61531;
+  padding: 1rem;
+  border-radius: 10px;
+  margin-bottom: 1rem;
+  text-align: center;
+  border: 1px solid #F5B5BE;
+}
+
+.ineligibleBanner {
+  background: #FFF0F0;
+  color: #8B0E22;
+  padding: 1rem;
+  border-radius: 10px;
+  margin-bottom: 1rem;
+  text-align: center;
+  border: 1px solid #E8A0AB;
+}
+
+.enrolledBanner {
+  background: #E6F0FF;
+  color: #1A2B6D;
+  padding: 1rem;
+  border-radius: 10px;
+  margin-bottom: 1rem;
+  text-align: center;
+  border: 1px solid #A5C0E8;
 }
 
 .statusLabel {
-  font-size: 1.1rem;
-  font-weight: 700;
-  letter-spacing: 0.05em;
+  font-size: 1.15rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 
 .resultMessage {
+  margin-bottom: 0.5rem;
+  font-size: 0.92rem;
+  line-height: 1.5;
+  color: #444;
+}
+
+.resultReason {
   margin-bottom: 1rem;
-  font-size: 0.95rem;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: #666;
+  background: #F8F9FA;
+  padding: 0.75rem;
+  border-radius: 8px;
+  border-left: 3px solid #C61531;
 }
 
 .tokenBox {
-  background: #f8f9fa;
+  background: #F8F9FA;
   padding: 0.75rem;
-  border-radius: 6px;
+  border-radius: 8px;
   margin-bottom: 1rem;
+  border: 1px solid #eee;
 }
 
 .tokenCode {
   display: block;
-  margin-top: 0.25rem;
-  font-size: 0.8rem;
+  margin-top: 0.3rem;
+  font-size: 0.78rem;
   word-break: break-all;
-  color: #333;
+  color: #444;
+  font-family: "Courier New", monospace;
 }
 
 /* ── Scanner status ───────────────────────────── */
@@ -173,21 +243,23 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.5rem 0.75rem;
-  border-radius: 6px;
+  padding: 0.55rem 0.85rem;
+  border-radius: 8px;
   font-size: 0.8rem;
   font-weight: 600;
-  margin-bottom: 1rem;
+  margin-bottom: 1.25rem;
 }
 
 .scannerConnected {
-  background: #e6f9ed;
-  color: #0a7c3e;
+  background: #E8F8EE;
+  color: #0A7C3E;
+  border: 1px solid #B5E8C9;
 }
 
 .scannerDisconnected {
-  background: #fde8e8;
-  color: #b91c1c;
+  background: #FFF0F0;
+  color: #C61531;
+  border: 1px solid #F5B5BE;
 }
 
 .scannerDot {
@@ -198,11 +270,12 @@
 }
 
 .scannerConnected .scannerDot {
-  background: #0a7c3e;
+  background: #0A7C3E;
+  box-shadow: 0 0 4px rgba(10, 124, 62, 0.4);
 }
 
 .scannerDisconnected .scannerDot {
-  background: #b91c1c;
+  background: #C61531;
 }
 
 .scannerText {
@@ -211,12 +284,39 @@
 
 /* ── Scan phase indicator ─────────────────────── */
 .scanStatus {
-  background: #f0f4ff;
-  color: #2c5364;
-  padding: 0.6rem 0.8rem;
-  border-radius: 6px;
+  background: #FFF8E6;
+  color: #8B6914;
+  padding: 0.65rem 0.85rem;
+  border-radius: 8px;
   margin-bottom: 1rem;
   font-size: 0.85rem;
   font-weight: 600;
   text-align: center;
+  border: 1px solid #F5DFA0;
+}
+
+/* ── Eligibility status badge ─────────────────── */
+.statusBadge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.badgeEligible {
+  background: #E8F8EE;
+  color: #0A7C3E;
+}
+
+.badgeUnverified {
+  background: #FFF8E6;
+  color: #8B6914;
+}
+
+.badgeIneligible {
+  background: #FFF0F0;
+  color: #C61531;
 }

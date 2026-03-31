@@ -43,14 +43,15 @@ CREATE INDEX idx_biometrics_member_id ON biometrics(member_id);
 -- 3. Providers
 -- ============================================================
 CREATE TABLE providers (
-    provider_id     UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    name            VARCHAR(200) NOT NULL,
-    email           VARCHAR(200) NOT NULL UNIQUE,
-    hashed_password TEXT NOT NULL,
-    location        VARCHAR(300),
-    device_id       VARCHAR(100),
-    is_active       BOOLEAN DEFAULT TRUE,
-    created_at      TIMESTAMPTZ DEFAULT NOW()
+    provider_id             UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    name                    VARCHAR(200) NOT NULL,
+    email                   VARCHAR(200) NOT NULL UNIQUE,
+    hashed_password         TEXT NOT NULL,
+    prognosis_provider_id   VARCHAR(50) NOT NULL,  -- Provider ID in Prognosis system
+    location                VARCHAR(300),
+    device_id               VARCHAR(100),
+    is_active               BOOLEAN DEFAULT TRUE,
+    created_at              TIMESTAMPTZ DEFAULT NOW()
 );
 
 CREATE INDEX idx_providers_email ON providers(email);

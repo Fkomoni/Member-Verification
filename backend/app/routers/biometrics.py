@@ -1,11 +1,11 @@
 """
 POST /capture-biometric    – Enroll a new fingerprint (Futronic FS80H)
-POST /validate-fingerprint – Verify a live scan against stored template
+POST /validate-fingerprint – Verify live scan, then check Prognosis eligibility.
+                             Only returns ELIGIBLE if BOTH biometric matches AND
+                             Prognosis confirms enrollee access.
 """
 
 import logging
-import uuid
-from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
@@ -34,32 +34,27 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["biometrics"])
 
-# Minimum acceptable image quality score (0-100)
 MIN_IMAGE_QUALITY = 40
 
 
 def _enforce_lfd(lfd_passed: bool):
-    """Reject the request if LFD is required but the scanner reports failure."""
     if settings.REQUIRE_LFD and not lfd_passed:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail=(
                 "Live Finger Detection failed — the scanner detected a fake finger. "
-                "Only real fingers are accepted. If this is an error, clean the "
-                "scanner surface and try again."
+                "Only real fingers are accepted. Clean the scanner surface and try again."
             ),
         )
 
 
 def _enforce_quality(quality: int):
-    """Reject scans with quality below the acceptable threshold."""
     if quality > 0 and quality < MIN_IMAGE_QUALITY:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=(
                 f"Fingerprint image quality too low ({quality}/100). "
-                "Clean the finger and scanner, then try again. "
-                "Ensure the finger is pressed firmly and held still."
+                "Clean the finger and scanner, press firmly and hold still."
             ),
         )
 
@@ -70,7 +65,6 @@ def capture_biometric(
     db: Session = Depends(get_db),
     provider: Provider = Depends(get_current_provider),
 ):
-    # Enforce LFD and quality before processing
     _enforce_lfd(body.lfd_passed)
     _enforce_quality(body.image_quality)
 
@@ -97,7 +91,6 @@ def capture_biometric(
     if body.nin:
         member.nin = body.nin
 
-    # Audit log
     audit = VerificationLog(
         member_id=member.member_id,
         provider_id=provider.provider_id,
@@ -127,7 +120,6 @@ async def validate_fingerprint(
     db: Session = Depends(get_db),
     provider: Provider = Depends(get_current_provider),
 ):
-    # Enforce LFD and quality before processing
     _enforce_lfd(body.lfd_passed)
     _enforce_quality(body.image_quality)
 
@@ -152,42 +144,8 @@ async def validate_fingerprint(
 
     matched = compare_templates(body.fingerprint_template_b64, stored.fingerprint_template)
 
-    if matched:
-        # Generate verification token (signed JWT with visit context)
-        verification_token = create_access_token(
-            data={
-                "type": "visit_verification",
-                "member_id": str(member.member_id),
-                "provider_id": str(provider.provider_id),
-            }
-        )
-
-        visit = Visit(
-            member_id=member.member_id,
-            provider_id=provider.provider_id,
-            verification_token=verification_token,
-            verification_status="APPROVED",
-        )
-        db.add(visit)
-
-        audit = VerificationLog(
-            member_id=member.member_id,
-            provider_id=provider.provider_id,
-            match_status="MATCH",
-            device_id=provider.device_id,
-        )
-        db.add(audit)
-        db.commit()
-
-        logger.info("MATCH: member=%s provider=%s", member.member_id, provider.provider_id)
-
-        return FingerprintValidateResponse(
-            member_id=member.member_id,
-            match=True,
-            verification_token=verification_token,
-            message="Identity verified — check-in approved",
-        )
-    else:
+    if not matched:
+        # Biometric mismatch — DENIED
         audit = VerificationLog(
             member_id=member.member_id,
             provider_id=provider.provider_id,
@@ -204,9 +162,8 @@ async def validate_fingerprint(
         db.add(visit)
         db.commit()
 
-        logger.warning("NO_MATCH: member=%s provider=%s — flagging impersonation", member.member_id, provider.provider_id)
+        logger.warning("NO_MATCH: member=%s provider=%s", member.member_id, provider.provider_id)
 
-        # Notify Prognosis of potential impersonation
         await prognosis_client.flag_impersonation(
             str(member.member_id), str(provider.provider_id)
         )
@@ -214,5 +171,100 @@ async def validate_fingerprint(
         return FingerprintValidateResponse(
             member_id=member.member_id,
             match=False,
-            message="Fingerprint mismatch — access denied. Flagged for HMO review.",
+            verification_status="DENIED",
+            verification_reason="Fingerprint does not match the enrolled biometric.",
+            message=(
+                "Fingerprint mismatch — access denied. "
+                "This incident has been flagged for HMO review."
+            ),
         )
+
+    # Biometric MATCHED — now check Prognosis eligibility
+    eligibility = await prognosis_client.validate_enrollee_eligibility(
+        cifno=member.enrollee_id,
+        provider_id=provider.prognosis_provider_id,
+    )
+
+    prognosis_eligible = eligibility.get("is_eligible", False)
+    prognosis_data = eligibility.get("prognosis_response")
+
+    if not prognosis_eligible:
+        # Biometric matched but Prognosis says NOT eligible — UNVERIFIED
+        audit = VerificationLog(
+            member_id=member.member_id,
+            provider_id=provider.provider_id,
+            match_status="MATCH",
+            device_id=provider.device_id,
+        )
+        db.add(audit)
+
+        visit = Visit(
+            member_id=member.member_id,
+            provider_id=provider.provider_id,
+            verification_status="DENIED",
+        )
+        db.add(visit)
+        db.commit()
+
+        reason = eligibility.get("reason") or (
+            "Enrollee identity confirmed via biometric, but Prognosis reports "
+            "the enrollee is NOT eligible for this provider. Contact the HMO."
+        )
+
+        logger.warning(
+            "MATCH but INELIGIBLE: member=%s provider=%s reason=%s",
+            member.member_id, provider.provider_id, reason,
+        )
+
+        return FingerprintValidateResponse(
+            member_id=member.member_id,
+            match=True,
+            verification_status="UNVERIFIED",
+            verification_reason=reason,
+            prognosis_data=prognosis_data,
+            message=(
+                "Identity confirmed via fingerprint, but enrollee is not eligible "
+                "on the Prognosis network for this provider."
+            ),
+        )
+
+    # BOTH biometric matched AND Prognosis eligible — FULL APPROVAL
+    verification_token = create_access_token(
+        data={
+            "type": "visit_verification",
+            "member_id": str(member.member_id),
+            "provider_id": str(provider.provider_id),
+        }
+    )
+
+    visit = Visit(
+        member_id=member.member_id,
+        provider_id=provider.provider_id,
+        verification_token=verification_token,
+        verification_status="APPROVED",
+    )
+    db.add(visit)
+
+    audit = VerificationLog(
+        member_id=member.member_id,
+        provider_id=provider.provider_id,
+        match_status="MATCH",
+        device_id=provider.device_id,
+    )
+    db.add(audit)
+    db.commit()
+
+    logger.info(
+        "ELIGIBLE: member=%s provider=%s (biometric + Prognosis verified)",
+        member.member_id, provider.provider_id,
+    )
+
+    return FingerprintValidateResponse(
+        member_id=member.member_id,
+        match=True,
+        verification_token=verification_token,
+        verification_status="ELIGIBLE",
+        verification_reason="Identity verified via biometric and Prognosis eligibility confirmed.",
+        prognosis_data=prognosis_data,
+        message="Member verified — check-in approved.",
+    )

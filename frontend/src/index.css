@@ -1,3 +1,31 @@
+/*
+ * Leadway Health — De Novo Design System
+ * Brand colors extracted from the Leadway Health Mini Manual v3
+ */
+
+:root {
+  /* Primary brand colors */
+  --lw-crimson: #C61531;
+  --lw-orange: #F15A24;
+  --lw-dark: #263626;
+  --lw-yellow: #FFCE07;
+
+  /* Supporting */
+  --lw-navy: #151644;
+  --lw-grey: #B8B8C8;
+  --lw-light-grey: #F4F5F7;
+  --lw-white: #FFFFFF;
+
+  /* Semantic */
+  --lw-success: #0A7C3E;
+  --lw-warning: #F15A24;
+  --lw-danger: #C61531;
+  --lw-info: #1A2B6D;
+
+  /* Typography — fallback to system sans-serif (Leadway font is custom/proprietary) */
+  --font-primary: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+}
+
 *,
 *::before,
 *::after {
@@ -7,17 +35,19 @@
 }
 
 body {
-  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-  background: #f4f6f9;
-  color: #1a1a2e;
+  font-family: var(--font-primary);
+  background: var(--lw-light-grey);
+  color: var(--lw-dark);
   min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
 }
 
 a {
-  color: inherit;
+  color: var(--lw-crimson);
   text-decoration: none;
 }
 
 button {
   cursor: pointer;
+  font-family: var(--font-primary);
 }

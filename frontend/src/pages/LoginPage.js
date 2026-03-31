@@ -27,38 +27,75 @@ export default function LoginPage() {
 
   return (
     <div className={styles.container}>
-      <form className={styles.form} onSubmit={handleSubmit}>
-        <h1 className={styles.title}>Provider Login</h1>
-        <p className={styles.subtitle}>Biometric Member Verification Portal</p>
+      <div className={styles.leftPanel}>
+        <div className={styles.brandContent}>
+          <div className={styles.logoBlock}>
+            <div className={styles.camelIcon}>
+              <svg viewBox="0 0 60 60" width="48" height="48">
+                <circle cx="30" cy="30" r="28" fill="url(#sunGrad)" />
+                <defs>
+                  <linearGradient id="sunGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#F15A24" />
+                    <stop offset="100%" stopColor="#FFCE07" />
+                  </linearGradient>
+                </defs>
+              </svg>
+            </div>
+            <div className={styles.logoText}>
+              <span className={styles.logoLeadway}>LEADWAY</span>
+              <span className={styles.logoHealth}>Health</span>
+            </div>
+          </div>
+          <h1 className={styles.brandTitle}>Member Verification Portal</h1>
+          <p className={styles.brandTagline}>
+            Biometric identity verification for healthcare providers.
+            Secure. Real-time. Fraud-proof.
+          </p>
+        </div>
+      </div>
 
-        {error && <div className={styles.error}>{error}</div>}
+      <div className={styles.rightPanel}>
+        <form className={styles.form} onSubmit={handleSubmit}>
+          <h2 className={styles.formTitle}>Provider Sign In</h2>
+          <p className={styles.formSubtitle}>
+            Access your verification dashboard
+          </p>
 
-        <label className={styles.label}>
-          Email
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            className={styles.input}
-          />
-        </label>
+          {error && <div className={styles.error}>{error}</div>}
 
-        <label className={styles.label}>
-          Password
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            className={styles.input}
-          />
-        </label>
+          <label className={styles.label}>
+            Email Address
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              className={styles.input}
+              placeholder="provider@facility.com"
+            />
+          </label>
 
-        <button type="submit" disabled={loading} className={styles.button}>
-          {loading ? "Signing in..." : "Sign In"}
-        </button>
-      </form>
+          <label className={styles.label}>
+            Password
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              className={styles.input}
+              placeholder="Enter password"
+            />
+          </label>
+
+          <button type="submit" disabled={loading} className={styles.button}>
+            {loading ? "Signing in..." : "Sign In"}
+          </button>
+
+          <p className={styles.footer}>
+            Leadway Health Services &mdash; For health, wealth &amp; more...
+          </p>
+        </form>
+      </div>
     </div>
   );
 }

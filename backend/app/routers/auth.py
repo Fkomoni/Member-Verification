@@ -27,4 +27,5 @@ def login(body: LoginRequest, db: Session = Depends(get_db)):
         access_token=token,
         provider_id=provider.provider_id,
         provider_name=provider.name,
+        prognosis_provider_id=provider.prognosis_provider_id,
     )

@@ -1,7 +1,8 @@
 import uuid
 from datetime import datetime
+from typing import Any
 
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel
 
 
 # ── Auth ──────────────────────────────────────────────────────
@@ -15,20 +16,46 @@ class TokenResponse(BaseModel):
     token_type: str = "bearer"
     provider_id: uuid.UUID
     provider_name: str
+    prognosis_provider_id: str  # Prognosis system provider ID
 
 
-# ── Member ────────────────────────────────────────────────────
+# ── Member / Eligibility ─────────────────────────────────────
 class MemberLookup(BaseModel):
+    enrollee_id: str  # CIF number used in Prognosis
+
+
+class EligibilityResponse(BaseModel):
+    """
+    Combined response: Prognosis eligibility + local biometric status.
+    Even if Prognosis says eligible, if biometric is not verified,
+    the member is returned as UNVERIFIED.
+    """
+    member_id: uuid.UUID
     enrollee_id: str
+    name: str
+    dob: datetime | None = None
+    gender: str | None = None
+    nin: str | None = None
+    biometric_registered: bool
+
+    # Prognosis eligibility fields
+    prognosis_eligible: bool
+    prognosis_data: Any = None  # raw Prognosis API response
+
+    # Final verification status
+    verification_status: str  # ELIGIBLE | UNVERIFIED | INELIGIBLE
+    verification_reason: str  # human-readable reason
+
+    model_config = {"from_attributes": True}
 
 
 class MemberResponse(BaseModel):
     member_id: uuid.UUID
     enrollee_id: str
     name: str
-    dob: datetime | None
-    gender: str | None
-    nin: str | None
+    dob: datetime | None = None
+    gender: str | None = None
+    nin: str | None = None
     biometric_registered: bool
 
     model_config = {"from_attributes": True}
@@ -40,8 +67,8 @@ class BiometricCaptureRequest(BaseModel):
     fingerprint_template_b64: str  # base64-encoded ANSI 378 template from FS80H
     finger_position: str = "right_thumb"
     nin: str | None = None
-    lfd_passed: bool = True        # Live Finger Detection result from scanner agent
-    image_quality: int = 0         # NFIQ quality score (0-100)
+    lfd_passed: bool = True
+    image_quality: int = 0
 
 
 class BiometricCaptureResponse(BaseModel):
@@ -54,15 +81,18 @@ class BiometricCaptureResponse(BaseModel):
 # ── Fingerprint Validation ────────────────────────────────────
 class FingerprintValidateRequest(BaseModel):
     member_id: uuid.UUID
-    fingerprint_template_b64: str  # base64-encoded live scan from FS80H
-    lfd_passed: bool = True        # Live Finger Detection result from scanner agent
-    image_quality: int = 0         # NFIQ quality score (0-100)
+    fingerprint_template_b64: str
+    lfd_passed: bool = True
+    image_quality: int = 0
 
 
 class FingerprintValidateResponse(BaseModel):
     member_id: uuid.UUID
     match: bool
     verification_token: str | None = None
+    verification_status: str  # ELIGIBLE | UNVERIFIED | DENIED
+    verification_reason: str
+    prognosis_data: Any = None
     message: str
 
 
