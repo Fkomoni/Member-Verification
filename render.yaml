@@ -30,7 +30,7 @@ services:
       - key: REQUIRE_LFD
         value: "true"
       - key: PYTHONPATH
-        value: /opt/render/project/src
+        value: /opt/render/project/src/backend
 
   # ── Frontend ─────────────────────────────────────
   - type: web
