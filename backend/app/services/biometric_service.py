@@ -23,7 +23,7 @@ import logging
 import os
 import sys
 
-from backend.app.core.security import decrypt_biometric_template, encrypt_biometric_template
+from app.core.security import decrypt_biometric_template, encrypt_biometric_template
 
 log = logging.getLogger(__name__)
 

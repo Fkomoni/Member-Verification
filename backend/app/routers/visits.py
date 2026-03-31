@@ -8,11 +8,11 @@ import uuid
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
-from backend.app.core.database import get_db
-from backend.app.core.deps import get_current_provider
-from backend.app.core.security import decode_access_token
-from backend.app.models.models import Provider, Visit
-from backend.app.schemas.schemas import (
+from app.core.database import get_db
+from app.core.deps import get_current_provider
+from app.core.security import decode_access_token
+from app.models.models import Provider, Visit
+from app.schemas.schemas import (
     ClaimValidationRequest,
     ClaimValidationResponse,
     LogVisitRequest,

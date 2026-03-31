@@ -10,11 +10,11 @@ verification_status="UNVERIFIED" with the reason.
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
-from backend.app.core.database import get_db
-from backend.app.core.deps import get_current_provider
-from backend.app.models.models import Member, Provider
-from backend.app.schemas.schemas import EligibilityResponse, MemberLookup
-from backend.app.services import prognosis_client
+from app.core.database import get_db
+from app.core.deps import get_current_provider
+from app.models.models import Member, Provider
+from app.schemas.schemas import EligibilityResponse, MemberLookup
+from app.services import prognosis_client
 
 router = APIRouter(tags=["members"])
 

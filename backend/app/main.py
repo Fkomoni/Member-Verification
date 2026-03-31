@@ -5,8 +5,8 @@ Biometric Member Verification Portal – FastAPI Application
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from backend.app.core.config import settings
-from backend.app.routers import auth, biometrics, members, visits
+from app.core.config import settings
+from app.routers import auth, biometrics, members, visits
 
 app = FastAPI(
     title=settings.APP_NAME,
@@ -18,7 +18,10 @@ app = FastAPI(
 # CORS – tighten origins in production
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=[
+        "http://localhost:3000",
+        "https://member-verification-portal.onrender.com",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

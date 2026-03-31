@@ -10,25 +10,25 @@ import logging
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
-from backend.app.core.config import settings
-from backend.app.core.database import get_db
-from backend.app.core.deps import get_current_provider
-from backend.app.core.security import create_access_token
-from backend.app.models.models import (
+from app.core.config import settings
+from app.core.database import get_db
+from app.core.deps import get_current_provider
+from app.core.security import create_access_token
+from app.models.models import (
     Biometric,
     Member,
     Provider,
     VerificationLog,
     Visit,
 )
-from backend.app.schemas.schemas import (
+from app.schemas.schemas import (
     BiometricCaptureRequest,
     BiometricCaptureResponse,
     FingerprintValidateRequest,
     FingerprintValidateResponse,
 )
-from backend.app.services.biometric_service import compare_templates, encrypt_template
-from backend.app.services import prognosis_client
+from app.services.biometric_service import compare_templates, encrypt_template
+from app.services import prognosis_client
 
 logger = logging.getLogger(__name__)
 
