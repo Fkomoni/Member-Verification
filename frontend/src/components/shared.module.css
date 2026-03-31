@@ -1,0 +1,168 @@
+/* ── Card ─────────────────────────────────────── */
+.card {
+  background: #fff;
+  border-radius: 10px;
+  padding: 1.75rem;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+}
+
+.cardTitle {
+  font-size: 1.15rem;
+  margin-bottom: 0.25rem;
+}
+
+.cardSubtitle {
+  color: #666;
+  font-size: 0.85rem;
+  margin-bottom: 1.25rem;
+}
+
+/* ── Inputs ───────────────────────────────────── */
+.input {
+  display: block;
+  width: 100%;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  margin-top: 0.25rem;
+}
+
+.input:focus {
+  outline: none;
+  border-color: #2c5364;
+  box-shadow: 0 0 0 2px rgba(44, 83, 100, 0.2);
+}
+
+.label {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+}
+
+.row {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-end;
+}
+
+.row .input {
+  flex: 1;
+}
+
+/* ── Buttons ──────────────────────────────────── */
+.primaryBtn {
+  padding: 0.65rem 1.5rem;
+  background: #2c5364;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.primaryBtn:hover {
+  background: #203a43;
+}
+
+.primaryBtn:disabled {
+  opacity: 0.6;
+}
+
+.secondaryBtn {
+  padding: 0.6rem 1.25rem;
+  background: transparent;
+  color: #2c5364;
+  border: 1px solid #2c5364;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin-top: 1rem;
+}
+
+.secondaryBtn:hover {
+  background: #f0f4f6;
+}
+
+/* ── Detail grid ──────────────────────────────── */
+.detailGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem 1.5rem;
+}
+
+.detailLabel {
+  display: block;
+  font-size: 0.75rem;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.detailValue {
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.detailValueWarn {
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: #c57600;
+}
+
+/* ── Alerts ───────────────────────────────────── */
+.error {
+  background: #fee;
+  color: #c00;
+  padding: 0.6rem 0.8rem;
+  border-radius: 6px;
+  margin-bottom: 1rem;
+  font-size: 0.85rem;
+}
+
+/* ── Result banners ───────────────────────────── */
+.successBanner {
+  background: #e6f9ed;
+  color: #0a7c3e;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  text-align: center;
+}
+
+.errorBanner {
+  background: #fde8e8;
+  color: #b91c1c;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  text-align: center;
+}
+
+.statusLabel {
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
+
+.resultMessage {
+  margin-bottom: 1rem;
+  font-size: 0.95rem;
+}
+
+.tokenBox {
+  background: #f8f9fa;
+  padding: 0.75rem;
+  border-radius: 6px;
+  margin-bottom: 1rem;
+}
+
+.tokenCode {
+  display: block;
+  margin-top: 0.25rem;
+  font-size: 0.8rem;
+  word-break: break-all;
+  color: #333;
+}
