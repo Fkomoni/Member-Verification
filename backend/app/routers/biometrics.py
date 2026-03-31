@@ -189,7 +189,7 @@ async def validate_fingerprint(
     prognosis_data = eligibility.get("prognosis_response")
 
     if not prognosis_eligible:
-        # Biometric matched but Prognosis says NOT eligible — UNVERIFIED
+        # Biometric matched but Prognosis says NOT eligible — INELIGIBLE
         audit = VerificationLog(
             member_id=member.member_id,
             provider_id=provider.provider_id,
@@ -208,7 +208,7 @@ async def validate_fingerprint(
 
         reason = eligibility.get("reason") or (
             "Enrollee identity confirmed via biometric, but Prognosis reports "
-            "the enrollee is NOT eligible for this provider. Contact the HMO."
+            "the enrollee is NOT ELIGIBLE for this provider. Contact the HMO."
         )
 
         logger.warning(
@@ -219,11 +219,11 @@ async def validate_fingerprint(
         return FingerprintValidateResponse(
             member_id=member.member_id,
             match=True,
-            verification_status="UNVERIFIED",
+            verification_status="INELIGIBLE",
             verification_reason=reason,
             prognosis_data=prognosis_data,
             message=(
-                "Identity confirmed via fingerprint, but enrollee is not eligible "
+                "Identity confirmed via fingerprint, but enrollee is NOT ELIGIBLE "
                 "on the Prognosis network for this provider."
             ),
         )
