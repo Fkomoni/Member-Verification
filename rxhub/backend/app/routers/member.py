@@ -1,11 +1,13 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
+from typing import Optional
 
 from app.core.database import get_db
 from app.core.deps import get_current_member
 from app.models.member import Member
 from app.models.medication import Medication
-from app.models.request import Request
+from app.models.request import Request, RequestLog
 from app.models.notification import Notification
 from app.schemas.member import MemberProfile, MemberDashboard
 from app.schemas.medication import MedicationOut
@@ -13,6 +15,17 @@ from app.services.refill_intelligence import get_refill_intelligence, calculate_
 
 router = APIRouter(prefix="/member", tags=["Member"])
 
+
+# ── Profile Update Schema ────────────────────────────────────
+
+class ProfileUpdateRequest(BaseModel):
+    new_phone: Optional[str] = None
+    new_email: Optional[str] = None
+    new_address: Optional[str] = None
+    comment: Optional[str] = None
+
+
+# ── Endpoints ─────────────────────────────────────────────────
 
 @router.get("/profile", response_model=MemberProfile)
 async def get_profile(member: Member = Depends(get_current_member)):
@@ -74,6 +87,56 @@ async def get_medications(
         results.append(med_out)
 
     return results
+
+
+@router.post("/profile/update-request")
+async def request_profile_update(
+    body: ProfileUpdateRequest,
+    member: Member = Depends(get_current_member),
+    db: Session = Depends(get_db),
+):
+    """
+    Quick endpoint: submit a profile update request (phone, email, address).
+    Goes through the approval workflow — does NOT directly edit the member record.
+    """
+    changes = {}
+    if body.new_phone:
+        changes["phone"] = {"current": member.phone, "requested": body.new_phone}
+    if body.new_email:
+        changes["email"] = {"current": member.email or "", "requested": body.new_email}
+    if body.new_address:
+        changes["address"] = {"requested": body.new_address}
+
+    if not changes:
+        raise HTTPException(status_code=400, detail="No changes provided. Enter at least one field to update.")
+
+    req = Request(
+        member_id=member.member_id,
+        request_type="PROFILE_UPDATE",
+        action="MODIFY",
+        payload=changes,
+        comment=body.comment,
+    )
+    db.add(req)
+    db.flush()
+
+    log = RequestLog(
+        request_id=req.id,
+        actor_type="MEMBER",
+        actor_id=member.member_id,
+        action="PROFILE_UPDATE_REQUESTED",
+        before_state={k: v.get("current", "") for k, v in changes.items() if isinstance(v, dict)},
+        after_state={k: v.get("requested", "") for k, v in changes.items() if isinstance(v, dict)},
+        notes=body.comment,
+    )
+    db.add(log)
+    db.commit()
+
+    return {
+        "message": "Profile update request submitted. You'll be notified once reviewed.",
+        "request_id": str(req.id),
+        "changes_requested": list(changes.keys()),
+    }
 
 
 @router.get("/notifications")

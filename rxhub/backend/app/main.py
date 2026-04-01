@@ -1,10 +1,12 @@
 import asyncio
 import logging
+import os
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 
 from app.core.config import settings
 from app.core.database import engine, Base
@@ -78,6 +80,13 @@ app.include_router(refill.router, prefix="/api")
 app.include_router(admin.router, prefix="/api")
 app.include_router(resources.router, prefix="/api")
 app.include_router(payments.router, prefix="/api")
+
+
+# Serve local uploads during development (when S3 not configured)
+_uploads_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "uploads")
+if os.path.isdir(_uploads_dir) or not settings.AWS_ACCESS_KEY_ID:
+    os.makedirs(_uploads_dir, exist_ok=True)
+    app.mount("/uploads", StaticFiles(directory=_uploads_dir), name="uploads")
 
 
 @app.get("/api/health")
