@@ -9,6 +9,9 @@ const TYPES = [
 
 const GLUCOSE_CTX = ['FASTING', 'RANDOM', 'POST_MEAL'];
 
+// Strip decimal points from readings
+const n = (v) => v != null ? Math.round(parseFloat(v)) : v;
+
 const TREND_ICONS = { IMPROVING: '\u2193', WORSENING: '\u2191', STABLE: '\u2194', NO_DATA: '-', INSUFFICIENT_DATA: '~' };
 const TREND_COLORS = { IMPROVING: '#16A34A', WORSENING: '#DC2626', STABLE: '#2563EB', NO_DATA: '#999', INSUFFICIENT_DATA: '#999' };
 const TREND_LABELS = { IMPROVING: 'Improving', WORSENING: 'Worsening', STABLE: 'Stable', NO_DATA: 'No data', INSUFFICIENT_DATA: 'Need more readings' };
@@ -180,9 +183,9 @@ export default function HealthReadingsPage() {
               {r ? (
                 <>
                   <div style={s.trendValue}>
-                    {t.key === 'BLOOD_PRESSURE' && `${r.systolic}/${r.diastolic}`}
-                    {t.key === 'BLOOD_GLUCOSE' && `${r.glucose_level}`}
-                    {t.key === 'CHOLESTEROL' && `${r.total_cholesterol}`}
+                    {t.key === 'BLOOD_PRESSURE' && `${n(r.systolic)}/${n(r.diastolic)}`}
+                    {t.key === 'BLOOD_GLUCOSE' && `${n(r.glucose_level)}`}
+                    {t.key === 'CHOLESTEROL' && `${n(r.total_cholesterol)}`}
                   </div>
                   <div style={s.trendUnit}>{t.unit}</div>
 
@@ -205,7 +208,7 @@ export default function HealthReadingsPage() {
                   )}
 
                   {t.key === 'BLOOD_GLUCOSE' && r.glucose_context && <div style={s.ctx}>{r.glucose_context.replace('_', ' ')}</div>}
-                  {t.key === 'CHOLESTEROL' && r.hdl && <div style={s.ctx}>HDL: {r.hdl} / LDL: {r.ldl}</div>}
+                  {t.key === 'CHOLESTEROL' && r.hdl && <div style={s.ctx}>HDL: {n(r.hdl)} / LDL: {n(r.ldl)}</div>}
                   <div style={s.trendDate}>{new Date(r.recorded_at).toLocaleDateString()}</div>
                   <div style={s.readingCount}>{tr.reading_count || 0} readings on file</div>
                 </>
@@ -281,9 +284,9 @@ export default function HealthReadingsPage() {
                 <span>{new Date(r.recorded_at).toLocaleString()}</span>
                 <span>{r.reading_type.replace(/_/g, ' ')}</span>
                 <span style={{ fontWeight: 600 }}>
-                  {r.reading_type === 'BLOOD_PRESSURE' && `${r.systolic}/${r.diastolic}`}
-                  {r.reading_type === 'BLOOD_GLUCOSE' && `${r.glucose_level}`}
-                  {r.reading_type === 'CHOLESTEROL' && `${r.total_cholesterol}`}
+                  {r.reading_type === 'BLOOD_PRESSURE' && `${n(r.systolic)}/${n(r.diastolic)}`}
+                  {r.reading_type === 'BLOOD_GLUCOSE' && `${n(r.glucose_level)}`}
+                  {r.reading_type === 'CHOLESTEROL' && `${n(r.total_cholesterol)}`}
                   {changeIcon && <span style={{ marginLeft: 6, color: changeColor, fontWeight: 700 }}>{changeIcon}</span>}
                 </span>
                 <span style={{ color: statusColor, fontWeight: 600, fontSize: 12 }}>{status}</span>

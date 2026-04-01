@@ -14,6 +14,7 @@ const CAT_COLORS = {
 export default function ResourcesPage() {
   const [resources, setResources] = useState([]);
   const [cat, setCat] = useState('');
+  const [expanded, setExpanded] = useState({});
 
   useEffect(() => {
     const params = { page_size: 30 };
@@ -21,8 +22,11 @@ export default function ResourcesPage() {
     api.get('/resources', { params }).then(r => setResources(r.data)).catch(() => {});
   }, [cat]);
 
+  const toggleExpand = (id) => {
+    setExpanded(prev => ({ ...prev, [id]: !prev[id] }));
+  };
+
   const openNewsletter = (r) => {
-    // If thumbnail_url points to a newsletter HTML file, open it in new tab
     if (r.thumbnail_url && r.thumbnail_url.startsWith('/newsletters/')) {
       window.open(r.thumbnail_url, '_blank');
     }
@@ -45,19 +49,28 @@ export default function ResourcesPage() {
         {resources.map(r => {
           const isNewsletter = r.category === 'NEWSLETTER' && r.thumbnail_url;
           const catColor = CAT_COLORS[r.category] || '#666';
+          const isLong = r.body.length > 250;
+          const isExpanded = expanded[r.id];
+          const displayBody = isLong && !isExpanded ? r.body.slice(0, 250) + '...' : r.body;
 
           return (
-            <div key={r.id} style={{ ...s.card, cursor: isNewsletter ? 'pointer' : 'default' }}
-              onClick={() => isNewsletter && openNewsletter(r)}>
+            <div key={r.id} style={s.card}>
               <div style={{ ...s.cardCat, color: catColor }}>{r.category.replace(/_/g, ' ')}</div>
               <h3 style={s.cardTitle}>{r.title}</h3>
-              <p style={s.cardBody}>{r.body.length > 250 ? r.body.slice(0, 250) + '...' : r.body}</p>
+              <p style={s.cardBody}>{displayBody}</p>
+              {isLong && (
+                <button onClick={() => toggleExpand(r.id)} style={s.expandBtn}>
+                  {isExpanded ? 'Show less' : 'Read full alert'}
+                </button>
+              )}
               {r.diagnosis_tags?.length > 0 && (
                 <div style={s.tags}>{r.diagnosis_tags.map(t => <span key={t} style={s.tag}>{t}</span>)}</div>
               )}
               <div style={s.cardFooter}>
                 <span style={s.cardDate}>{r.published_at ? new Date(r.published_at).toLocaleDateString() : ''}</span>
-                {isNewsletter && <span style={s.readMore}>Read Full Newsletter &rarr;</span>}
+                {isNewsletter && (
+                  <button onClick={() => openNewsletter(r)} style={s.readMore}>Read Full Newsletter &rarr;</button>
+                )}
               </div>
             </div>
           );
@@ -74,13 +87,14 @@ const s = {
   filters: { display: 'flex', gap: 6, marginBottom: 20, flexWrap: 'wrap' },
   filterBtn: { padding: '7px 14px', borderRadius: 6, border: '1px solid #ddd', backgroundColor: '#fff', cursor: 'pointer', fontSize: 12, fontWeight: 500 },
   grid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: 16 },
-  card: { backgroundColor: '#fff', borderRadius: 12, padding: 22, boxShadow: '0 1px 3px rgba(0,0,0,0.06)', transition: 'box-shadow 0.2s' },
+  card: { backgroundColor: '#fff', borderRadius: 12, padding: 22, boxShadow: '0 1px 3px rgba(0,0,0,0.06)' },
   cardCat: { fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5 },
   cardTitle: { fontSize: 16, fontWeight: 700, color: '#1A1A2E', margin: '6px 0 8px' },
-  cardBody: { fontSize: 14, color: '#555', lineHeight: 1.6, whiteSpace: 'pre-line' },
+  cardBody: { fontSize: 14, color: '#555', lineHeight: 1.7, whiteSpace: 'pre-line' },
+  expandBtn: { background: 'none', border: 'none', color: '#C8102E', fontWeight: 600, fontSize: 13, cursor: 'pointer', padding: '8px 0', marginTop: 4 },
   tags: { display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 12 },
   tag: { padding: '2px 8px', backgroundColor: '#F0F0F0', borderRadius: 4, fontSize: 11, color: '#444' },
   cardFooter: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 12 },
   cardDate: { fontSize: 12, color: '#999' },
-  readMore: { fontSize: 13, color: '#C8102E', fontWeight: 600 },
+  readMore: { background: 'none', border: 'none', fontSize: 13, color: '#C8102E', fontWeight: 600, cursor: 'pointer' },
 };

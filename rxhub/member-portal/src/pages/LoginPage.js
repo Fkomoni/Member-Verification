@@ -59,9 +59,9 @@ export default function LoginPage() {
         {step === 'login' ? (
           <form onSubmit={handleLogin} style={s.form}>
             <label style={s.label}>Member ID</label>
-            <input style={s.input} value={memberId} onChange={e => setMemberId(e.target.value)} placeholder="e.g. 21000645/0" required />
+            <input style={s.input} value={memberId} onChange={e => setMemberId(e.target.value)} placeholder="e.g. 23069157/0" required autoComplete="username" />
             <label style={s.label}>Phone Number</label>
-            <input style={s.input} value={phone} onChange={e => setPhone(e.target.value)} placeholder="e.g. 08012345678" required />
+            <input style={s.input} value={phone} onChange={e => setPhone(e.target.value)} placeholder="e.g. 08012345678" required autoComplete="tel" />
             <button type="submit" disabled={loading} style={s.btn}>{loading ? 'Verifying...' : 'Sign In'}</button>
           </form>
         ) : (

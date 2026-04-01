@@ -13,7 +13,7 @@ class Settings(BaseSettings):
     # JWT
     JWT_SECRET_KEY: str = "change-me-in-production"
     JWT_ALGORITHM: str = "HS256"
-    JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
+    JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = 300
     JWT_ADMIN_TOKEN_EXPIRE_MINUTES: int = 480
 
     # Prognosis API (PBM Backend)
