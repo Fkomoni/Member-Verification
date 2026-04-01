@@ -19,7 +19,7 @@ class Payment(Base):
     gateway_ref = Column(String(200))
     gateway_status = Column(String(30))
     status = Column(String(20), default="PENDING")
-    metadata = Column(JSONB, default={})
+    payment_metadata = Column("metadata", JSONB, default={})
     paid_at = Column(DateTime(timezone=True))
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))

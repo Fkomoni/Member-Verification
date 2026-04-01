@@ -69,38 +69,69 @@ def _upsert_member_from_prognosis(enrollee: dict, db: Session) -> Member:
     return member
 
 
+def _normalize_phone(phone: str) -> str:
+    """Normalize Nigerian phone to 0XXXXXXXXXX."""
+    if not phone:
+        return ""
+    phone = phone.strip().replace(" ", "").replace("-", "")
+    if phone.startswith("+234"):
+        phone = "0" + phone[4:]
+    elif phone.startswith("234") and len(phone) > 10:
+        phone = "0" + phone[3:]
+    return phone
+
+
+def _local_validate(member_id: str, phone: str, db: Session) -> Member:
+    """Validate against local DB when Prognosis API is unreachable."""
+    member = db.query(Member).filter(Member.member_id == member_id).first()
+    if not member:
+        return None
+    if _normalize_phone(member.phone) == _normalize_phone(phone):
+        return member
+    return None
+
+
 @router.post("/login", response_model=LoginResponse)
 async def member_login(req: LoginRequest, db: Session = Depends(get_db)):
     """
     Primary login: validate member_id + phone against Prognosis API.
-    Calls GetEnrolleeBioDataByEnrolleeID, then compares phone number.
+    Falls back to local DB validation if Prognosis is unreachable.
     """
+    member = None
+    auth_method = "API"
+
+    # Try Prognosis API first
     result = await prognosis_client.validate_member(req.member_id, req.phone, db=db)
 
-    if "error" in result and not result.get("valid"):
+    if result.get("valid"):
+        # Prognosis validated — upsert member from API data
+        member = _upsert_member_from_prognosis(result, db)
+    elif "Connection error" in str(result.get("error", "")) or "Timeout" in str(result.get("error", "")):
+        # Prognosis unreachable — fall back to local DB
+        import logging
+        logging.getLogger(__name__).warning("Prognosis API unreachable, falling back to local validation")
+        member = _local_validate(req.member_id, req.phone, db)
+        auth_method = "LOCAL"
+    else:
+        # Prognosis responded but validation failed (wrong phone, etc.)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=result.get("error", "Validation failed. Please check your Member ID and phone number, or use OTP login."),
         )
 
-    if not result.get("valid"):
+    if not member:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Validation failed. Please check your Member ID and phone number.",
         )
 
-    # Upsert member from Prognosis data
-    member = _upsert_member_from_prognosis(result, db)
-    if not member:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to process member data")
-
     token = create_access_token(
-        {"sub": member.member_id, "type": "member", "auth_method": "API"}
+        {"sub": member.member_id, "type": "member", "auth_method": auth_method}
     )
 
     return LoginResponse(
         access_token=token,
-        auth_method="API",
+        auth_method=auth_method,
         member_id=member.member_id,
         member_name=f"{member.first_name} {member.last_name}".strip(),
     )
@@ -109,27 +140,30 @@ async def member_login(req: LoginRequest, db: Session = Depends(get_db)):
 @router.post("/send-otp", response_model=SendOTPResponse)
 async def send_otp(req: SendOTPRequest, db: Session = Depends(get_db)):
     """
-    Fallback OTP: fetch registered phone from Prognosis, send OTP to it.
-    Only triggered when primary login fails.
+    Fallback OTP: fetch registered phone from Prognosis (or local DB), send OTP to it.
     """
+    phone = None
+
+    # Try Prognosis first
     enrollee = await prognosis_client.get_member(req.member_id, db=db)
-    if "error" in enrollee:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Member not found in the system. Please verify your Member ID.",
+    if "error" not in enrollee:
+        phone = (
+            enrollee.get("phone") or enrollee.get("Phone") or
+            enrollee.get("phoneNumber") or enrollee.get("PhoneNumber") or
+            enrollee.get("mobileNumber") or enrollee.get("MobileNumber") or
+            enrollee.get("telephone") or enrollee.get("Telephone") or ""
         )
 
-    phone = (
-        enrollee.get("phone") or enrollee.get("Phone") or
-        enrollee.get("phoneNumber") or enrollee.get("PhoneNumber") or
-        enrollee.get("mobileNumber") or enrollee.get("MobileNumber") or
-        enrollee.get("telephone") or enrollee.get("Telephone") or ""
-    )
+    # Fallback to local DB
+    if not phone:
+        local_member = db.query(Member).filter(Member.member_id == req.member_id).first()
+        if local_member:
+            phone = local_member.phone
 
     if not phone:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="No phone number on file for this member.",
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Member not found. Please verify your Member ID.",
         )
 
     result = await otp_service.send_otp(req.member_id, phone, db)
