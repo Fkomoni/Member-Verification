@@ -218,10 +218,10 @@ async def get_analytics(
     """User analytics: active members, request counts, etc."""
     total_members = db.query(Member).filter(Member.status == "ACTIVE").count()
 
-    from sqlalchemy import func, distinct
+    from sqlalchemy import func, distinct, text
     active_members = (
         db.query(func.count(distinct(Request.member_id)))
-        .filter(Request.created_at >= func.now() - func.cast("30 days", func.text("interval")))
+        .filter(Request.created_at >= func.now() - text("interval '30 days'"))
         .scalar()
     ) or 0
 
