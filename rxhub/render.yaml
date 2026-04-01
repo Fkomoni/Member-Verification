@@ -16,9 +16,11 @@ services:
           property: connectionString
       - key: JWT_SECRET_KEY
         generateValue: true
-      - key: PBM_API_BASE_URL
+      - key: PROGNOSIS_API_BASE_URL
+        value: "https://prognosis-api.leadwayhealth.com/api"
+      - key: PROGNOSIS_USERNAME
         sync: false
-      - key: PBM_API_KEY
+      - key: PROGNOSIS_PASSWORD
         sync: false
       - key: SMS_API_KEY
         sync: false
