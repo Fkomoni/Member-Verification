@@ -21,17 +21,16 @@ router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 def _upsert_member_from_prognosis(enrollee: dict, db: Session) -> Member:
     """Create or update local member record from Prognosis enrollee data."""
-    # Prognosis field mapping (handle multiple possible field name formats)
-    def get(field, *alts):
-        for f in [field] + list(alts):
-            val = enrollee.get(f) or enrollee.get(f.lower()) or enrollee.get(f[0].upper() + f[1:])
-            if val:
-                return val
+    def get(*fields):
+        for f in fields:
+            val = enrollee.get(f)
+            if val and str(val).strip():
+                return str(val).strip()
         return None
 
     member_id = (
-        get("enrolleeID", "EnrolleeID", "enrollee_id", "MemberID", "memberId", "member_id") or
-        get("enrolleeid", "ENROLLEEID") or ""
+        get("Member_EnrolleeID", "EnrolleeID", "enrolleeID", "enrollee_id",
+            "MemberID", "memberId", "member_id", "enrolleeid", "ENROLLEEID") or ""
     )
 
     if not member_id:
@@ -42,22 +41,60 @@ def _upsert_member_from_prognosis(enrollee: dict, db: Session) -> Member:
         member = Member(member_id=str(member_id))
         db.add(member)
 
-    # Map Prognosis fields to our member model
-    member.first_name = get("firstName", "FirstName", "first_name", "Firstname") or member.first_name or "Member"
-    member.last_name = get("lastName", "LastName", "last_name", "Lastname", "surname", "Surname") or member.last_name or ""
-    member.email = get("email", "Email", "emailAddress", "EmailAddress") or member.email
-    member.phone = get("phone", "Phone", "phoneNumber", "PhoneNumber", "mobileNumber", "MobileNumber", "telephone", "Telephone") or member.phone or ""
-    member.gender = get("gender", "Gender", "sex", "Sex") or member.gender
-    member.diagnosis = get("diagnosis", "Diagnosis", "primaryDiagnosis", "PrimaryDiagnosis") or member.diagnosis
-    member.plan_type = get("planType", "PlanType", "plan_type", "planCode", "PlanCode") or member.plan_type
-    member.plan_name = get("planName", "PlanName", "plan_name", "plan", "Plan") or member.plan_name
-    member.employer = get("employer", "Employer", "company", "Company", "organizationName", "OrganizationName") or member.employer
+    # Map Prognosis Member_ prefixed fields + other common formats
+    member.first_name = get(
+        "Member_FirstName", "Member_Firstname", "firstName", "FirstName", "first_name", "Firstname"
+    ) or member.first_name or "Member"
+
+    member.last_name = get(
+        "Member_LastName", "Member_Lastname", "Member_Surname", "lastName", "LastName",
+        "last_name", "Lastname", "surname", "Surname"
+    ) or member.last_name or ""
+
+    member.email = get(
+        "Member_Email", "Member_EmailAddress", "email", "Email", "emailAddress", "EmailAddress"
+    ) or member.email
+
+    member.phone = get(
+        "Member_MobileNo", "Member_MobileNumber", "Member_Phone", "Member_PhoneNumber",
+        "Member_Telephone", "Member_GSM", "Member_CellPhone",
+        "phone", "Phone", "phoneNumber", "PhoneNumber", "mobileNumber", "MobileNumber",
+        "mobileNo", "MobileNo", "telephone", "Telephone", "gsm", "GSM"
+    ) or member.phone or ""
+
+    member.gender = get(
+        "Member_Gender", "Member_Sex", "gender", "Gender", "sex", "Sex"
+    ) or member.gender
+
+    member.diagnosis = get(
+        "Member_Diagnosis", "Member_PrimaryDiagnosis", "diagnosis", "Diagnosis", "primaryDiagnosis"
+    ) or member.diagnosis
+
+    member.plan_type = get(
+        "Member_PlanType", "Member_PlanCode", "Member_Plan", "Member_Scheme",
+        "planType", "PlanType", "plan_type", "planCode", "PlanCode"
+    ) or member.plan_type
+
+    member.plan_name = get(
+        "Member_PlanName", "Member_SchemeName", "Member_Scheme",
+        "planName", "PlanName", "plan_name", "plan", "Plan"
+    ) or member.plan_name
+
+    member.employer = get(
+        "Member_Employer", "Member_Company", "Member_OrganizationName", "Member_Organisation",
+        "Member_CompanyName", "employer", "Employer", "company", "Company",
+        "organizationName", "OrganizationName"
+    ) or member.employer
+
     member.status = "ACTIVE"
     member.pbm_synced_at = datetime.now(timezone.utc)
 
     # Try to parse date_of_birth
-    dob = get("dateOfBirth", "DateOfBirth", "date_of_birth", "dob", "DOB")
-    if dob and isinstance(dob, str):
+    dob = get(
+        "Member_DateOfBirth", "Member_DOB", "Member_BirthDate",
+        "dateOfBirth", "DateOfBirth", "date_of_birth", "dob", "DOB"
+    )
+    if dob:
         try:
             from dateutil import parser as date_parser
             member.date_of_birth = date_parser.parse(dob).date()

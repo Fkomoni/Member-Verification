@@ -117,7 +117,7 @@ class PrognosisClient:
         try:
             log = SyncLog(
                 entity_type="PROGNOSIS_API",
-                entity_id=endpoint,
+                entity_id=endpoint[:100],
                 direction="OUTBOUND",
                 endpoint=f"{method} {endpoint}",
                 request_body=request_body,
@@ -162,6 +162,8 @@ class PrognosisClient:
         # Extract phone — try every possible field name
         stored_phone = ""
         phone_fields = [
+            "Member_MobileNo", "Member_MobileNumber", "Member_Phone",
+            "Member_PhoneNumber", "Member_Telephone", "Member_GSM", "Member_CellPhone",
             "phone", "Phone", "phoneNumber", "PhoneNumber",
             "mobileNumber", "MobileNumber", "telephone", "Telephone",
             "mobileNo", "MobileNo", "phoneNo", "PhoneNo",
