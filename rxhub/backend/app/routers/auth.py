@@ -80,14 +80,21 @@ def _upsert_member_from_prognosis(enrollee: dict, db: Session) -> Member:
     ) or member.diagnosis
 
     member.plan_type = get(
-        "Member_PlanType", "Member_PlanCode", "Member_Plan", "Member_Scheme",
+        "Member_PlanType", "Member_PlanCode", "Member_Plan",
         "planType", "PlanType", "plan_type", "planCode", "PlanCode"
     ) or member.plan_type
 
-    member.plan_name = get(
-        "Member_PlanName", "Member_SchemeName", "Member_Scheme",
-        "planName", "PlanName", "plan_name", "plan", "Plan"
-    ) or member.plan_name
+    # Scheme/Plan name — try every possible variation
+    scheme = get(
+        "Member_SchemeName", "Member_SchemeDescription", "Member_Scheme",
+        "Member_PlanName", "Member_PlanDescription", "Member_PolicyName",
+        "Member_PolicyDescription", "Member_PackageName",
+        "SchemeName", "SchemeDescription", "Scheme",
+        "planName", "PlanName", "plan_name", "plan", "Plan",
+        "PolicyName", "PolicyDescription", "PackageName",
+    )
+    if scheme:
+        member.plan_name = scheme  # Always overwrite with Prognosis data
 
     member.employer = get(
         "Member_Employer", "Member_Company", "Member_OrganizationName", "Member_Organisation",
