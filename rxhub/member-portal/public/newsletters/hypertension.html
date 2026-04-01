@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Leadway Health — Hypertension Newsletter</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+<style>
+
+  /* === LEADWAY HEALTH BRAND TOKENS === */
+  :root {
+    --lw-navy:    #1A1A2E;
+    --lw-crimson: #C8102E;
+    --lw-orange:  #E87722;
+    --lw-light:   #F7F8FA;
+    --lw-white:   #FFFFFF;
+    --lw-muted:   #6B7280;
+    --lw-border:  #E5E7EB;
+    --lw-text:    #1C1C1C;
+    --accent:     var(--lw-crimson); /* override per file */
+    --accent-bg:  #FEE2E2;           /* override per file */
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--lw-light);
+    color: var(--lw-text);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* === HEADER === */
+  .lw-header {
+    background: var(--lw-navy);
+    padding: 20px 40px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .lw-header__logo { height: 52px; width: auto; object-fit: contain; }
+  .lw-header__badge {
+    background: var(--accent);
+    color: #fff;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 5px 14px;
+    border-radius: 20px;
+  }
+
+  /* === HERO BAND === */
+  .lw-hero {
+    background: var(--lw-navy);
+    border-top: 3px solid var(--accent);
+    padding: 40px 40px 36px;
+    color: #fff;
+  }
+  .lw-hero__label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--lw-orange);
+    margin-bottom: 10px;
+  }
+  .lw-hero__title {
+    font-family: 'Playfair Display', serif;
+    font-size: 2rem;
+    line-height: 1.2;
+    color: #fff;
+    max-width: 620px;
+    margin-bottom: 14px;
+  }
+  .lw-hero__intro {
+    font-size: 0.95rem;
+    line-height: 1.7;
+    color: rgba(255,255,255,0.72);
+    max-width: 580px;
+  }
+
+  /* === BODY === */
+  .lw-body { max-width: 800px; margin: 0 auto; padding: 40px 24px 60px; }
+
+  /* === SECTION HEADING === */
+  .lw-section-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--lw-muted);
+    margin: 32px 0 14px;
+  }
+  .lw-section-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--lw-border);
+  }
+
+  /* === TIPS GRID === */
+  .lw-tips {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 12px;
+  }
+  .lw-tip {
+    background: var(--lw-white);
+    border: 1px solid var(--lw-border);
+    border-left: 3px solid var(--accent);
+    border-radius: 8px;
+    padding: 14px 16px;
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    font-size: 0.875rem;
+    line-height: 1.55;
+  }
+  .lw-tip__icon { font-size: 1.1rem; flex-shrink: 0; margin-top: 1px; }
+  .lw-tip strong { color: var(--lw-navy); display: block; margin-bottom: 2px; }
+
+  /* === FOOD CHIPS === */
+  .lw-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .lw-chip {
+    background: var(--lw-white);
+    border: 1px solid var(--lw-border);
+    border-radius: 20px;
+    padding: 5px 14px;
+    font-size: 0.82rem;
+  }
+  .lw-chip--avoid {
+    background: #FFF1F1;
+    border-color: #FECACA;
+    color: #B91C1C;
+  }
+
+  /* === CALLOUT BOX === */
+  .lw-callout {
+    background: #FFFBEB;
+    border: 1px solid #FDE68A;
+    border-left: 4px solid var(--lw-orange);
+    border-radius: 8px;
+    padding: 16px 18px;
+    font-size: 0.875rem;
+    line-height: 1.6;
+    color: #92400E;
+    margin-top: 32px;
+  }
+  .lw-callout strong { color: #78350F; }
+
+  /* === INTRO TEXT === */
+  .lw-body-text {
+    font-size: 0.92rem;
+    line-height: 1.75;
+    color: #374151;
+  }
+
+  /* === FOOTER === */
+  .lw-footer {
+    background: var(--lw-navy);
+    color: rgba(255,255,255,0.5);
+    font-size: 0.78rem;
+    padding: 22px 40px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .lw-footer__brand { color: rgba(255,255,255,0.9); font-weight: 600; }
+  .lw-footer__tag {
+    background: var(--accent);
+    color: #fff;
+    padding: 3px 12px;
+    border-radius: 12px;
+    font-size: 0.72rem;
+    font-weight: 600;
+  }
+
+  @media(max-width:600px){
+    .lw-hero { padding: 28px 20px; }
+    .lw-hero__title { font-size: 1.5rem; }
+    .lw-header { padding: 16px 20px; }
+    .lw-footer { padding: 16px 20px; }
+  }
+
+:root { --accent: #C8102E; --accent-bg: #FEE2E2; }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="lw-header">
+  <img class="lw-header__logo" src="https://raw.githubusercontent.com/Fkomoni/datadump/main/leadway%20health%20logo%2020266.jpg" alt="Leadway Health HMO" />
+  <span class="lw-header__badge">Newsletter</span>
+</header>
+
+<!-- HERO -->
+<section class="lw-hero">
+  <div class="lw-hero__label">Health Newsletter — Hypertension</div>
+  <h1 class="lw-hero__title">Living Well with High Blood Pressure: Your Everyday Guide</h1>
+  <p class="lw-hero__intro">High blood pressure (hypertension) is one of the most common chronic conditions among Nigerians — yet with the right daily habits it can be managed very effectively. Here is what every member living with hypertension should know.</p>
+</section>
+
+<!-- BODY -->
+<main class="lw-body">
+
+  <div class="lw-section-label">Understanding Your Condition</div>
+  <p class="lw-body-text">Hypertension means your blood pressure is consistently at or above 140/90 mmHg. Often called the 'silent killer', it rarely causes symptoms yet quietly damages the heart, kidneys, and blood vessels over time. The key message is simple: you can live a long, healthy life with hypertension if you manage it consistently.</p>
+
+  <div class="lw-section-label">Lifestyle Tips</div>
+  <div class="lw-tips">
+<div class="lw-tip"><span class="lw-tip__icon">🚶</span><div><strong>Walk daily.</strong>A brisk 30-minute walk five days a week can lower blood pressure by 5 to 8 mmHg on its own.</div></div>
+<div class="lw-tip"><span class="lw-tip__icon">🧂</span><div><strong>Reduce your salt intake.</strong>Limit added salt in cooking and reduce seasoning cubes (Maggi, Knorr) — they are extremely high in sodium.</div></div>
+<div class="lw-tip"><span class="lw-tip__icon">⚖️</span><div><strong>Maintain a healthy weight.</strong>Losing even 5 kg can produce a meaningful reduction in blood pressure readings.</div></div>
+<div class="lw-tip"><span class="lw-tip__icon">🚭</span><div><strong>Quit smoking and limit alcohol.</strong>Both directly raise blood pressure and increase your risk of stroke and heart failure.</div></div>
+<div class="lw-tip"><span class="lw-tip__icon">😴</span><div><strong>Sleep 7 to 8 hours nightly.</strong>Poor or broken sleep keeps blood pressure elevated — consistency matters as much as duration.</div></div>
+<div class="lw-tip"><span class="lw-tip__icon">🧘</span><div><strong>Manage stress actively.</strong>Daily prayer, deep breathing, or a short walk after work all help lower the stress hormones that spike your pressure.</div></div>
+  </div>
+
+  <div class="lw-section-label">What to Eat More Of</div>
+  <div class="lw-chips"><span class="lw-chip">🍌 Bananas</span>
+<span class="lw-chip">🥬 Waterleaf & vegetables</span>
+<span class="lw-chip">🐟 Grilled fish</span>
+<span class="lw-chip">🥣 Oatmeal</span>
+<span class="lw-chip">🥑 Avocado pear</span>
+<span class="lw-chip">🫘 Beans & lentils</span>
+<span class="lw-chip">🥛 Low-fat dairy</span></div>
+
+  <div class="lw-section-label">Limit or Avoid</div>
+  <div class="lw-chips"><span class="lw-chip lw-chip--avoid">Excess table salt</span>
+<span class="lw-chip lw-chip--avoid">Seasoning cubes (excess)</span>
+<span class="lw-chip lw-chip--avoid">Fried & smoked foods</span>
+<span class="lw-chip lw-chip--avoid">Soft drinks & juice drinks</span>
+<span class="lw-chip lw-chip--avoid">Processed canned foods</span>
+<span class="lw-chip lw-chip--avoid">Excess palm oil</span></div>
+
+  <div class="lw-callout">⚠️ <strong>Never stop your medication because you feel fine.</strong> Take it at the same time every day, even when your readings look normal. Missing doses is one of the leading causes of stroke in Nigeria.</div>
+
+</main>
+
+<!-- FOOTER -->
+<footer class="lw-footer">
+  <div>
+    <span class="lw-footer__brand">Leadway Health HMO</span>
+    &nbsp;&bull;&nbsp; RxHub Member Resource Centre &nbsp;&bull;&nbsp; April 2026
+  </div>
+  <span class="lw-footer__tag">Hypertension</span>
+</footer>
+
+</body>
+</html>

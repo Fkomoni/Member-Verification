@@ -14,10 +14,12 @@ from app.models.resource import Resource
 def update():
     db = SessionLocal()
     try:
-        # ── Clear old scarcity alerts and drug alerts ─────────
-        db.query(Resource).filter(Resource.category.in_(["SCARCITY_ALERT", "DRUG_ALERT"])).delete(synchronize_session=False)
+        # ── Clear old alerts and newsletters ──────────────
+        db.query(Resource).filter(
+            Resource.category.in_(["SCARCITY_ALERT", "DRUG_ALERT", "NEWSLETTER"])
+        ).delete(synchronize_session=False)
         db.commit()
-        print("[*] Cleared old scarcity alerts and drug alerts")
+        print("[*] Cleared old scarcity alerts, drug alerts, and newsletters")
 
         resources = [
             # ── SCARCITY ALERTS ───────────────────────────────
@@ -107,23 +109,68 @@ This is a regulatory directive. Leadway Health is working to ensure all affected
             ),
         ]
 
+        # ── NEWSLETTERS ────────────────────────────────────
+        newsletters = [
+            Resource(
+                title="Health Newsletter: Managing Hypertension",
+                body="High blood pressure (hypertension) is one of the most common chronic conditions among Nigerians — yet with the right daily habits it can be managed very effectively. Learn about blood pressure targets, medication adherence, dietary changes (the DASH diet), exercise recommendations, and when to seek emergency care. Read the full newsletter for detailed guidance on living well with hypertension.",
+                category="NEWSLETTER",
+                diagnosis_tags=["Hypertension"],
+                thumbnail_url="/newsletters/hypertension.html",
+                is_published=True,
+                published_at=datetime.now(timezone.utc),
+            ),
+            Resource(
+                title="Health Newsletter: Living with Type 2 Diabetes",
+                body="Type 2 diabetes is increasingly common in Nigeria, particularly in urban areas. It does not have to control your life. With the right knowledge and day-to-day habits, you can keep your blood sugar stable and reduce your risk of complications. This newsletter covers blood sugar targets, HbA1c monitoring, medication management, diet tips, and foot care essentials.",
+                category="NEWSLETTER",
+                diagnosis_tags=["Diabetes"],
+                thumbnail_url="/newsletters/diabetes.html",
+                is_published=True,
+                published_at=datetime.now(timezone.utc),
+            ),
+            Resource(
+                title="Health Newsletter: Sickle Cell Disease — Daily Care Guide",
+                body="Nigeria carries the highest burden of sickle cell disease in the world. Living with SCD requires specific daily care, but with the right approach — and the right support — many people with sickle cell lead fulfilling lives. Learn about crisis prevention, hydration, folic acid supplementation, pain management, and when to go to the emergency room.",
+                category="NEWSLETTER",
+                diagnosis_tags=["Sickle Cell"],
+                thumbnail_url="/newsletters/sickle-cell.html",
+                is_published=True,
+                published_at=datetime.now(timezone.utc),
+            ),
+            Resource(
+                title="Health Newsletter: Understanding Hypercholesterolaemia",
+                body="Hypercholesterolaemia — high levels of cholesterol in the blood — typically has no symptoms at all, yet it is a leading driver of heart attacks and strokes. The encouraging news is that diet and lifestyle changes, combined with medication when needed, can dramatically reduce your risk. Learn about cholesterol targets, statins, heart-healthy eating, and monitoring your levels.",
+                category="NEWSLETTER",
+                diagnosis_tags=["Hypercholesterolaemia", "Cardiac"],
+                thumbnail_url="/newsletters/hypercholesterolaemia.html",
+                is_published=True,
+                published_at=datetime.now(timezone.utc),
+            ),
+            Resource(
+                title="Health Newsletter: Managing Spondylosis",
+                body="Spondylosis refers to the natural wear and tear of the spine — affecting the neck (cervical), mid-back (thoracic), or lower back (lumbar). It is extremely common in adults over 40 and, with the right approach, most people can manage symptoms effectively and stay active. This newsletter covers causes, posture tips, exercise recommendations, pain management, and when to see a specialist.",
+                category="NEWSLETTER",
+                diagnosis_tags=["Spondylosis", "Musculoskeletal"],
+                thumbnail_url="/newsletters/spondylosis.html",
+                is_published=True,
+                published_at=datetime.now(timezone.utc),
+            ),
+        ]
+
+        resources.extend(newsletters)
+
         for r in resources:
             db.add(r)
         db.commit()
 
-        scarcity_count = sum(1 for r in resources if r.category == "SCARCITY_ALERT")
-        alert_count = sum(1 for r in resources if r.category == "DRUG_ALERT")
-        print(f"[+] Created {scarcity_count} scarcity alerts:")
-        for r in resources:
-            if r.category == "SCARCITY_ALERT":
+        for cat in ["SCARCITY_ALERT", "DRUG_ALERT", "NEWSLETTER"]:
+            items = [r for r in resources if r.category == cat]
+            print(f"[+] Created {len(items)} {cat.replace('_', ' ').lower()}(s):")
+            for r in items:
                 print(f"    - {r.title}")
 
-        print(f"[+] Created {alert_count} drug alert(s):")
-        for r in resources:
-            if r.category == "DRUG_ALERT":
-                print(f"    - {r.title}")
-
-        print("\n[OK] All alerts updated!")
+        print(f"\n[OK] All resources updated! ({len(resources)} total)")
 
     except Exception as e:
         db.rollback()
