@@ -93,3 +93,25 @@ if os.path.isdir(_uploads_dir) or not settings.AWS_ACCESS_KEY_ID:
 @app.get("/api/health")
 async def health():
     return {"status": "ok", "service": settings.APP_NAME, "version": settings.APP_VERSION}
+
+
+@app.post("/api/admin/run-seed")
+async def run_seed():
+    """Run seed script via API — creates test data."""
+    from app.seed import seed
+    try:
+        seed()
+        return {"status": "ok", "message": "Seed complete"}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+
+@app.post("/api/admin/run-update-alerts")
+async def run_update_alerts():
+    """Run update_alerts script via API — updates scarcity alerts, drug alerts, newsletters."""
+    from app.update_alerts import update
+    try:
+        update()
+        return {"status": "ok", "message": "Alerts and newsletters updated"}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
