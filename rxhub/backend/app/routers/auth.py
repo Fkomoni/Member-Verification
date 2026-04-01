@@ -21,6 +21,15 @@ router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 def _upsert_member_from_prognosis(enrollee: dict, db: Session) -> Member:
     """Create or update local member record from Prognosis enrollee data."""
+    import logging
+    _logger = logging.getLogger(__name__)
+
+    # Log ALL fields from Prognosis for debugging
+    _logger.info(f"Prognosis upsert — all fields: {list(enrollee.keys())}")
+    for k, v in enrollee.items():
+        if v and 'pic' not in k.lower() and 'photo' not in k.lower() and 'image' not in k.lower():
+            _logger.info(f"  Prognosis: {k} = {str(v)[:80]}")
+
     def get(*fields):
         for f in fields:
             val = enrollee.get(f)

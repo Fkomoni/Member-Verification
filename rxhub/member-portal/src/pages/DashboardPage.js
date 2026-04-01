@@ -15,7 +15,7 @@ export default function DashboardPage() {
     <div>
       <div style={s.welcome}>
         <h1 style={s.heading}>Welcome back, {profile.first_name}</h1>
-        <p style={s.sub}>ID: {profile.member_id} &middot; {profile.plan_name || profile.plan_type} &middot; {profile.diagnosis || 'No diagnosis on file'}</p>
+        <p style={s.sub}>ID: {profile.member_id} &middot; {profile.plan_name || profile.plan_type || 'N/A'} &middot; {profile.diagnosis || 'No diagnosis on file'}</p>
       </div>
 
       <div style={s.stats}>
@@ -26,11 +26,26 @@ export default function DashboardPage() {
 
       {alerts.length > 0 && (
         <div style={{ marginTop: 28 }}>
-          <h2 style={s.sectionTitle}>Refill Alerts</h2>
+          <h2 style={s.sectionTitle}>Upcoming Refills</h2>
           {alerts.map((a, i) => (
             <div key={i} style={s.alert}>
-              <strong>{a.medication}</strong> — {a.message}
-              {a.days_remaining != null && <span style={s.days}>{a.days_remaining} days</span>}
+              <div style={s.alertRow}>
+                <strong>{a.medication}</strong>
+                {a.next_refill_due && (
+                  <span style={s.refillDate}>
+                    Next refill: {new Date(a.next_refill_due).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                  </span>
+                )}
+                {a.days_remaining != null && (
+                  <span style={{
+                    ...s.daysBadge,
+                    backgroundColor: a.days_remaining <= 3 ? '#FEE2E2' : a.days_remaining <= 7 ? '#FFF7ED' : '#F0F4FF',
+                    color: a.days_remaining <= 3 ? '#DC2626' : a.days_remaining <= 7 ? '#E87722' : '#2563EB',
+                  }}>
+                    {a.days_remaining <= 0 ? 'OVERDUE' : `${a.days_remaining} days left`}
+                  </span>
+                )}
+              </div>
             </div>
           ))}
         </div>
@@ -68,8 +83,10 @@ const s = {
   statVal: { fontSize: 30, fontWeight: 700, color: '#1A1A2E' },
   statLabel: { fontSize: 13, color: '#666', marginTop: 2 },
   sectionTitle: { fontSize: 18, fontWeight: 700, color: '#1A1A2E', margin: '0 0 12px' },
-  alert: { backgroundColor: '#FFF7ED', borderLeft: '4px solid #E87722', borderRadius: 8, padding: '12px 16px', marginBottom: 8, fontSize: 14, color: '#333' },
-  days: { marginLeft: 8, color: '#E87722', fontWeight: 600, fontSize: 13 },
+  alert: { backgroundColor: '#fff', borderLeft: '4px solid #E87722', borderRadius: 8, padding: '14px 18px', marginBottom: 8, boxShadow: '0 1px 2px rgba(0,0,0,0.04)' },
+  alertRow: { display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' },
+  refillDate: { fontSize: 13, color: '#1A1A2E', fontWeight: 600 },
+  daysBadge: { padding: '3px 10px', borderRadius: 12, fontSize: 12, fontWeight: 700 },
   actions: { display: 'flex', gap: 12 },
   actionBtn: { padding: '12px 24px', borderRadius: 8, border: 'none', color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer' },
 };

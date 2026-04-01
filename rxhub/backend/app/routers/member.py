@@ -54,7 +54,13 @@ async def get_dashboard(
     # Build alerts from refill intelligence
     intelligence = get_refill_intelligence(member.member_id, db)
     alerts = [
-        {"type": "REFILL", "medication": ri.drug_name, "message": ri.alert, "days_remaining": ri.days_remaining}
+        {
+            "type": "REFILL",
+            "medication": ri.drug_name,
+            "message": ri.alert,
+            "days_remaining": ri.days_remaining,
+            "next_refill_due": str(ri.next_refill_due) if ri.next_refill_due else None,
+        }
         for ri in intelligence if ri.alert
     ]
 
