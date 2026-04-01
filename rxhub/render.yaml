@@ -37,7 +37,6 @@ services:
       - key: CORS_ORIGINS
         sync: false
     healthCheckPath: /api/health
-    plan: free
 
   # ── RxHub Admin Portal ─────────────────────────────────────
   - type: web
@@ -57,7 +56,6 @@ services:
     envVars:
       - key: REACT_APP_API_URL
         sync: false
-    plan: free
 
   # ── RxHub Member Portal ───────────────────────────────────
   - type: web
@@ -77,7 +75,6 @@ services:
     envVars:
       - key: REACT_APP_API_URL
         sync: false
-    plan: free
 
 databases:
   - name: rxhub-db
