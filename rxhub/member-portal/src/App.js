@@ -22,7 +22,7 @@ function Layout({ children }) {
   return (
     <div style={{ display: 'flex' }}>
       <Sidebar />
-      <main style={{ flex: 1, marginLeft: 240, padding: '28px 32px', minHeight: '100vh', backgroundColor: '#F5F5F7' }}>
+      <main style={{ flex: 1, marginLeft: 250, padding: '28px 32px', minHeight: '100vh', backgroundColor: '#F5F5F7' }}>
         {children}
       </main>
     </div>

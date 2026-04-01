@@ -28,9 +28,9 @@ export default function LoginPage() {
     <div style={styles.container}>
       <div style={styles.card}>
         <div style={styles.logoWrap}>
-          <div style={styles.logo}>Rx</div>
+          <img src="/leadway-logo.jpg" alt="Leadway Health" style={styles.logoImg} />
           <h1 style={styles.title}>RxHub Admin</h1>
-          <p style={styles.subtitle}>LeadwayHMO PBM Portal</p>
+          <p style={styles.subtitle}>Leadway Health HMO — Management Portal</p>
         </div>
 
         <form onSubmit={handleSubmit} style={styles.form}>
@@ -60,19 +60,15 @@ export default function LoginPage() {
 const styles = {
   container: {
     minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center',
-    backgroundColor: '#1A1A2E', fontFamily: "'Inter', sans-serif",
+    backgroundColor: '#262626', fontFamily: "'Inter', sans-serif",
   },
   card: {
     backgroundColor: '#fff', borderRadius: 16, padding: '48px 40px', width: 400,
     boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
   },
   logoWrap: { textAlign: 'center', marginBottom: 32 },
-  logo: {
-    width: 56, height: 56, borderRadius: 14, backgroundColor: '#C8102E', color: '#fff',
-    display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-    fontWeight: 700, fontSize: 22, marginBottom: 12,
-  },
-  title: { fontSize: 24, fontWeight: 700, color: '#1A1A2E', margin: 0 },
+  logoImg: { width: 220, height: 'auto', marginBottom: 12 },
+  title: { fontSize: 24, fontWeight: 700, color: '#C8102E', margin: 0 },
   subtitle: { fontSize: 14, color: '#666', marginTop: 4 },
   form: { display: 'flex', flexDirection: 'column', gap: 12 },
   label: { fontSize: 13, fontWeight: 600, color: '#333' },

@@ -49,8 +49,8 @@ export default function LoginPage() {
     <div style={s.container}>
       <div style={s.card}>
         <div style={s.logoWrap}>
-          <div style={s.logo}>Rx</div>
-          <h1 style={s.title}>LeadwayHMO RxHub</h1>
+          <img src="/leadway-logo.jpg" alt="Leadway Health" style={s.logoImg} />
+          <h1 style={s.title}>RxHub</h1>
           <p style={s.sub}>Member Self-Service Portal</p>
         </div>
 
@@ -79,11 +79,11 @@ export default function LoginPage() {
 }
 
 const s = {
-  container: { minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#1A1A2E' },
-  card: { backgroundColor: '#fff', borderRadius: 16, padding: '40px 36px', width: 400, boxShadow: '0 20px 60px rgba(0,0,0,0.3)' },
+  container: { minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#262626' },
+  card: { backgroundColor: '#fff', borderRadius: 16, padding: '40px 36px', width: 420, boxShadow: '0 20px 60px rgba(0,0,0,0.3)' },
   logoWrap: { textAlign: 'center', marginBottom: 28 },
-  logo: { width: 52, height: 52, borderRadius: 13, backgroundColor: '#C8102E', color: '#fff', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 20, marginBottom: 10 },
-  title: { fontSize: 22, fontWeight: 700, color: '#1A1A2E', margin: 0 },
+  logoImg: { width: 220, height: 'auto', marginBottom: 12 },
+  title: { fontSize: 24, fontWeight: 700, color: '#C8102E', margin: 0 },
   sub: { fontSize: 13, color: '#666', marginTop: 4 },
   form: { display: 'flex', flexDirection: 'column', gap: 10 },
   label: { fontSize: 13, fontWeight: 600, color: '#333' },

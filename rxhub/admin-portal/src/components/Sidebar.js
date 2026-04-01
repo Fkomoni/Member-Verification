@@ -21,11 +21,11 @@ export default function Sidebar() {
   return (
     <aside style={styles.sidebar}>
       <div style={styles.brand}>
-        <div style={styles.logo}>Rx</div>
-        <div>
-          <div style={styles.title}>RxHub Admin</div>
-          <div style={styles.subtitle}>LeadwayHMO</div>
-        </div>
+        <img src="/leadway-logo.jpg" alt="Leadway Health" style={styles.logo} />
+      </div>
+      <div style={styles.appTitle}>
+        <div style={styles.title}>RxHub Admin</div>
+        <div style={styles.subtitle}>Management Portal</div>
       </div>
 
       <nav style={styles.nav}>
@@ -57,16 +57,14 @@ export default function Sidebar() {
 
 const styles = {
   sidebar: {
-    width: 260, backgroundColor: '#1A1A2E', color: '#fff', display: 'flex',
-    flexDirection: 'column', padding: '24px 0',
+    width: 260, backgroundColor: '#262626', color: '#fff', display: 'flex',
+    flexDirection: 'column', padding: '16px 0',
   },
-  brand: { display: 'flex', alignItems: 'center', gap: 12, padding: '0 24px 24px', borderBottom: '1px solid rgba(255,255,255,0.1)' },
-  logo: {
-    width: 40, height: 40, borderRadius: 10, backgroundColor: '#C8102E', display: 'flex',
-    alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 18,
-  },
-  title: { fontWeight: 700, fontSize: 16 },
-  subtitle: { fontSize: 12, opacity: 0.6 },
+  brand: { padding: '4px 24px 12px', textAlign: 'center' },
+  logo: { width: 190, height: 'auto', objectFit: 'contain', borderRadius: 6 },
+  appTitle: { padding: '0 24px 20px', borderBottom: '1px solid rgba(255,255,255,0.1)' },
+  title: { fontWeight: 700, fontSize: 17, color: '#C8102E' },
+  subtitle: { fontSize: 12, opacity: 0.5 },
   nav: { flex: 1, padding: '16px 12px', display: 'flex', flexDirection: 'column', gap: 4 },
   navItem: {
     display: 'flex', alignItems: 'center', gap: 12, padding: '10px 16px',
