@@ -156,26 +156,44 @@ class PrognosisClient:
         if isinstance(data, list):
             enrollee = data[0] if data else {}
 
-        # Extract phone from Prognosis response (field names may vary)
-        stored_phone = (
-            enrollee.get("phone") or enrollee.get("Phone") or
-            enrollee.get("phoneNumber") or enrollee.get("PhoneNumber") or
-            enrollee.get("mobileNumber") or enrollee.get("MobileNumber") or
-            enrollee.get("telephone") or enrollee.get("Telephone") or ""
-        )
+        # Log all keys for debugging
+        logger.info(f"Prognosis enrollee keys: {list(enrollee.keys())}")
+
+        # Extract phone — try every possible field name
+        stored_phone = ""
+        phone_fields = [
+            "phone", "Phone", "phoneNumber", "PhoneNumber",
+            "mobileNumber", "MobileNumber", "telephone", "Telephone",
+            "mobileNo", "MobileNo", "phoneNo", "PhoneNo",
+            "mobile", "Mobile", "tel", "Tel",
+            "contactPhone", "ContactPhone", "cellPhone", "CellPhone",
+            "gsm", "GSM", "gsmNumber", "GsmNumber",
+        ]
+        for field in phone_fields:
+            val = enrollee.get(field)
+            if val and str(val).strip():
+                stored_phone = str(val).strip()
+                logger.info(f"Found phone in field '{field}': {self._mask_phone(stored_phone)}")
+                break
+
+        if not stored_phone:
+            # No phone found in any field — log all values for debugging and allow login
+            logger.warning(f"No phone field found in Prognosis data for {member_id}. Keys: {list(enrollee.keys())}")
+            # Log first 5 values to help identify the right field
+            for k, v in list(enrollee.items())[:15]:
+                logger.info(f"  Prognosis field: {k} = {str(v)[:50]}")
+            return {**enrollee, "valid": True, "phone_match": False, "phone_on_file": ""}
 
         # Normalize phones for comparison (strip spaces, +234 → 0, etc.)
         input_normalized = self._normalize_phone(phone)
         stored_normalized = self._normalize_phone(stored_phone)
 
-        if not stored_normalized:
-            # No phone on file — allow login if enrollee exists (they proved they know their ID)
-            return {**enrollee, "valid": True, "phone_match": False, "phone_on_file": ""}
+        logger.info(f"Phone comparison: input={input_normalized} vs stored={stored_normalized}")
 
         if input_normalized == stored_normalized:
             return {**enrollee, "valid": True, "phone_match": True}
         else:
-            return {"valid": False, "error": "Phone number does not match records", "phone_on_file_masked": self._mask_phone(stored_phone)}
+            return {"valid": False, "error": f"Phone number does not match our records. Please use the phone number registered with your HMO plan.", "phone_on_file_masked": self._mask_phone(stored_phone)}
 
     def _normalize_phone(self, phone: str) -> str:
         """Normalize Nigerian phone number to 0XXXXXXXXXX format."""
