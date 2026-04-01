@@ -43,7 +43,7 @@ class Settings(BaseSettings):
     PAYSTACK_PUBLIC_KEY: str = ""
 
     # CORS
-    CORS_ORIGINS: str = "http://localhost:3000,http://localhost:3001,http://localhost:19006"
+    CORS_ORIGINS: str = "http://localhost:3000,http://localhost:3001,https://rxhub-member.onrender.com,https://rxhub-admin.onrender.com"
 
     # Rate Limiting
     RATE_LIMIT_PER_MINUTE: int = 60
