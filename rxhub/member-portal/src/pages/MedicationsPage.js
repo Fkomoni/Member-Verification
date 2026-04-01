@@ -92,9 +92,7 @@ export default function MedicationsPage() {
               )}
             </div>
 
-            {m.is_covered && (
-              <div style={s.coverage}>Coverage: {parseFloat(m.coverage_pct)}% &middot; Copay: &#8358;{parseFloat(m.copay_amount).toLocaleString()}</div>
-            )}
+            {/* Coverage managed by admin */}
 
             <div style={s.actions}>
               <button style={s.refillBtn} onClick={() => requestRefill(m)}>Request Refill</button>
