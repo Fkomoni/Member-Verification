@@ -136,9 +136,21 @@ class PrognosisClient:
         """
         GET /EnrolleeProfile/GetEnrolleeBioDataByEnrolleeID?enrolleeid={id}
         Fetches full enrollee bio data including name, phone, diagnosis, plan, etc.
+        Prognosis wraps data in {"status": 200, "result": [{...}], ...}
         """
         url = f"{self.base_url}/EnrolleeProfile/GetEnrolleeBioDataByEnrolleeID?enrolleeid={enrollee_id}"
-        return await self._request("GET", url, db=db)
+        data = await self._request("GET", url, db=db)
+
+        if "error" in data:
+            return data
+
+        # Unwrap Prognosis response: data is inside "result" field
+        result = data.get("result") or data.get("Result") or data
+        if isinstance(result, list):
+            result = result[0] if result else {}
+
+        logger.info(f"Prognosis enrollee data keys: {list(result.keys())[:20]}")
+        return result
 
     async def validate_member(self, member_id: str, phone: str, db: Session = None) -> dict:
         """
