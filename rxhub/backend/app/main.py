@@ -10,7 +10,7 @@ from fastapi.staticfiles import StaticFiles
 
 from app.core.config import settings
 from app.core.database import engine, Base
-from app.routers import auth, member, requests, refill, admin, resources, payments
+from app.routers import auth, member, requests, refill, admin, resources, payments, health_readings
 from app.tasks.background import run_background_loop
 
 logging.basicConfig(level=logging.INFO)
@@ -80,6 +80,7 @@ app.include_router(refill.router, prefix="/api")
 app.include_router(admin.router, prefix="/api")
 app.include_router(resources.router, prefix="/api")
 app.include_router(payments.router, prefix="/api")
+app.include_router(health_readings.router, prefix="/api")
 
 
 # Serve local uploads during development (when S3 not configured)

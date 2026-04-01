@@ -30,3 +30,4 @@ class Member(Base):
     requests = relationship("Request", back_populates="member", lazy="dynamic")
     payments = relationship("Payment", back_populates="member", lazy="dynamic")
     notifications = relationship("Notification", back_populates="member", lazy="dynamic")
+    health_readings = relationship("HealthReading", back_populates="member", lazy="dynamic")
