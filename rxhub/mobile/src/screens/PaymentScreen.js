@@ -1,106 +1,69 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ScrollView, Linking } from 'react-native';
-import api from '../services/api';
+import React from 'react';
+import { View, Text, StyleSheet, ScrollView } from 'react-native';
 
-const PAYMENT_TYPES = ['UNCOVERED_MEDICATION', 'SUPPLEMENT', 'COPAY', 'TOP_UP'];
-
-export default function PaymentScreen({ navigation }) {
-  const [amount, setAmount] = useState('');
-  const [paymentType, setPaymentType] = useState('UNCOVERED_MEDICATION');
-  const [loading, setLoading] = useState(false);
-
-  const handlePay = async () => {
-    const numAmount = parseFloat(amount);
-    if (!numAmount || numAmount <= 0) {
-      Alert.alert('Error', 'Please enter a valid amount');
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const { data } = await api.post('/payments/initiate', {
-        amount: numAmount,
-        payment_type: paymentType,
-      });
-
-      if (data.authorization_url) {
-        Alert.alert(
-          'Proceed to Payment',
-          'You will be redirected to the payment gateway.',
-          [
-            { text: 'Cancel', style: 'cancel' },
-            {
-              text: 'Pay Now',
-              onPress: () => Linking.openURL(data.authorization_url),
-            },
-          ]
-        );
-      }
-    } catch (err) {
-      Alert.alert('Error', err.response?.data?.detail || 'Payment initiation failed');
-    } finally {
-      setLoading(false);
-    }
-  };
-
+export default function PaymentScreen() {
   return (
-    <ScrollView style={styles.container} contentContainerStyle={{ padding: 16, paddingBottom: 40 }}>
+    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <View style={styles.card}>
-        <Text style={styles.title}>Make a Payment</Text>
-        <Text style={styles.subtitle}>Pay for uncovered medications, supplements, or copays</Text>
+        <View style={styles.iconWrap}>
+          <Text style={styles.icon}>{'\u26A1'}</Text>
+        </View>
+        <Text style={styles.title}>Payments</Text>
+        <Text style={styles.subtitle}>Coming Soon</Text>
+        <Text style={styles.body}>
+          We're working on a secure payment feature that will allow you to pay for uncovered medications, nutritional supplements, and copays directly from the app.
+        </Text>
 
-        <Text style={styles.label}>Payment Type</Text>
-        <View style={styles.typeGrid}>
-          {PAYMENT_TYPES.map(t => (
-            <TouchableOpacity
-              key={t}
-              style={[styles.typeBtn, paymentType === t && styles.typeBtnActive]}
-              onPress={() => setPaymentType(t)}
-            >
-              <Text style={[styles.typeBtnText, paymentType === t && styles.typeBtnTextActive]}>
-                {t.replace(/_/g, ' ')}
-              </Text>
-            </TouchableOpacity>
-          ))}
+        <View style={styles.features}>
+          <Feature text="Pay for uncovered medications" />
+          <Feature text="Purchase nutritional supplements" />
+          <Feature text="Manage copay payments" />
+          <Feature text="Secure payment via Paystack" />
+          <Feature text="Full payment history" />
         </View>
 
-        <Text style={styles.label}>Amount (NGN)</Text>
-        <TextInput
-          style={styles.amountInput}
-          placeholder="0.00"
-          value={amount}
-          onChangeText={setAmount}
-          keyboardType="decimal-pad"
-        />
-
-        <TouchableOpacity style={styles.payBtn} onPress={handlePay} disabled={loading}>
-          <Text style={styles.payBtnText}>{loading ? 'Processing...' : 'Proceed to Pay'}</Text>
-        </TouchableOpacity>
-      </View>
-
-      <View style={styles.info}>
-        <Text style={styles.infoTitle}>Secure Payment</Text>
-        <Text style={styles.infoText}>Payments are processed securely via Paystack. Your card details are never stored on our servers.</Text>
+        <View style={styles.notifyBox}>
+          <Text style={styles.notifyText}>You'll be notified when this feature becomes available.</Text>
+        </View>
       </View>
     </ScrollView>
   );
 }
 
+function Feature({ text }) {
+  return (
+    <View style={styles.featureRow}>
+      <View style={styles.featureDot} />
+      <Text style={styles.featureText}>{text}</Text>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F5F5F7' },
-  card: { backgroundColor: '#fff', borderRadius: 14, padding: 24, shadowColor: '#000', shadowOpacity: 0.04, shadowOffset: { width: 0, height: 2 }, shadowRadius: 8, elevation: 2 },
-  title: { fontSize: 20, fontWeight: '700', color: '#1A1A2E' },
-  subtitle: { fontSize: 13, color: '#666', marginTop: 4, marginBottom: 20 },
-  label: { fontSize: 13, fontWeight: '700', color: '#333', marginTop: 16, marginBottom: 8 },
-  typeGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  typeBtn: { paddingHorizontal: 14, paddingVertical: 10, borderRadius: 10, backgroundColor: '#F5F5F7', borderWidth: 1, borderColor: '#E5E5E5' },
-  typeBtnActive: { backgroundColor: '#1A1A2E', borderColor: '#1A1A2E' },
-  typeBtnText: { fontSize: 12, fontWeight: '600', color: '#666' },
-  typeBtnTextActive: { color: '#fff' },
-  amountInput: { backgroundColor: '#F5F5F7', borderRadius: 12, padding: 16, fontSize: 24, fontWeight: '700', textAlign: 'center', borderWidth: 1, borderColor: '#E5E5E5' },
-  payBtn: { backgroundColor: '#C8102E', borderRadius: 12, padding: 16, alignItems: 'center', marginTop: 24 },
-  payBtnText: { color: '#fff', fontSize: 16, fontWeight: '700' },
-  info: { marginTop: 24, padding: 16 },
-  infoTitle: { fontSize: 14, fontWeight: '700', color: '#1A1A2E' },
-  infoText: { fontSize: 13, color: '#666', marginTop: 4, lineHeight: 20 },
+  content: { padding: 16, paddingBottom: 40 },
+  card: {
+    backgroundColor: '#fff', borderRadius: 16, padding: 32,
+    alignItems: 'center', shadowColor: '#000', shadowOpacity: 0.04,
+    shadowOffset: { width: 0, height: 2 }, shadowRadius: 8, elevation: 2,
+  },
+  iconWrap: {
+    width: 72, height: 72, borderRadius: 36, backgroundColor: '#FFF7ED',
+    justifyContent: 'center', alignItems: 'center', marginBottom: 20,
+  },
+  icon: { fontSize: 32 },
+  title: { fontSize: 24, fontWeight: '700', color: '#1A1A2E' },
+  subtitle: {
+    fontSize: 14, fontWeight: '700', color: '#E87722',
+    textTransform: 'uppercase', letterSpacing: 1, marginTop: 4, marginBottom: 16,
+  },
+  body: { fontSize: 14, color: '#666', textAlign: 'center', lineHeight: 22, marginBottom: 24 },
+  features: { width: '100%', marginBottom: 24 },
+  featureRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 8 },
+  featureDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#C8102E', marginRight: 12 },
+  featureText: { fontSize: 14, color: '#333' },
+  notifyBox: {
+    backgroundColor: '#F0F4FF', borderRadius: 12, padding: 16, width: '100%', alignItems: 'center',
+  },
+  notifyText: { fontSize: 13, color: '#2563EB', fontWeight: '500', textAlign: 'center' },
 });

@@ -16,10 +16,11 @@ class Settings(BaseSettings):
     JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
     JWT_ADMIN_TOKEN_EXPIRE_MINUTES: int = 480
 
-    # PBM External API
-    PBM_API_BASE_URL: str = "https://pbm-api.leadwayhmo.com"
-    PBM_API_KEY: str = ""
-    PBM_API_TIMEOUT: int = 30
+    # Prognosis API (PBM Backend)
+    PROGNOSIS_API_BASE_URL: str = "https://prognosis-api.leadwayhealth.com/api"
+    PROGNOSIS_USERNAME: str = ""
+    PROGNOSIS_PASSWORD: str = ""
+    PROGNOSIS_API_TIMEOUT: int = 30
 
     # OTP
     OTP_EXPIRE_MINUTES: int = 5
