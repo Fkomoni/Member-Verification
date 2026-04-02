@@ -235,22 +235,57 @@ class PrognosisClient:
 
     async def get_member_medications(self, member_id: str, db: Session = None) -> dict:
         """
-        Fetch member medications from Prognosis.
-        Uses enrollee bio data — medications may be nested in the response.
+        GET /PharmacyDelivery/GetPbmMedication?enrolleeid={id}
+        Fetches real medication list with refill dates, delivery info, etc.
+        Prognosis wraps data in {"status": 200, "result": [...]}
         """
-        data = await self.get_enrollee_by_id(member_id, db=db)
+        url = f"{self.base_url}/PharmacyDelivery/GetPbmMedication?enrolleeid={member_id}"
+        data = await self._request("GET", url, db=db)
+
         if "error" in data:
             return data
 
-        enrollee = data if not isinstance(data, list) else (data[0] if data else {})
+        # Unwrap Prognosis response
+        result = data.get("result") or data.get("Result") or data
+        if not isinstance(result, list):
+            result = [result] if result else []
 
-        # Extract medications if present in enrollee data
-        medications = (
-            enrollee.get("medications") or enrollee.get("Medications") or
-            enrollee.get("drugs") or enrollee.get("Drugs") or []
-        )
+        logger.info(f"Prognosis medications: {len(result)} items for {member_id}")
+        if result:
+            logger.info(f"Medication fields: {list(result[0].keys())[:25]}")
+            # Log first medication for field discovery
+            for k, v in list(result[0].items())[:20]:
+                if v and 'pic' not in str(k).lower():
+                    logger.info(f"  Med field: {k} = {str(v)[:80]}")
 
-        return {"medications": medications}
+        # Also extract delivery info and diagnosis from first record if available
+        delivery_info = {}
+        if result:
+            first = result[0]
+            delivery_info = {
+                "delivery_phone": self._find_field(first, [
+                    "DeliveryPhone", "Delivery_Phone", "deliveryPhone", "delivery_phone",
+                    "Phone", "phone", "MobileNo", "mobileNo",
+                    "Member_MobileNo", "Member_Phone",
+                ]),
+                "delivery_address": self._find_field(first, [
+                    "DeliveryAddress", "Delivery_Address", "deliveryAddress", "delivery_address",
+                    "Address", "address", "Member_Address",
+                ]),
+                "diagnosis": self._find_field(first, [
+                    "Diagnosis", "diagnosis", "Member_Diagnosis", "PrimaryDiagnosis",
+                ]),
+            }
+
+        return {"medications": result, "delivery_info": delivery_info}
+
+    def _find_field(self, data: dict, fields: list) -> str:
+        """Try multiple field names and return the first non-empty value."""
+        for f in fields:
+            val = data.get(f)
+            if val and str(val).strip():
+                return str(val).strip()
+        return ""
 
     async def submit_change_request(self, payload: dict, db: Session = None) -> dict:
         """POST change request to Prognosis (when available)."""

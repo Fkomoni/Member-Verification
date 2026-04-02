@@ -149,14 +149,8 @@ def seed():
             },
         ]
 
-        existing_count = db.query(Medication).filter(Medication.member_id == member.member_id).count()
-        if existing_count == 0:
-            for m in meds_data:
-                med = Medication(member_id=member.member_id, **m, pbm_synced_at=datetime.now(timezone.utc))
-                db.add(med)
-            print(f"[+] Created {len(meds_data)} sample medications")
-        else:
-            print(f"[=] Medications already exist ({existing_count})")
+        # Skip test medications — real data comes from Prognosis PharmacyDelivery API on login
+        print(f"[*] Medications: will be synced from Prognosis API on first login")
 
         # ── Admin User ────────────────────────────────────────
         admin = db.query(Admin).filter(Admin.email == "admin@leadwayhmo.com").first()

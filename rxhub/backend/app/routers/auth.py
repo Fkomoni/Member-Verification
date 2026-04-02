@@ -15,6 +15,7 @@ from app.schemas.auth import (
 )
 from app.services.pbm_client import prognosis_client
 from app.services.otp_service import otp_service
+from app.services.sync_service import sync_medications_from_pbm
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
@@ -177,6 +178,13 @@ async def member_login(req: LoginRequest, db: Session = Depends(get_db)):
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Validation failed. Please check your Member ID and phone number.",
         )
+
+    # Sync medications from PBM on login (background, don't block login if it fails)
+    try:
+        await sync_medications_from_pbm(member.member_id, db)
+    except Exception as e:
+        import logging
+        logging.getLogger(__name__).warning(f"Medication sync failed on login: {e}")
 
     token = create_access_token(
         {"sub": member.member_id, "type": "member", "auth_method": auth_method}

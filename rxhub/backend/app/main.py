@@ -115,3 +115,26 @@ async def run_update_alerts():
         return {"status": "ok", "message": "Alerts and newsletters updated"}
     except Exception as e:
         return {"status": "error", "message": str(e)}
+
+
+@app.post("/api/admin/resync-member/{member_id}")
+async def resync_member(member_id: str):
+    """Force re-sync member data and medications from Prognosis API."""
+    from app.core.database import SessionLocal
+    from app.services.sync_service import sync_member_from_pbm, sync_medications_from_pbm
+    db = SessionLocal()
+    try:
+        member_ok = await sync_member_from_pbm(member_id, db)
+        meds_ok = await sync_medications_from_pbm(member_id, db)
+        from app.models.medication import Medication
+        med_count = db.query(Medication).filter(Medication.member_id == member_id).count()
+        return {
+            "status": "ok",
+            "member_synced": member_ok,
+            "medications_synced": meds_ok,
+            "medication_count": med_count,
+        }
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+    finally:
+        db.close()
