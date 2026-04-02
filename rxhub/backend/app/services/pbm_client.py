@@ -264,16 +264,33 @@ class PrognosisClient:
             first = result[0]
             delivery_info = {
                 "delivery_phone": self._find_field(first, [
-                    "DeliveryPhone", "Delivery_Phone", "deliveryPhone", "delivery_phone",
+                    "PhoneNumber", "AlternativePhoneNumber",
+                    "DeliveryPhone", "Delivery_Phone", "deliveryPhone",
                     "Phone", "phone", "MobileNo", "mobileNo",
                     "Member_MobileNo", "Member_Phone",
                 ]),
                 "delivery_address": self._find_field(first, [
-                    "DeliveryAddress", "Delivery_Address", "deliveryAddress", "delivery_address",
+                    "DeliveryAddress", "Delivery_Address", "deliveryAddress",
                     "Address", "address", "Member_Address",
                 ]),
                 "diagnosis": self._find_field(first, [
-                    "Diagnosis", "diagnosis", "Member_Diagnosis", "PrimaryDiagnosis",
+                    "diagnosisname", "Diagnosis", "diagnosis",
+                    "DiagnosisName", "Member_Diagnosis", "PrimaryDiagnosis",
+                ]),
+                "email": self._find_field(first, [
+                    "EmailAdress", "EmailAddress", "Email", "email",
+                    "Member_Email",
+                ]),
+                "scheme": self._find_field(first, [
+                    "scheme", "Scheme", "Scheme_type",
+                    "SchemeName", "Member_SchemeName",
+                ]),
+                "company": self._find_field(first, [
+                    "Company", "company", "Employer",
+                    "Member_Employer", "Member_Company",
+                ]),
+                "pharmacy": self._find_field(first, [
+                    "pharmacyname", "PharmacyName", "Pharmacy",
                 ]),
             }
 

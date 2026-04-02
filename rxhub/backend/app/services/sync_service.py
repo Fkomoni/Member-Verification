@@ -81,15 +81,22 @@ async def sync_medications_from_pbm(member_id: str, db: Session) -> bool:
     medications = data.get("medications", [])
     delivery_info = data.get("delivery_info", {})
 
-    # Update member with delivery info and diagnosis if available
+    # Update member with delivery info, diagnosis, scheme, company from medication API
     if delivery_info:
         member = db.query(Member).filter(Member.member_id == member_id).first()
         if member:
             if delivery_info.get("diagnosis"):
                 member.diagnosis = delivery_info["diagnosis"]
-            if delivery_info.get("delivery_phone") and not member.phone:
+            if delivery_info.get("delivery_phone"):
                 member.phone = delivery_info["delivery_phone"]
+            if delivery_info.get("email"):
+                member.email = delivery_info["email"]
+            if delivery_info.get("scheme"):
+                member.plan_name = delivery_info["scheme"]
+            if delivery_info.get("company"):
+                member.employer = delivery_info["company"]
             db.commit()
+            logger.info(f"Updated member {member_id}: diagnosis={delivery_info.get('diagnosis')}, scheme={delivery_info.get('scheme')}, employer={delivery_info.get('company')}")
 
     # Clear old medications and replace with fresh PBM data
     if medications:
@@ -104,12 +111,12 @@ async def sync_medications_from_pbm(member_id: str, db: Session) -> bool:
             "DrugID", "drugId", "drug_id", "pbm_drug_id", "ID", "id",
         )
         if not pbm_drug_id:
-            # Use drug name as fallback ID
-            pbm_drug_id = _find(med_data, "DrugName", "Drug_Name", "drugName", "drug_name", "Name", "name") or "unknown"
+            # Use drug name + enrollee as fallback ID
+            pbm_drug_id = _find(med_data, "Medications", "DrugName", "Drug_Name", "drugName", "Name") or f"med-{len(medications)}"
 
         # Map all medication fields
         drug_name = _find(med_data,
-            "DrugName", "Drug_Name", "drugName", "drug_name",
+            "Medications", "DrugName", "Drug_Name", "drugName", "drug_name",
             "MedicationName", "Medication_Name", "Name", "name",
             "ItemName", "Item_Name", "ProductName",
         ) or "Unknown Medication"
@@ -133,6 +140,7 @@ async def sync_medications_from_pbm(member_id: str, db: Session) -> bool:
         prescriber = _find(med_data,
             "Prescriber", "prescriber", "Doctor", "doctor",
             "PrescriberName", "DoctorName", "Physician",
+            "pharmacyname",
         )
 
         quantity = _find(med_data,
@@ -145,15 +153,15 @@ async def sync_medications_from_pbm(member_id: str, db: Session) -> bool:
             "SupplyDays", "Duration", "duration",
         )
 
-        # Refill dates
+        # Refill dates — Prognosis uses LastPackDate / NextPackDate
         next_refill_due = _find_date(med_data,
-            "NextRefillDate", "Next_Refill_Date", "nextRefillDate", "next_refill_date",
+            "NextPackDate", "NextRefillDate", "Next_Refill_Date", "nextRefillDate",
             "NextRefill", "NextDispenseDate", "NextFillDate",
             "ExpectedRefillDate", "DueDate",
         )
 
         last_refill_at_date = _find_date(med_data,
-            "LastRefillDate", "Last_Refill_Date", "lastRefillDate", "last_refill_date",
+            "LastPackDate", "LastRefillDate", "Last_Refill_Date", "lastRefillDate",
             "LastRefill", "LastDispenseDate", "LastFillDate",
             "DateDispensed", "DispenseDate", "FillDate",
         )
@@ -166,6 +174,12 @@ async def sync_medications_from_pbm(member_id: str, db: Session) -> bool:
         end_date = _find_date(med_data,
             "EndDate", "end_date", "endDate",
             "ExpiryDate", "ExpirationDate",
+        )
+
+        # Diagnosis per medication
+        med_diagnosis = _find(med_data,
+            "diagnosisname", "Diagnosis", "diagnosis",
+            "DiagnosisName", "PrimaryDiagnosis",
         )
 
         refill_count = _find(med_data,
