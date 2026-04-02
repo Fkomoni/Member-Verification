@@ -117,7 +117,7 @@ async def run_update_alerts():
         return {"status": "error", "message": str(e)}
 
 
-@app.post("/api/admin/resync-member/{member_id}")
+@app.post("/api/admin/resync-member/{member_id:path}")
 async def resync_member(member_id: str):
     """Force re-sync member data and medications from Prognosis API."""
     from app.core.database import SessionLocal
