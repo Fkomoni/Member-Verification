@@ -55,4 +55,8 @@ export const validateClaim = (verificationToken, timestamp, providerId) =>
     provider_id: providerId,
   });
 
+// ── Claims Status ────────────────────────────────
+export const getClaimsStatus = (enrolleeId) =>
+  api.post("/claims-status", { enrollee_id: enrolleeId });
+
 export default api;

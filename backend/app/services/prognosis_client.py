@@ -201,3 +201,72 @@ async def flag_impersonation(member_id: str, provider_id: str) -> None:
             )
     except httpx.RequestError as e:
         log.error("Prognosis fraud flag failed: %s", e)
+
+
+async def get_claims_by_member(cifno: str) -> dict:
+    """
+    Get reimbursement claims status for a member by CIF number.
+
+    Calls: GET /api/Claims/GetClaimsByMemberId?cifno={cifno}
+    """
+    if not settings.PROGNOSIS_BASE_URL:
+        return {
+            "success": False,
+            "reason": "Prognosis API not configured",
+            "claims": [],
+        }
+
+    token = await _get_prognosis_token()
+    if not token:
+        return {
+            "success": False,
+            "reason": "Failed to authenticate with Prognosis API",
+            "claims": [],
+        }
+
+    url = f"{settings.PROGNOSIS_BASE_URL}/api/Claims/GetClaimsByMemberId"
+    params = {"cifno": cifno}
+    headers = {"Authorization": f"Bearer {token}"}
+
+    try:
+        async with httpx.AsyncClient(timeout=_TIMEOUT, verify=False) as client:
+            resp = await client.get(url, params=params, headers=headers)
+
+        if resp.status_code == 200:
+            data = resp.json()
+            log.info("Prognosis claims for cifno=%s: %d records", cifno, len(data) if isinstance(data, list) else 1)
+            claims = data if isinstance(data, list) else [data] if data else []
+            return {
+                "success": True,
+                "reason": None,
+                "claims": claims,
+            }
+        elif resp.status_code == 401:
+            global _prognosis_token_expiry
+            _prognosis_token_expiry = 0
+            token = await _get_prognosis_token()
+            if token:
+                headers = {"Authorization": f"Bearer {token}"}
+                async with httpx.AsyncClient(timeout=_TIMEOUT, verify=False) as client:
+                    resp = await client.get(url, params=params, headers=headers)
+                if resp.status_code == 200:
+                    data = resp.json()
+                    claims = data if isinstance(data, list) else [data] if data else []
+                    return {"success": True, "reason": None, "claims": claims}
+            return {"success": False, "reason": "Prognosis authentication expired", "claims": []}
+        elif resp.status_code == 404:
+            return {"success": True, "reason": "No claims found for this member", "claims": []}
+        else:
+            log.warning("Prognosis claims returned %d for cifno=%s", resp.status_code, cifno)
+            return {
+                "success": False,
+                "reason": f"Prognosis returned status {resp.status_code}",
+                "claims": [],
+            }
+    except httpx.RequestError as e:
+        log.error("Prognosis claims request failed: %s", e)
+        return {
+            "success": False,
+            "reason": f"Cannot reach Prognosis API: {e}",
+            "claims": [],
+        }

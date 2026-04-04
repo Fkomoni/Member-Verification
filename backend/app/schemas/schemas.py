@@ -123,3 +123,16 @@ class ClaimValidationResponse(BaseModel):
     valid: bool
     message: str
     visit_id: uuid.UUID | None = None
+
+
+# ── Reimbursement Claims Status ──────────────────────────────
+class ClaimsStatusRequest(BaseModel):
+    enrollee_id: str  # CIF number
+
+
+class ClaimsStatusResponse(BaseModel):
+    enrollee_id: str
+    success: bool
+    reason: str | None = None
+    claims: list[Any] = []
+    total_claims: int = 0
