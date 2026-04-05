@@ -9,12 +9,13 @@ import io
 import datetime
 import random
 import string
+from pathlib import Path
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.colors import HexColor
 from reportlab.lib.units import mm
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.platypus import (
-    SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, HRFlowable
+    SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, HRFlowable, Image
 )
 from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT
 
@@ -86,14 +87,33 @@ def generate_policy_pdf(data: dict) -> bytes:
 
     elements = []
 
-    # --- HEADER ---
-    elements.append(Paragraph("LEADWAY ASSURANCE", styles['BrandTitle']))
-    elements.append(Paragraph("HOUSEOWNERS & HOUSEHOLDERS INSURANCE POLICY", styles['BrandSubtitle']))
+    # --- HEADER WITH LOGO ---
+    logo_path = Path(__file__).parent.parent / "frontend" / "leadway-logo.jpeg"
+    if logo_path.exists():
+        logo = Image(str(logo_path), width=28*mm, height=28*mm)
+        header_data = [[
+            logo,
+            Paragraph(
+                '<font size="20" color="#FF6B22"><b>LEADWAY ASSURANCE</b></font><br/>'
+                '<font size="10" color="#333333">HOUSEOWNERS &amp; HOUSEHOLDERS INSURANCE POLICY</font>',
+                ParagraphStyle('HeaderRight', parent=styles['Normal'], alignment=TA_RIGHT, leading=16)
+            )
+        ]]
+        header_table = Table(header_data, colWidths=[35*mm, 125*mm])
+        header_table.setStyle(TableStyle([
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+            ('ALIGN', (0, 0), (0, 0), 'LEFT'),
+            ('ALIGN', (1, 0), (1, 0), 'RIGHT'),
+        ]))
+        elements.append(header_table)
+    else:
+        elements.append(Paragraph("LEADWAY ASSURANCE", styles['BrandTitle']))
+        elements.append(Paragraph("HOUSEOWNERS & HOUSEHOLDERS INSURANCE POLICY", styles['BrandSubtitle']))
 
     # Orange line
     elements.append(HRFlowable(
         width="100%", thickness=2, color=ORANGE,
-        spaceBefore=0, spaceAfter=6*mm,
+        spaceBefore=4*mm, spaceAfter=6*mm,
     ))
 
     # --- POLICY DETAILS TABLE ---
