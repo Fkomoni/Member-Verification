@@ -235,12 +235,8 @@ def generate_policy_pdf(data: dict) -> bytes:
             premium_data.append([label, f'{sign}{amount:,.2f}'])
 
     gross = data.get('gross_premium', 0)
-    commission = data.get('commission', 0)
-    net = data.get('net_premium', 0)
 
-    premium_data.append(['GROSS PREMIUM', f'{gross:,.2f}'])
-    premium_data.append(['Commission (15%)', f'-{commission:,.2f}'])
-    premium_data.append(['NET PREMIUM', f'{net:,.2f}'])
+    premium_data.append(['TOTAL PREMIUM', f'{gross:,.2f}'])
 
     prem_table = Table(premium_data, colWidths=[100*mm, 60*mm])
     prem_table.setStyle(TableStyle([
@@ -252,10 +248,7 @@ def generate_policy_pdf(data: dict) -> bytes:
         ('ALIGN', (1, 0), (1, -1), 'RIGHT'),
         ('TOPPADDING', (0, 0), (-1, -1), 4),
         ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
-        ('LINEBELOW', (0, 1), (-1, -4), 0.5, HexColor('#EEEEEE')),
-        ('FONTNAME', (0, -3), (-1, -3), 'Helvetica-Bold'),
-        ('TEXTCOLOR', (0, -3), (-1, -3), ORANGE),
-        ('LINEABOVE', (0, -3), (-1, -3), 1, ORANGE),
+        ('LINEBELOW', (0, 1), (-1, -2), 0.5, HexColor('#EEEEEE')),
         ('FONTNAME', (0, -1), (-1, -1), 'Helvetica-Bold'),
         ('TEXTCOLOR', (0, -1), (-1, -1), ORANGE),
         ('BACKGROUND', (0, -1), (-1, -1), LIGHT_GRAY),

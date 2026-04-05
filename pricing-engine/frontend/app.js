@@ -283,10 +283,8 @@ function displayResults(data, buildingSI, contentSI, location, coverType, durati
     }
     document.getElementById('breakdownBody').innerHTML = html;
 
-    // Net
+    // Total
     document.getElementById('grossNet').textContent = formatNGN(data.gross_premium);
-    document.getElementById('commNet').textContent = '-' + formatNGN(data.commission);
-    document.getElementById('netNet').textContent = formatNGN(data.net_premium);
 
     showPage('page-results');
 }
