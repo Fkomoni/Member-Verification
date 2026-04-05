@@ -64,6 +64,28 @@ a { text-decoration: none; color: inherit; }
 .nav-links { display: flex; gap: 28px; list-style: none; }
 .nav-links a { font-size: 12px; font-weight: 600; letter-spacing: 1.5px; color: var(--gray-600); padding: 6px 0; border-bottom: 2px solid transparent; transition: var(--ease); }
 .nav-links a:hover, .nav-links a.nav-active { color: var(--orange); border-bottom-color: var(--orange); }
+/* Nav dropdown */
+.nav-dropdown { position: relative; }
+.nav-dropdown > a { display: flex; align-items: center; gap: 4px; }
+.dropdown-menu {
+    display: none; position: absolute; top: calc(100% + 12px); left: -16px;
+    background: var(--white); border: 1px solid var(--gray-200); border-radius: var(--r-md);
+    box-shadow: var(--shadow-lg); min-width: 240px; padding: 8px; z-index: 50;
+}
+.nav-dropdown.open .dropdown-menu { display: block; }
+.dropdown-item {
+    display: flex; align-items: center; gap: 10px; padding: 10px 14px;
+    font-size: 13px; font-weight: 500; color: var(--gray-700); border-radius: var(--r-sm);
+    transition: var(--ease); text-transform: none; letter-spacing: 0;
+}
+.dropdown-item:hover { background: var(--gray-100); color: var(--orange); }
+.dropdown-item.active-item { color: var(--orange); font-weight: 600; }
+.dropdown-item.disabled-item { opacity: 0.5; pointer-events: none; }
+.coming-soon {
+    margin-left: auto; font-size: 10px; font-weight: 600; letter-spacing: 0.5px;
+    color: var(--gray-500); background: var(--gray-100); padding: 2px 8px; border-radius: var(--r-pill);
+}
+
 .mobile-menu { display: none; background: none; border: none; cursor: pointer; color: var(--near-black); }
 
 /* ============= SELECT HERO ============= */

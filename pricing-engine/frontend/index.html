@@ -24,8 +24,29 @@
                 </div>
             </div>
             <ul class="nav-links">
-                <li><a href="#" class="nav-active">HOUSEHOLDER</a></li>
-                <li><a href="#rateCardSection" onclick="showRateCard(event)">RATE CARD</a></li>
+                <li class="nav-dropdown">
+                    <a href="#" class="nav-active" onclick="event.preventDefault();this.parentElement.classList.toggle('open');">
+                        OUR PRODUCTS
+                        <i data-lucide="chevron-down" style="width:14px;height:14px;"></i>
+                    </a>
+                    <div class="dropdown-menu">
+                        <a href="#" class="dropdown-item active-item" onclick="event.preventDefault();showPage('page-select');document.querySelector('.nav-dropdown').classList.remove('open');">
+                            <i data-lucide="home" style="width:16px;height:16px;"></i>
+                            Householder Insurance
+                        </a>
+                        <a href="#" class="dropdown-item disabled-item">
+                            <i data-lucide="car" style="width:16px;height:16px;"></i>
+                            Motor Insurance
+                            <span class="coming-soon">Coming Soon</span>
+                        </a>
+                        <a href="#" class="dropdown-item disabled-item">
+                            <i data-lucide="flame" style="width:16px;height:16px;"></i>
+                            Fire Insurance
+                            <span class="coming-soon">Coming Soon</span>
+                        </a>
+                    </div>
+                </li>
+                <li><a href="#" onclick="showRateCard(event)">RATE CARD</a></li>
             </ul>
             <button class="mobile-menu" onclick="document.querySelector('.nav-links').classList.toggle('open')">
                 <i data-lucide="menu" style="width:28px;height:28px;"></i>
