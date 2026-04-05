@@ -1,95 +1,141 @@
 """
-Rate tables derived from Leadway Householder Report analysis.
+Official Leadway Householder Pricing Rates.
 
-Data source: Householder Report.xlsx (2022-2025)
-- 8,906 production records, N845.5M total premium
-- 342 claims, N219M total paid
-- Overall loss ratio: 34.6%
+Source: PRICING.xlsx (official rate table from Leadway)
 
-Key findings:
-- Corporate loss ratio: 13.4% (low risk)
-- Individual loss ratio: 31.5% (higher risk)
-- Corporate median rate: 0.65 per mille
-- Individual median rate: 1.95 per mille
+Two pricing tiers:
+1. PRE-PRICED (Individual/Retail) — fixed rates
+2. UNDERWRITTEN (Corporate) — variable rates by contingency band
+
+Sections:
+- Section 1: Building (Fire & Special Perils)
+- Section 2: Content (Fire, Special Perils & Burglary)
+- Accidental Damage to content
+- All Risks Extension (max 10% of content SI)
+- Personal Accident
+- Alternative Accommodation
 """
 
-from .models import ClientType, CoverType, Location, Peril
+from .models import ClientType, CoverType, Location
 
-# === BASE RATES (per mille of sum insured) ===
-# Derived from actual premium/sum_insured analysis
-# Separated by client type and peril
+# =============================================================
+# PRE-PRICED RATES (Individual/Retail) — from "Pre-Priced Rates"
+# Expressed as decimal (e.g., 0.001 = 0.1% = 1.0 per mille)
+# =============================================================
 
-BASE_RATES: dict[ClientType, dict[Peril, float]] = {
-    ClientType.CORPORATE: {
-        # Corporate: lower frequency, moderate severity
-        # Fire: 5 claims, N5M paid, N265M premium base
-        Peril.FIRE: 0.45,
-        # Theft: 4 claims, N1.1M paid — low severity for corporate
-        Peril.THEFT: 0.25,
-        # Flood: 1 claim (via "various"), rare but catastrophic
-        Peril.FLOOD: 0.35,
+INDIVIDUAL_RATES = {
+    "building":              0.001,    # 0.10% — Building: Fire & Special Perils
+    "content":               0.002,    # 0.20% — Content: Fire, Special Perils & Burglary
+    "accidental_damage":     0.00125,  # 0.125% — Accidental Damage to content
+    "all_risks":             0.02,     # 2.0% — All Risks Extension (max 10% of content SI)
+    "personal_accident":     0.00185,  # 0.185% — Personal Accident
+    "alt_accommodation":     0.002,    # 0.20% — Alternative Accommodation
+}
+
+# =============================================================
+# UNDERWRITTEN RATES (Corporate) — from "Pricing" sheet
+# Four rate bands; we use Band 1 (lowest) as base for standard,
+# and apply cover type multipliers for higher bands
+# =============================================================
+
+# Band mapping: Band 1=Basic, Band 2=Standard, Band 3=Enhanced, Band 4=Premium
+CORPORATE_RATES = {
+    "building": {
+        "band_1": 0.00125,   # 0.125%
+        "band_2": 0.0015,    # 0.15%
+        "band_3": 0.00175,   # 0.175%
+        "band_4": 0.00185,   # 0.185%
     },
-    ClientType.INDIVIDUAL: {
-        # Individual: higher frequency across all perils
-        # Fire: 12 claims, N27.8M paid — high severity
-        Peril.FIRE: 1.20,
-        # Theft: 44 claims, N39.3M — highest volume peril
-        Peril.THEFT: 0.95,
-        # Flood: 12 claims, N36.2M — highest avg severity (N3M/claim)
-        Peril.FLOOD: 1.50,
+    "content": {
+        "band_1": 0.003,     # 0.30%
+        "band_2": 0.0035,    # 0.35%
+        "band_3": 0.0045,    # 0.45%
+        "band_4": 0.005,     # 0.50%
     },
 }
 
-# === LOCATION FACTORS ===
-# Based on branch premium concentration and claims distribution
-# Lagos (Corp Office + Ikeja + Lekki + Festac + Ikorodu) = ~78% of premium
+# Map cover types to corporate rate bands
+CORPORATE_BAND_MAP: dict[CoverType, str] = {
+    CoverType.BASIC:    "band_1",
+    CoverType.BRONZE:   "band_1",
+    CoverType.SILVER:   "band_2",
+    CoverType.STANDARD: "band_2",
+    CoverType.GOLD:     "band_3",
+    CoverType.PLATINUM: "band_4",
+}
+
+# Corporate uses same rates as individual for additional coverages
+CORPORATE_ADDITIONAL_RATES = {
+    "accidental_damage":  0.00125,
+    "all_risks":          0.02,
+    "personal_accident":  0.00185,
+    "alt_accommodation":  0.002,
+}
+
+
+def get_rates(client_type: ClientType, cover_type: CoverType) -> dict[str, float]:
+    """Get applicable rates based on client type and cover."""
+    if client_type == ClientType.INDIVIDUAL:
+        return INDIVIDUAL_RATES.copy()
+    else:
+        band = CORPORATE_BAND_MAP.get(cover_type, "band_2")
+        return {
+            "building": CORPORATE_RATES["building"][band],
+            "content": CORPORATE_RATES["content"][band],
+            **CORPORATE_ADDITIONAL_RATES,
+        }
+
+
+# =============================================================
+# LOCATION FACTORS
+# Based on claims analysis: Lagos has highest exposure
+# =============================================================
+
 LOCATION_FACTORS: dict[Location, float] = {
-    Location.LAGOS: 1.15,          # Highest exposure — flood, theft risk
-    Location.ABUJA: 1.05,          # Moderate — fire risk from power surges
-    Location.PORT_HARCOURT: 1.10,  # Flood-prone, industrial exposure
-    Location.IBADAN: 0.95,         # Lower claims frequency
-    Location.KADUNA: 0.90,         # Lower exposure
-    Location.OTHER: 1.00,          # Baseline
+    Location.LAGOS:         1.15,
+    Location.ABUJA:         1.05,
+    Location.PORT_HARCOURT: 1.10,
+    Location.IBADAN:        0.95,
+    Location.KADUNA:        0.90,
+    Location.OTHER:         1.00,
 }
 
-# Flood-specific location surcharges (flood is location-sensitive)
-FLOOD_LOCATION_SURCHARGE: dict[Location, float] = {
-    Location.LAGOS: 0.30,          # High flood risk
-    Location.PORT_HARCOURT: 0.25,  # Coastal/riverine
-    Location.ABUJA: 0.05,
-    Location.IBADAN: 0.10,
-    Location.KADUNA: 0.05,
-    Location.OTHER: 0.10,
+# =============================================================
+# COVER TYPE MULTIPLIERS (Individual only — Corporate uses bands)
+# =============================================================
+
+INDIVIDUAL_COVER_MULTIPLIERS: dict[CoverType, float] = {
+    CoverType.BASIC:    0.85,
+    CoverType.BRONZE:   0.90,
+    CoverType.SILVER:   0.95,
+    CoverType.STANDARD: 1.00,
+    CoverType.GOLD:     1.10,
+    CoverType.PLATINUM: 1.20,
 }
 
-# === COVER TYPE MULTIPLIERS ===
-# Derived from actual avg premium by cover type
-# Standard = 1.0 baseline (N98K avg premium)
-COVER_TYPE_MULTIPLIERS: dict[CoverType, float] = {
-    CoverType.BASIC: 0.50,      # N5K avg — minimal cover
-    CoverType.BRONZE: 0.65,     # N19K avg
-    CoverType.SILVER: 0.80,     # N31K avg
-    CoverType.STANDARD: 1.00,   # N98K avg — baseline
-    CoverType.GOLD: 1.15,       # N54K avg but broader cover
-    CoverType.PLATINUM: 1.30,   # N76K avg — comprehensive
-}
+# =============================================================
+# CLAIMS HISTORY LOADING
+# =============================================================
 
-# === CLAIMS HISTORY LOADING ===
-# Penalize repeat claimants (data shows some insureds with 5+ claims)
 CLAIMS_LOADING: dict[int, float] = {
-    0: 0.00,    # No claims — no loading
-    1: 0.10,    # 1 claim — 10% loading
-    2: 0.25,    # 2 claims — 25% loading
-    3: 0.50,    # 3 claims — 50% loading
+    0: 0.00,
+    1: 0.10,
+    2: 0.25,
+    3: 0.50,
 }
-MAX_CLAIMS_LOADING = 0.75  # Cap at 75% for 4+ claims
+MAX_CLAIMS_LOADING = 0.75
 
-# === DISCOUNT FACTORS ===
-SECURITY_DISCOUNT = 0.05          # 5% discount for security systems
-FIRE_EQUIPMENT_DISCOUNT = 0.03    # 3% discount for fire extinguishers
+# =============================================================
+# DISCOUNTS
+# =============================================================
 
-# === BUILDING AGE LOADING ===
-# Older buildings = higher fire/structural risk
+SECURITY_DISCOUNT = 0.05
+FIRE_EQUIPMENT_DISCOUNT = 0.03
+
+# =============================================================
+# BUILDING AGE LOADING
+# =============================================================
+
 def get_building_age_loading(age_years: int) -> float:
     if age_years <= 5:
         return 0.00
@@ -100,32 +146,34 @@ def get_building_age_loading(age_years: int) -> float:
     else:
         return 0.20
 
-# === COMMISSION RATES ===
-# From data: commission ~15-20% of gross premium
+# =============================================================
+# COMMISSION & MINIMUMS
+# =============================================================
+
 COMMISSION_RATES: dict[ClientType, float] = {
-    ClientType.CORPORATE: 0.15,   # 15% for corporate (broker-driven)
-    ClientType.INDIVIDUAL: 0.15,  # 15% for individual (agent-driven)
+    ClientType.CORPORATE: 0.15,
+    ClientType.INDIVIDUAL: 0.15,
 }
 
-# === SUM INSURED BANDS (for volume discount) ===
-def get_volume_discount(sum_insured: float, client_type: ClientType) -> float:
-    """Large sum insured gets a volume discount."""
+def get_volume_discount(total_si: float, client_type: ClientType) -> float:
     if client_type == ClientType.CORPORATE:
-        if sum_insured >= 1_000_000_000:  # 1B+
+        if total_si >= 1_000_000_000:
             return 0.10
-        elif sum_insured >= 500_000_000:  # 500M+
+        elif total_si >= 500_000_000:
             return 0.07
-        elif sum_insured >= 100_000_000:  # 100M+
+        elif total_si >= 100_000_000:
             return 0.04
     else:
-        if sum_insured >= 100_000_000:   # 100M+
+        if total_si >= 100_000_000:
             return 0.05
-        elif sum_insured >= 50_000_000:  # 50M+
+        elif total_si >= 50_000_000:
             return 0.03
     return 0.00
 
-# === MINIMUM PREMIUMS ===
 MINIMUM_PREMIUMS: dict[ClientType, float] = {
-    ClientType.CORPORATE: 25_000.0,   # N25K minimum
-    ClientType.INDIVIDUAL: 5_000.0,   # N5K minimum
+    ClientType.CORPORATE: 25_000.0,
+    ClientType.INDIVIDUAL: 5_000.0,
 }
+
+# All Risks Extension cap: max 10% of content sum insured
+ALL_RISKS_MAX_PCT = 0.10

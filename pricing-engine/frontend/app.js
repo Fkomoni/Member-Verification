@@ -1,24 +1,23 @@
 /**
  * Leadway Householder Pricing Engine
  * Multi-page flow: Select -> Quote Builder -> Results
+ * Uses official Leadway rate tables (Building + Content sections)
  */
 
 let clientType = 'individual';
+
+// Corporate rate bands for display
+const CORPORATE_BUILDING_RATES = { basic: 0.125, bronze: 0.125, silver: 0.15, standard: 0.15, gold: 0.175, platinum: 0.185 };
+const CORPORATE_CONTENT_RATES = { basic: 0.30, bronze: 0.30, silver: 0.35, standard: 0.35, gold: 0.45, platinum: 0.50 };
 
 // ============= PAGE NAVIGATION =============
 
 function showPage(pageId) {
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active-page'));
     document.getElementById(pageId).classList.add('active-page');
-
-    // Show footer only on select page
     const footer = document.getElementById('mainFooter');
     if (footer) footer.style.display = pageId === 'page-select' ? '' : 'none';
-
-    // Scroll to top
     window.scrollTo(0, 0);
-
-    // Re-init icons
     if (window.lucide) lucide.createIcons();
 }
 
@@ -26,16 +25,12 @@ function selectProduct(type) {
     clientType = type;
     updateTypeToggle();
     updateInfoPanel();
+    updateRateDisplay();
     showPage('page-quote');
 }
 
-function goBack() {
-    showPage('page-select');
-}
-
-function goToQuote() {
-    showPage('page-quote');
-}
+function goBack() { showPage('page-select'); }
+function goToQuote() { showPage('page-quote'); }
 
 // ============= TYPE TOGGLE =============
 
@@ -43,6 +38,7 @@ function switchType(type) {
     clientType = type;
     updateTypeToggle();
     updateInfoPanel();
+    updateRateDisplay();
 }
 
 function updateTypeToggle() {
@@ -58,12 +54,27 @@ function updateInfoPanel() {
 
     if (clientType === 'corporate') {
         title.textContent = 'Cover Your Business Property';
-        desc.textContent = 'Comprehensive cover for commercial buildings, office contents, and business assets. Volume discounts for large sums insured.';
+        desc.textContent = 'Comprehensive cover for commercial buildings, office contents, and business assets. Underwritten rates with volume discounts.';
         feat3.textContent = 'Volume discounts for sums over N100M';
     } else {
         title.textContent = 'Protect What Matters';
-        desc.textContent = 'Get comprehensive cover for your home and personal property against the most common risks — with pricing powered by real claims data.';
+        desc.textContent = 'Get comprehensive cover for your home and personal property — using Leadway\'s official pre-priced rates.';
         feat3.textContent = 'Discounts for security & fire equipment';
+    }
+}
+
+function updateRateDisplay() {
+    const coverType = (document.getElementById('coverType') || {}).value || 'standard';
+    const rb = document.getElementById('rateBuilding');
+    const rc = document.getElementById('rateContent');
+    if (!rb || !rc) return;
+
+    if (clientType === 'corporate') {
+        rb.textContent = (CORPORATE_BUILDING_RATES[coverType] || 0.15) + '%';
+        rc.textContent = (CORPORATE_CONTENT_RATES[coverType] || 0.35) + '%';
+    } else {
+        rb.textContent = '0.10%';
+        rc.textContent = '0.20%';
     }
 }
 
@@ -71,37 +82,31 @@ function updateInfoPanel() {
 
 function formatCurrency(input) {
     let value = input.value.replace(/[^0-9]/g, '');
-    if (value) {
-        value = parseInt(value, 10).toLocaleString('en-NG');
-    }
+    if (value) value = parseInt(value, 10).toLocaleString('en-NG');
     input.value = value;
 }
 
 function parseCurrency(str) {
-    return parseFloat(str.replace(/[^0-9.-]/g, '')) || 0;
+    return parseFloat((str || '').replace(/[^0-9.-]/g, '')) || 0;
 }
 
 function formatNGN(amount) {
-    return '\u20A6' + amount.toLocaleString('en-NG', {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2
-    });
+    return '\u20A6' + amount.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
 function toggleChip(checkbox) {
     checkbox.closest('.peril-chip').classList.toggle('selected', checkbox.checked);
 }
 
-function getSelectedPerils() {
-    const perils = [];
-    document.querySelectorAll('.peril-chip input:checked').forEach(cb => perils.push(cb.value));
-    return perils;
+function toggleCoverage(checkbox) {
+    checkbox.closest('.coverage-option').classList.toggle('selected', checkbox.checked);
 }
 
 // ============= GENERATE QUOTE =============
 
 async function getQuote() {
-    const sumInsured = parseCurrency(document.getElementById('sumInsured').value);
+    const buildingSI = parseCurrency(document.getElementById('buildingSI').value);
+    const contentSI = parseCurrency(document.getElementById('contentSI').value);
     const location = document.getElementById('location').value;
     const coverType = document.getElementById('coverType').value;
     const duration = parseInt(document.getElementById('duration').value);
@@ -109,12 +114,24 @@ async function getQuote() {
     const claimsHistory = parseInt(document.getElementById('claimsHistory').value);
     const hasSecurity = document.getElementById('hasSecurity').checked;
     const hasFireExtinguisher = document.getElementById('hasFireExtinguisher').checked;
-    const perils = getSelectedPerils();
+
+    // Coverages
+    const incBuilding = document.getElementById('incBuilding').checked;
+    const incContent = document.getElementById('incContent').checked;
+    const incAccidental = document.getElementById('incAccidental').checked;
+    const incAllRisks = document.getElementById('incAllRisks').checked;
+    const incPA = document.getElementById('incPA').checked;
+    const incAltAcc = document.getElementById('incAltAcc').checked;
 
     // Validation
-    if (!sumInsured || sumInsured <= 0) { alert('Please enter a valid Sum Insured amount.'); return; }
+    if (buildingSI <= 0 && contentSI <= 0) {
+        alert('Please enter at least one Sum Insured (Building or Content).');
+        return;
+    }
     if (!location) { alert('Please select a location.'); return; }
-    if (perils.length === 0) { alert('Please select at least one peril to cover.'); return; }
+    if (!incBuilding && !incContent && !incAccidental && !incAllRisks && !incPA && !incAltAcc) {
+        alert('Please select at least one coverage.'); return;
+    }
 
     const btn = document.getElementById('quoteBtn');
     btn.disabled = true;
@@ -126,10 +143,16 @@ async function getQuote() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 client_type: clientType,
-                sum_insured: sumInsured,
+                building_sum_insured: buildingSI,
+                content_sum_insured: contentSI,
                 location,
                 cover_type: coverType,
-                perils,
+                include_building: incBuilding,
+                include_content: incContent,
+                include_accidental_damage: incAccidental,
+                include_all_risks: incAllRisks,
+                include_personal_accident: incPA,
+                include_alt_accommodation: incAltAcc,
                 building_age_years: buildingAge,
                 has_security: hasSecurity,
                 has_fire_extinguisher: hasFireExtinguisher,
@@ -144,7 +167,7 @@ async function getQuote() {
         }
 
         const data = await response.json();
-        displayResults(data, perils, sumInsured, location, coverType, duration);
+        displayResults(data, buildingSI, contentSI, location, coverType, duration);
 
     } catch (error) {
         alert('Error: ' + error.message);
@@ -156,45 +179,51 @@ async function getQuote() {
 
 // ============= DISPLAY RESULTS =============
 
-function displayResults(data, selectedPerils, sumInsured, location, coverType, duration) {
+function displayResults(data, buildingSI, contentSI, location, coverType, duration) {
     // Left panel
     document.getElementById('grossPremiumBig').textContent = formatNGN(data.gross_premium);
     document.getElementById('rateDisplay').textContent = 'Rate: ' + data.rate_per_mille.toFixed(2) + ' per mille';
     document.getElementById('resultsTitle').textContent =
         (clientType === 'corporate' ? 'Corporate' : 'Individual') + ' Quote';
 
-    // Peril mini cards
-    const perilMinis = {
-        fire: { card: 'miniFireCard', amount: 'miniFireAmt', value: data.fire_premium },
-        theft: { card: 'miniTheftCard', amount: 'miniTheftAmt', value: data.theft_premium },
-        flood: { card: 'miniFloodCard', amount: 'miniFloodAmt', value: data.flood_premium },
-    };
-    for (const [peril, info] of Object.entries(perilMinis)) {
-        const card = document.getElementById(info.card);
-        const amt = document.getElementById(info.amount);
-        if (selectedPerils.includes(peril)) {
-            card.classList.remove('inactive');
-            amt.textContent = formatNGN(info.value);
-        } else {
-            card.classList.add('inactive');
-            amt.textContent = 'Not covered';
-        }
-    }
+    // Section mini cards
+    const sections = [
+        { label: 'Building', amount: data.building_premium, icon: 'building', cls: 'fire-mini' },
+        { label: 'Content', amount: data.content_premium, icon: 'sofa', cls: 'theft-mini' },
+        { label: 'Accidental Damage', amount: data.accidental_damage_premium, icon: 'alert-triangle', cls: 'flood-mini' },
+        { label: 'All Risks', amount: data.all_risks_premium, icon: 'shield-check', cls: 'fire-mini' },
+        { label: 'Personal Accident', amount: data.personal_accident_premium, icon: 'heart-pulse', cls: 'theft-mini' },
+        { label: 'Alt. Accommodation', amount: data.alt_accommodation_premium, icon: 'bed', cls: 'flood-mini' },
+    ];
 
-    // Right panel
+    const cardsHtml = sections
+        .filter(s => s.amount > 0)
+        .map(s => `
+            <div class="peril-mini">
+                <div class="peril-mini-icon ${s.cls}"><i data-lucide="${s.icon}" style="width:16px;height:16px;"></i></div>
+                <div>
+                    <span class="peril-mini-label">${s.label}</span>
+                    <span class="peril-mini-amount">${formatNGN(s.amount)}</span>
+                </div>
+            </div>
+        `).join('');
+    document.getElementById('sectionCards').innerHTML = cardsHtml;
+
+    // Right panel badges
     document.getElementById('clientBadge').textContent = clientType.toUpperCase();
     document.getElementById('coverBadge').textContent = coverType.toUpperCase();
 
     // Summary
-    document.getElementById('sumDisplay').textContent = formatNGN(sumInsured);
+    const totalSI = buildingSI + contentSI;
+    document.getElementById('sumDisplay').textContent = formatNGN(totalSI);
     const locMap = { lagos: 'Lagos', abuja: 'Abuja', port_harcourt: 'Port Harcourt', ibadan: 'Ibadan', kaduna: 'Kaduna', other: 'Other' };
     document.getElementById('locDisplay').textContent = locMap[location] || location;
-    document.getElementById('perilsDisplay').textContent = selectedPerils.map(p => p.charAt(0).toUpperCase() + p.slice(1)).join(', ');
+    document.getElementById('perilsDisplay').textContent = data.coverages.length + ' coverages';
     document.getElementById('durationDisplay').textContent = duration + ' months';
 
-    // Breakdown
+    // Breakdown table
     const rows = [
-        ['Base Premium', data.base_premium, ''],
+        ['Base Premium (all sections)', data.base_premium, ''],
         ['Location Adjustment', data.location_adjustment, data.location_adjustment > 0 ? 'loading' : data.location_adjustment < 0 ? 'discount' : ''],
         ['Cover Type Adjustment', data.cover_type_adjustment, data.cover_type_adjustment > 0 ? 'loading' : data.cover_type_adjustment < 0 ? 'discount' : ''],
         ['Claims History Loading', data.claims_loading, data.claims_loading > 0 ? 'loading' : ''],
@@ -206,7 +235,6 @@ function displayResults(data, selectedPerils, sumInsured, location, coverType, d
     let html = '';
     for (const [label, amount, cls] of rows) {
         if (amount === 0) continue;
-        const sign = amount > 0 ? '+' : '';
         const displayAmt = amount < 0 ? '-' + formatNGN(Math.abs(amount)) : '+' + formatNGN(amount);
         html += `<tr><td>${label}</td><td class="${cls}">${displayAmt}</td></tr>`;
     }
@@ -217,7 +245,6 @@ function displayResults(data, selectedPerils, sumInsured, location, coverType, d
     document.getElementById('commNet').textContent = '-' + formatNGN(data.commission);
     document.getElementById('netNet').textContent = formatNGN(data.net_premium);
 
-    // Show results page
     showPage('page-results');
 }
 

@@ -223,6 +223,25 @@ a { text-decoration: none; color: inherit; }
 .prefix { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); font-size: 15px; font-weight: 600; color: var(--gray-400); }
 .input-prefix input { padding-left: 32px; }
 
+/* Coverage grid */
+.coverage-grid { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
+.coverage-option { cursor: pointer; }
+.coverage-option input { display: none; }
+.cov-inner { display: flex; align-items: center; gap: 12px; padding: 12px 14px; background: var(--white); border: 1.5px solid var(--gray-300); border-radius: var(--r-sm); transition: var(--ease); }
+.coverage-option.selected .cov-inner { border-color: var(--orange); background: var(--orange-light); }
+.coverage-option:hover .cov-inner { border-color: var(--orange); }
+.cov-icon { width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.fire-cov { background: #FBE9E7; color: #E65100; }
+.theft-cov { background: #E8EAF6; color: #283593; }
+.acc-cov { background: #FFF8E1; color: #F9A825; }
+.ar-cov { background: #E8F5E9; color: #2E7D32; }
+.pa-cov { background: #FCE4EC; color: #C62828; }
+.alt-cov { background: #E1F5FE; color: #0277BD; }
+.cov-text { flex: 1; display: flex; flex-direction: column; }
+.cov-name { font-size: 13px; font-weight: 600; }
+.cov-desc { font-size: 11px; color: var(--gray-500); }
+.cov-rate { font-size: 12px; font-weight: 700; color: var(--orange); background: var(--orange-light); padding: 4px 10px; border-radius: var(--r-pill); flex-shrink: 0; }
+
 /* Peril chips */
 .perils-row { display: flex; gap: 10px; margin: 8px 0 20px; flex-wrap: wrap; }
 .peril-chip {

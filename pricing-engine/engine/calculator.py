@@ -1,18 +1,19 @@
 """
 Leadway Householder Premium Calculator.
 
-Calculates premiums for Fire, Theft, and Flood perils
-with separate logic for Corporate and Individual segments.
+Uses official Leadway rate tables:
+- Pre-priced rates for Individual/Retail
+- Underwritten rates (4 bands) for Corporate
+- Separate Building vs Content sections
+- Additional coverages: Accidental Damage, All Risks, PA, Alt Accommodation
 """
 
-from .models import (
-    ClientType, CoverType, Peril, RiskProfile, PremiumBreakdown
-)
+from .models import ClientType, CoverType, RiskProfile, PremiumBreakdown
 from .rates import (
-    BASE_RATES, LOCATION_FACTORS, FLOOD_LOCATION_SURCHARGE,
-    COVER_TYPE_MULTIPLIERS, CLAIMS_LOADING, MAX_CLAIMS_LOADING,
+    get_rates, LOCATION_FACTORS, INDIVIDUAL_COVER_MULTIPLIERS,
+    CLAIMS_LOADING, MAX_CLAIMS_LOADING,
     SECURITY_DISCOUNT, FIRE_EQUIPMENT_DISCOUNT,
-    COMMISSION_RATES, MINIMUM_PREMIUMS,
+    COMMISSION_RATES, MINIMUM_PREMIUMS, ALL_RISKS_MAX_PCT,
     get_building_age_loading, get_volume_discount,
 )
 
@@ -20,43 +21,53 @@ from .rates import (
 def calculate_premium(risk: RiskProfile) -> PremiumBreakdown:
     """Calculate premium for a given risk profile."""
 
-    rates = BASE_RATES[risk.client_type]
+    rates = get_rates(risk.client_type, risk.cover_type)
+    total_si = risk.building_sum_insured + risk.content_sum_insured
+
+    # --- Section premiums (rate x sum insured) ---
+    building_prem = 0.0
+    content_prem = 0.0
+    accidental_prem = 0.0
+    all_risks_prem = 0.0
+    pa_prem = 0.0
+    alt_acc_prem = 0.0
+
+    if risk.include_building and risk.building_sum_insured > 0:
+        building_prem = risk.building_sum_insured * rates["building"]
+
+    if risk.include_content and risk.content_sum_insured > 0:
+        content_prem = risk.content_sum_insured * rates["content"]
+
+    if risk.include_accidental_damage and risk.content_sum_insured > 0:
+        accidental_prem = risk.content_sum_insured * rates["accidental_damage"]
+
+    if risk.include_all_risks and risk.content_sum_insured > 0:
+        # All risks applies to max 10% of content sum insured
+        all_risks_si = risk.content_sum_insured * ALL_RISKS_MAX_PCT
+        all_risks_prem = all_risks_si * rates["all_risks"]
+
+    if risk.include_personal_accident and total_si > 0:
+        pa_prem = total_si * rates["personal_accident"]
+
+    if risk.include_alt_accommodation and risk.building_sum_insured > 0:
+        alt_acc_prem = risk.building_sum_insured * rates["alt_accommodation"]
+
+    base_premium = (
+        building_prem + content_prem + accidental_prem +
+        all_risks_prem + pa_prem + alt_acc_prem
+    )
+
+    # --- Location adjustment ---
     location_factor = LOCATION_FACTORS[risk.location]
-
-    # --- Per-peril premium calculation ---
-    fire_premium = 0.0
-    theft_premium = 0.0
-    flood_premium = 0.0
-    peril_details = {}
-
-    for peril in risk.perils:
-        base_rate = rates[peril]
-        peril_premium = risk.sum_insured * base_rate / 1000
-
-        # Flood gets extra location surcharge
-        if peril == Peril.FLOOD:
-            flood_surcharge = FLOOD_LOCATION_SURCHARGE[risk.location]
-            peril_premium *= (1 + flood_surcharge)
-
-        peril_details[peril.value] = peril_premium
-
-        if peril == Peril.FIRE:
-            fire_premium = peril_premium
-        elif peril == Peril.THEFT:
-            theft_premium = peril_premium
-        elif peril == Peril.FLOOD:
-            flood_premium = peril_premium
-
-    base_premium = sum(peril_details.values())
-
-    # --- Location adjustment (non-flood) ---
     location_adj = base_premium * (location_factor - 1.0)
     adjusted = base_premium + location_adj
 
-    # --- Cover type multiplier ---
-    cover_mult = COVER_TYPE_MULTIPLIERS[risk.cover_type]
-    cover_adj = adjusted * (cover_mult - 1.0)
-    adjusted += cover_adj
+    # --- Cover type adjustment (Individual only; Corporate uses rate bands) ---
+    cover_adj = 0.0
+    if risk.client_type == ClientType.INDIVIDUAL:
+        cover_mult = INDIVIDUAL_COVER_MULTIPLIERS[risk.cover_type]
+        cover_adj = adjusted * (cover_mult - 1.0)
+        adjusted += cover_adj
 
     # --- Building age loading ---
     age_loading = get_building_age_loading(risk.building_age_years)
@@ -65,10 +76,7 @@ def calculate_premium(risk: RiskProfile) -> PremiumBreakdown:
 
     # --- Claims history loading ---
     claims_count = min(risk.claims_history_count, 4)
-    if claims_count >= 4:
-        claims_factor = MAX_CLAIMS_LOADING
-    else:
-        claims_factor = CLAIMS_LOADING.get(claims_count, 0.0)
+    claims_factor = MAX_CLAIMS_LOADING if claims_count >= 4 else CLAIMS_LOADING.get(claims_count, 0.0)
     claims_adj = adjusted * claims_factor
     adjusted += claims_adj
 
@@ -78,20 +86,19 @@ def calculate_premium(risk: RiskProfile) -> PremiumBreakdown:
     adjusted -= (security_disc + fire_disc)
 
     # --- Volume discount ---
-    vol_disc = get_volume_discount(risk.sum_insured, risk.client_type)
+    vol_disc = get_volume_discount(total_si, risk.client_type)
     adjusted *= (1 - vol_disc)
 
-    # --- Duration adjustment (pro-rata for short period) ---
+    # --- Duration adjustment ---
     duration_factor = risk.policy_duration_months / 12.0
     if duration_factor < 1.0:
-        # Short period loading: less than 12 months costs proportionally more
-        duration_factor = max(duration_factor, 0.25)  # minimum 3 months
+        duration_factor = max(duration_factor, 0.25)
         short_period_loading = 1.0 + (1.0 - duration_factor) * 0.15
         duration_factor *= short_period_loading
     duration_adj = adjusted * (duration_factor - 1.0)
     gross_premium = adjusted + duration_adj
 
-    # --- Apply minimum premium ---
+    # --- Minimum premium ---
     minimum = MINIMUM_PREMIUMS[risk.client_type]
     gross_premium = max(gross_premium, minimum)
 
@@ -100,9 +107,17 @@ def calculate_premium(risk: RiskProfile) -> PremiumBreakdown:
     commission = gross_premium * comm_rate
     net_premium = gross_premium - commission
 
+    # Rate per mille
+    rate_per_mille = (gross_premium / total_si * 1000) if total_si > 0 else 0
+
     return PremiumBreakdown(
+        building_premium=round(building_prem, 2),
+        content_premium=round(content_prem, 2),
+        accidental_damage_premium=round(accidental_prem, 2),
+        all_risks_premium=round(all_risks_prem, 2),
+        personal_accident_premium=round(pa_prem, 2),
+        alt_accommodation_premium=round(alt_acc_prem, 2),
         base_premium=round(base_premium, 2),
-        peril_loadings=peril_details,
         location_adjustment=round(location_adj, 2),
         cover_type_adjustment=round(cover_adj, 2),
         claims_loading=round(claims_adj, 2),
@@ -112,7 +127,5 @@ def calculate_premium(risk: RiskProfile) -> PremiumBreakdown:
         gross_premium=round(gross_premium, 2),
         commission=round(commission, 2),
         net_premium=round(net_premium, 2),
-        fire_premium=round(fire_premium, 2),
-        theft_premium=round(theft_premium, 2),
-        flood_premium=round(flood_premium, 2),
+        rate_per_mille=round(rate_per_mille, 4),
     )

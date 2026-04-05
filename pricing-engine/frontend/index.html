@@ -170,7 +170,7 @@
                     <div class="info-features">
                         <div class="info-feature">
                             <i data-lucide="check-circle" style="width:18px;height:18px;color:#F58220;"></i>
-                            <span>Fire, Theft &amp; Flood cover in one policy</span>
+                            <span>Building &amp; Content cover with official rates</span>
                         </div>
                         <div class="info-feature">
                             <i data-lucide="check-circle" style="width:18px;height:18px;color:#F58220;"></i>
@@ -238,7 +238,7 @@
                         </div>
                         <div>
                             <h3>Property Information</h3>
-                            <span class="step-sub">Step 1 of 2</span>
+                            <span class="step-sub">Step 1 of 3</span>
                         </div>
                     </div>
 
@@ -269,15 +269,125 @@
                             </select>
                         </div>
                         <div class="form-group">
-                            <label>Sum Insured (NGN) <span class="req">*</span></label>
+                            <label>Building Sum Insured (NGN) <span class="req">*</span></label>
                             <div class="input-prefix">
                                 <span class="prefix">&#x20A6;</span>
-                                <input type="text" id="sumInsured" placeholder="50,000,000" required oninput="formatCurrency(this)">
+                                <input type="text" id="buildingSI" placeholder="e.g. 50,000,000" oninput="formatCurrency(this)">
                             </div>
                         </div>
                         <div class="form-group">
+                            <label>Content Sum Insured (NGN) <span class="req">*</span></label>
+                            <div class="input-prefix">
+                                <span class="prefix">&#x20A6;</span>
+                                <input type="text" id="contentSI" placeholder="e.g. 10,000,000" oninput="formatCurrency(this)">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- STEP 2: Coverage Selection -->
+                <div class="form-step" id="step2">
+                    <div class="step-header">
+                        <div class="step-icon orange-icon">
+                            <i data-lucide="shield" style="width:20px;height:20px;"></i>
+                        </div>
+                        <div>
+                            <h3>Select Coverages</h3>
+                            <span class="step-sub">Step 2 of 3</span>
+                        </div>
+                    </div>
+
+                    <label class="field-label">Core Coverages</label>
+                    <div class="coverage-grid">
+                        <label class="coverage-option selected" id="cov-building">
+                            <input type="checkbox" id="incBuilding" checked onchange="toggleCoverage(this)">
+                            <div class="cov-inner">
+                                <div class="cov-icon fire-cov"><i data-lucide="building" style="width:18px;height:18px;"></i></div>
+                                <div class="cov-text">
+                                    <span class="cov-name">Building</span>
+                                    <span class="cov-desc">Fire &amp; Special Perils</span>
+                                </div>
+                                <div class="cov-rate" id="rateBuilding">0.10%</div>
+                            </div>
+                        </label>
+                        <label class="coverage-option selected" id="cov-content">
+                            <input type="checkbox" id="incContent" checked onchange="toggleCoverage(this)">
+                            <div class="cov-inner">
+                                <div class="cov-icon theft-cov"><i data-lucide="sofa" style="width:18px;height:18px;"></i></div>
+                                <div class="cov-text">
+                                    <span class="cov-name">Content</span>
+                                    <span class="cov-desc">Fire, Burglary &amp; Special Perils</span>
+                                </div>
+                                <div class="cov-rate" id="rateContent">0.20%</div>
+                            </div>
+                        </label>
+                    </div>
+
+                    <label class="field-label" style="margin-top:16px;">Additional Coverages</label>
+                    <div class="coverage-grid">
+                        <label class="coverage-option" id="cov-accidental">
+                            <input type="checkbox" id="incAccidental" onchange="toggleCoverage(this)">
+                            <div class="cov-inner">
+                                <div class="cov-icon acc-cov"><i data-lucide="alert-triangle" style="width:18px;height:18px;"></i></div>
+                                <div class="cov-text">
+                                    <span class="cov-name">Accidental Damage</span>
+                                    <span class="cov-desc">To household content</span>
+                                </div>
+                                <div class="cov-rate">0.125%</div>
+                            </div>
+                        </label>
+                        <label class="coverage-option" id="cov-allrisks">
+                            <input type="checkbox" id="incAllRisks" onchange="toggleCoverage(this)">
+                            <div class="cov-inner">
+                                <div class="cov-icon ar-cov"><i data-lucide="shield-check" style="width:18px;height:18px;"></i></div>
+                                <div class="cov-text">
+                                    <span class="cov-name">All Risks Extension</span>
+                                    <span class="cov-desc">Max 10% of content SI</span>
+                                </div>
+                                <div class="cov-rate">2.0%</div>
+                            </div>
+                        </label>
+                        <label class="coverage-option" id="cov-pa">
+                            <input type="checkbox" id="incPA" onchange="toggleCoverage(this)">
+                            <div class="cov-inner">
+                                <div class="cov-icon pa-cov"><i data-lucide="heart-pulse" style="width:18px;height:18px;"></i></div>
+                                <div class="cov-text">
+                                    <span class="cov-name">Personal Accident</span>
+                                    <span class="cov-desc">Injury &amp; death cover</span>
+                                </div>
+                                <div class="cov-rate">0.185%</div>
+                            </div>
+                        </label>
+                        <label class="coverage-option" id="cov-altacc">
+                            <input type="checkbox" id="incAltAcc" onchange="toggleCoverage(this)">
+                            <div class="cov-inner">
+                                <div class="cov-icon alt-cov"><i data-lucide="bed" style="width:18px;height:18px;"></i></div>
+                                <div class="cov-text">
+                                    <span class="cov-name">Alt. Accommodation</span>
+                                    <span class="cov-desc">Temporary housing</span>
+                                </div>
+                                <div class="cov-rate">0.20%</div>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- STEP 3: Policy Details -->
+                <div class="form-step" id="step3">
+                    <div class="step-header">
+                        <div class="step-icon">
+                            <i data-lucide="file-text" style="width:20px;height:20px;"></i>
+                        </div>
+                        <div>
+                            <h3>Policy Details</h3>
+                            <span class="step-sub">Step 3 of 3</span>
+                        </div>
+                    </div>
+
+                    <div class="form-grid">
+                        <div class="form-group">
                             <label>Cover Type</label>
-                            <select id="coverType">
+                            <select id="coverType" onchange="updateRateDisplay()">
                                 <option value="standard">Standard Cover</option>
                                 <option value="basic">Basic</option>
                                 <option value="bronze">Bronze</option>
@@ -286,42 +396,6 @@
                                 <option value="platinum">Platinum</option>
                             </select>
                         </div>
-                    </div>
-                </div>
-
-                <!-- STEP 2: Risk & Coverage Details -->
-                <div class="form-step" id="step2">
-                    <div class="step-header">
-                        <div class="step-icon orange-icon">
-                            <i data-lucide="shield" style="width:20px;height:20px;"></i>
-                        </div>
-                        <div>
-                            <h3>Coverage Details</h3>
-                            <span class="step-sub">Step 2 of 2</span>
-                        </div>
-                    </div>
-
-                    <!-- Perils -->
-                    <label class="field-label">Select Perils to Cover <span class="req">*</span></label>
-                    <div class="perils-row">
-                        <label class="peril-chip selected" id="chip-fire">
-                            <input type="checkbox" value="fire" checked onchange="toggleChip(this)">
-                            <i data-lucide="flame" style="width:16px;height:16px;"></i>
-                            Fire
-                        </label>
-                        <label class="peril-chip" id="chip-theft">
-                            <input type="checkbox" value="theft" onchange="toggleChip(this)">
-                            <i data-lucide="lock" style="width:16px;height:16px;"></i>
-                            Theft
-                        </label>
-                        <label class="peril-chip" id="chip-flood">
-                            <input type="checkbox" value="flood" onchange="toggleChip(this)">
-                            <i data-lucide="waves" style="width:16px;height:16px;"></i>
-                            Flood
-                        </label>
-                    </div>
-
-                    <div class="form-grid">
                         <div class="form-group">
                             <label>Policy Duration</label>
                             <select id="duration">
@@ -342,8 +416,7 @@
                         </div>
                     </div>
 
-                    <!-- Risk mitigation -->
-                    <label class="field-label">Risk Mitigation</label>
+                    <label class="field-label">Risk Mitigation Discounts</label>
                     <div class="mitigation-row">
                         <label class="mitigation-toggle">
                             <input type="checkbox" id="hasSecurity">
@@ -398,28 +471,8 @@
                     </div>
 
                     <!-- Peril breakdown mini -->
-                    <div class="peril-mini-cards">
-                        <div class="peril-mini" id="miniFireCard">
-                            <div class="peril-mini-icon fire-mini"><i data-lucide="flame" style="width:16px;height:16px;"></i></div>
-                            <div>
-                                <span class="peril-mini-label">Fire</span>
-                                <span class="peril-mini-amount" id="miniFireAmt">-</span>
-                            </div>
-                        </div>
-                        <div class="peril-mini" id="miniTheftCard">
-                            <div class="peril-mini-icon theft-mini"><i data-lucide="lock" style="width:16px;height:16px;"></i></div>
-                            <div>
-                                <span class="peril-mini-label">Theft</span>
-                                <span class="peril-mini-amount" id="miniTheftAmt">-</span>
-                            </div>
-                        </div>
-                        <div class="peril-mini" id="miniFloodCard">
-                            <div class="peril-mini-icon flood-mini"><i data-lucide="waves" style="width:16px;height:16px;"></i></div>
-                            <div>
-                                <span class="peril-mini-label">Flood</span>
-                                <span class="peril-mini-amount" id="miniFloodAmt">-</span>
-                            </div>
-                        </div>
+                    <div class="peril-mini-cards" id="sectionCards">
+                        <!-- Populated by JS -->
                     </div>
                 </div>
             </div>

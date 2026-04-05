@@ -2,19 +2,11 @@
 
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Optional
 
 
 class ClientType(str, Enum):
     CORPORATE = "corporate"
     INDIVIDUAL = "individual"
-
-
-class Peril(str, Enum):
-    FIRE = "fire"
-    THEFT = "theft"
-    FLOOD = "flood"
-    ALL_PERILS = "all_perils"  # Combined cover
 
 
 class CoverType(str, Enum):
@@ -39,32 +31,47 @@ class Location(str, Enum):
 class RiskProfile:
     """Input risk profile for pricing."""
     client_type: ClientType
-    sum_insured: float
+    building_sum_insured: float  # Sum insured for building
+    content_sum_insured: float   # Sum insured for household contents
     location: Location
     cover_type: CoverType = CoverType.STANDARD
-    perils: list[Peril] = field(default_factory=lambda: [Peril.FIRE])
+    # Coverage selections
+    include_building: bool = True            # Section 1: Fire & Special Perils on building
+    include_content: bool = True             # Section 2: Fire, Special Perils & Burglary on content
+    include_accidental_damage: bool = False  # Accidental damage to content
+    include_all_risks: bool = False          # All risks extension (max 10% of content SI)
+    include_personal_accident: bool = False  # Personal accident cover
+    include_alt_accommodation: bool = False  # Alternative accommodation
+    # Risk factors
     building_age_years: int = 0
     has_security: bool = False
     has_fire_extinguisher: bool = False
-    claims_history_count: int = 0  # claims in last 3 years
+    claims_history_count: int = 0
     policy_duration_months: int = 12
 
 
 @dataclass
 class PremiumBreakdown:
     """Output premium breakdown."""
+    # Section premiums
+    building_premium: float
+    content_premium: float
+    accidental_damage_premium: float
+    all_risks_premium: float
+    personal_accident_premium: float
+    alt_accommodation_premium: float
+    # Base = sum of all section premiums
     base_premium: float
-    peril_loadings: dict[str, float]
+    # Adjustments
     location_adjustment: float
     cover_type_adjustment: float
     claims_loading: float
     security_discount: float
     fire_equipment_discount: float
     duration_adjustment: float
+    # Totals
     gross_premium: float
     commission: float
     net_premium: float
-    # Per-peril breakdown
-    fire_premium: float = 0.0
-    theft_premium: float = 0.0
-    flood_premium: float = 0.0
+    # Meta
+    rate_per_mille: float = 0.0
