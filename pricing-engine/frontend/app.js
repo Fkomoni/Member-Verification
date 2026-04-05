@@ -4,13 +4,24 @@
 
 let clientType = 'individual';
 
+const SEGMENT_DESCRIPTIONS = {
+    individual: 'Individual policies for homeowners and tenants. Covers personal property and household contents.',
+    corporate: 'Corporate policies for businesses and commercial properties. Lower base rates with volume discounts for large sums insured.'
+};
+
 function setClientType(type) {
     clientType = type;
     document.querySelectorAll('.segment-btn').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.type === type);
     });
-    // Hide results when switching segments
+    document.getElementById('segmentDesc').textContent = SEGMENT_DESCRIPTIONS[type];
+
+    // Hide results
     document.getElementById('resultsPanel').classList.remove('visible');
+    document.getElementById('resultsPlaceholder').style.display = '';
+
+    // Re-initialize icons after DOM changes
+    if (window.lucide) lucide.createIcons();
 }
 
 function togglePeril(checkbox) {
@@ -63,6 +74,7 @@ function resetForm() {
     });
 
     document.getElementById('resultsPanel').classList.remove('visible');
+    document.getElementById('resultsPlaceholder').style.display = '';
 }
 
 async function getQuote() {
@@ -118,26 +130,35 @@ async function getQuote() {
         }
 
         const data = await response.json();
-        displayResults(data, perils);
+        displayResults(data, perils, sumInsured);
 
     } catch (error) {
         alert('Error: ' + error.message);
     } finally {
         btn.disabled = false;
-        btn.innerHTML = 'Generate Quote \u2192';
+        btn.innerHTML = 'Generate Quote <i data-lucide="arrow-right" style="width:18px;height:18px;"></i>';
+        if (window.lucide) lucide.createIcons();
     }
 }
 
-function displayResults(data, selectedPerils) {
+function displayResults(data, selectedPerils, sumInsured) {
+    // Hide placeholder, show results
+    document.getElementById('resultsPlaceholder').style.display = 'none';
     const panel = document.getElementById('resultsPanel');
 
-    // Gross premium
-    document.getElementById('grossPremium').innerHTML =
-        formatNGN(data.gross_premium) + '<br><small>Gross Premium</small>';
+    // Client badge
+    document.getElementById('clientBadge').textContent = data.client_type.toUpperCase();
 
-    // Rate badge
+    // Rate
     document.getElementById('rateBadge').textContent =
-        `Rate: ${data.rate_per_mille.toFixed(2)} per mille \u2022 ${data.client_type.charAt(0).toUpperCase() + data.client_type.slice(1)}`;
+        `Rate: ${data.rate_per_mille.toFixed(2)} per mille`;
+
+    // Gross premium
+    document.getElementById('grossPremium').textContent = formatNGN(data.gross_premium);
+
+    // Sub text
+    document.getElementById('premiumSub').textContent =
+        `Sum Insured: ${formatNGN(sumInsured)}`;
 
     // Peril cards
     const perilMap = {
@@ -154,13 +175,13 @@ function displayResults(data, selectedPerils) {
             amountEl.textContent = formatNGN(info.value);
         } else {
             card.classList.add('inactive');
-            amountEl.textContent = 'Not covered';
+            amountEl.textContent = 'N/A';
         }
     }
 
     // Breakdown table
     const rows = [
-        ['Base Premium (all perils)', data.base_premium, ''],
+        ['Base Premium', data.base_premium, ''],
         ['Location Adjustment', data.location_adjustment, data.location_adjustment > 0 ? 'loading' : data.location_adjustment < 0 ? 'discount' : ''],
         ['Cover Type Adjustment', data.cover_type_adjustment, data.cover_type_adjustment > 0 ? 'loading' : data.cover_type_adjustment < 0 ? 'discount' : ''],
         ['Claims History Loading', data.claims_loading, data.claims_loading > 0 ? 'loading' : ''],
@@ -183,18 +204,34 @@ function displayResults(data, selectedPerils) {
         <td>Gross Premium</td>
         <td>${formatNGN(data.gross_premium)}</td>
     </tr>`;
-    html += `<tr>
-        <td>Commission (15%)</td>
-        <td class="discount">-${formatNGN(data.commission)}</td>
-    </tr>`;
-    html += `<tr class="total-row">
-        <td>Net Premium</td>
-        <td>${formatNGN(data.net_premium)}</td>
-    </tr>`;
 
     document.getElementById('breakdownBody').innerHTML = html;
 
-    // Show panel with scroll
+    // Net premium card
+    document.getElementById('commissionAmount').textContent = '-' + formatNGN(data.commission);
+    document.getElementById('netPremium').textContent = formatNGN(data.net_premium);
+
+    // Show panel
     panel.classList.add('visible');
-    panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+    // Re-init icons
+    if (window.lucide) lucide.createIcons();
+
+    // Scroll to results on mobile
+    if (window.innerWidth <= 1024) {
+        panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
 }
+
+// Smooth scroll for anchor links
+document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener('click', function (e) {
+            e.preventDefault();
+            const target = document.querySelector(this.getAttribute('href'));
+            if (target) {
+                target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        });
+    });
+});

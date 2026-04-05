@@ -2,6 +2,18 @@
 # Deploy all services with: Connect repo on Render Dashboard
 
 services:
+  # ── Pricing Engine ──────────────────────────────
+  - type: web
+    name: leadway-pricing-engine
+    runtime: python
+    region: oregon
+    rootDir: pricing-engine
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn api.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.11.9"
+
   # ── Backend API ──────────────────────────────────
   - type: web
     name: member-verification-api
