@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Leadway Householder Pricing Engine</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+
+    <!-- Top accent strip -->
+    <div class="top-strip"></div>
+
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="logo">
+            <div class="logo-text">LEADWAY <span>Assurance</span></div>
+        </div>
+        <ul class="nav-links">
+            <li><a href="#">Pricing Engine</a></li>
+            <li><a href="/api/rates" target="_blank">Rate Card</a></li>
+            <li><a href="/docs" target="_blank">API Docs</a></li>
+        </ul>
+    </nav>
+
+    <!-- Hero -->
+    <section class="hero">
+        <div class="breadcrumb">Home / Householder / Pricing Engine</div>
+        <h1>Householder Pricing Engine</h1>
+        <p>Generate premium quotes for Fire, Theft, and Flood cover. Separate pricing for Corporate and Individual segments.</p>
+    </section>
+
+    <!-- Main Content -->
+    <div class="container">
+
+        <!-- Client Type Toggle -->
+        <div class="segment-toggle">
+            <button class="segment-btn active" data-type="individual" onclick="setClientType('individual')">Individual</button>
+            <button class="segment-btn" data-type="corporate" onclick="setClientType('corporate')">Corporate</button>
+        </div>
+
+        <!-- Quote Form -->
+        <div class="form-section">
+            <h2>Kindly fill in the risk details</h2>
+
+            <form id="quoteForm" class="form-grid" onsubmit="return false;">
+
+                <!-- Sum Insured -->
+                <div class="form-group">
+                    <label>Sum Insured (NGN) <span class="required">*</span></label>
+                    <input type="text" id="sumInsured" placeholder="e.g. 50,000,000" required
+                           oninput="formatCurrency(this)">
+                </div>
+
+                <!-- Location -->
+                <div class="form-group">
+                    <label>Location <span class="required">*</span></label>
+                    <select id="location" required>
+                        <option value="">Select Location</option>
+                        <option value="lagos">Lagos</option>
+                        <option value="abuja">Abuja</option>
+                        <option value="port_harcourt">Port Harcourt</option>
+                        <option value="ibadan">Ibadan</option>
+                        <option value="kaduna">Kaduna</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+
+                <!-- Cover Type -->
+                <div class="form-group">
+                    <label>Cover Type <span class="required">*</span></label>
+                    <select id="coverType" required>
+                        <option value="standard">Standard Cover</option>
+                        <option value="basic">Basic</option>
+                        <option value="bronze">Bronze</option>
+                        <option value="silver">Silver</option>
+                        <option value="gold">Gold</option>
+                        <option value="platinum">Platinum</option>
+                    </select>
+                </div>
+
+                <!-- Policy Duration -->
+                <div class="form-group">
+                    <label>Policy Duration (Months) <span class="required">*</span></label>
+                    <select id="duration">
+                        <option value="12">12 Months</option>
+                        <option value="9">9 Months</option>
+                        <option value="6">6 Months</option>
+                        <option value="3">3 Months</option>
+                    </select>
+                </div>
+
+                <!-- Building Age -->
+                <div class="form-group">
+                    <label>Building Age (Years)</label>
+                    <input type="number" id="buildingAge" placeholder="0" min="0" value="0">
+                </div>
+
+                <!-- Claims History -->
+                <div class="form-group">
+                    <label>Claims in Last 3 Years</label>
+                    <select id="claimsHistory">
+                        <option value="0">No claims</option>
+                        <option value="1">1 claim</option>
+                        <option value="2">2 claims</option>
+                        <option value="3">3 claims</option>
+                        <option value="4">4+ claims</option>
+                    </select>
+                </div>
+
+                <!-- Perils -->
+                <div class="perils-group">
+                    <label>Perils to Cover <span class="required">*</span></label>
+                    <div class="perils-grid">
+                        <label class="peril-option selected" id="peril-fire">
+                            <input type="checkbox" value="fire" checked onchange="togglePeril(this)">
+                            <span class="peril-icon">&#x1F525;</span>
+                            <span class="peril-label">Fire</span>
+                        </label>
+                        <label class="peril-option" id="peril-theft">
+                            <input type="checkbox" value="theft" onchange="togglePeril(this)">
+                            <span class="peril-icon">&#x1F512;</span>
+                            <span class="peril-label">Theft</span>
+                        </label>
+                        <label class="peril-option" id="peril-flood">
+                            <input type="checkbox" value="flood" onchange="togglePeril(this)">
+                            <span class="peril-icon">&#x1F30A;</span>
+                            <span class="peril-label">Flood</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Discount toggles -->
+                <div class="toggle-group">
+                    <div class="toggle-item">
+                        <input type="checkbox" id="hasSecurity">
+                        <label for="hasSecurity">Security system installed</label>
+                    </div>
+                    <div class="toggle-item">
+                        <input type="checkbox" id="hasFireExtinguisher">
+                        <label for="hasFireExtinguisher">Fire extinguisher on premises</label>
+                    </div>
+                </div>
+
+                <!-- Buttons -->
+                <div class="btn-row">
+                    <button type="button" class="btn-secondary" onclick="resetForm()">&#8592; Reset</button>
+                    <button type="button" class="btn-primary" id="quoteBtn" onclick="getQuote()">
+                        Generate Quote &#8594;
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Results Panel -->
+        <div class="results-panel" id="resultsPanel">
+            <div class="results-header">
+                <div>
+                    <h2>Premium Quote</h2>
+                    <span class="rate-badge" id="rateBadge"></span>
+                </div>
+                <div class="gross-premium" id="grossPremium"></div>
+            </div>
+
+            <!-- Peril cards -->
+            <div class="peril-cards">
+                <div class="peril-card" id="fireCard">
+                    <div class="peril-card-icon">&#x1F525;</div>
+                    <div class="peril-card-label">Fire</div>
+                    <div class="peril-card-amount" id="fireAmount">-</div>
+                </div>
+                <div class="peril-card" id="theftCard">
+                    <div class="peril-card-icon">&#x1F512;</div>
+                    <div class="peril-card-label">Theft</div>
+                    <div class="peril-card-amount" id="theftAmount">-</div>
+                </div>
+                <div class="peril-card" id="floodCard">
+                    <div class="peril-card-icon">&#x1F30A;</div>
+                    <div class="peril-card-label">Flood</div>
+                    <div class="peril-card-amount" id="floodAmount">-</div>
+                </div>
+            </div>
+
+            <!-- Breakdown table -->
+            <table class="breakdown-table">
+                <tbody id="breakdownBody">
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        Leadway Assurance Company Limited (RC 7588) &mdash; Householder Pricing Engine v1.0
+    </footer>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>
