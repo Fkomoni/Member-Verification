@@ -4,15 +4,18 @@
    ============================================= */
 
 :root {
-    --orange: #F58220;
-    --orange-hover: #E07518;
-    --orange-light: #FFF3E8;
-    --teal: #2C3E4A;
-    --teal-dark: #1E2D38;
-    --near-black: #1A1A2E;
+    /* Official Leadway palette (from De Novo Style Guide) */
+    --orange: #F15A24;          /* Primary brand orange */
+    --orange-hover: #D94E1F;
+    --orange-light: #FEF0EB;    /* Light peach tint */
+    --orange-warm: #F8A462;     /* Warm amber accent */
+    --yellow: #FCE827;          /* Brand yellow accent */
+    --teal: #262626;            /* Dark — using Leadway's #262626 */
+    --teal-dark: #1A1A1A;
+    --near-black: #262626;      /* Official dark text */
     --white: #FFFFFF;
-    --blush: #FFF5F0;
-    --red: #E53935;
+    --blush: #FFF5F0;           /* Warm peach wash (from manual bg) */
+    --peach-bg: #FDEEE8;        /* Soft peach for form backgrounds */
     --gray-50: #FAFBFC;
     --gray-100: #F4F5F7;
     --gray-200: #E8EAED;
@@ -89,7 +92,7 @@ a { text-decoration: none; color: inherit; }
 .mobile-menu { display: none; background: none; border: none; cursor: pointer; color: var(--near-black); }
 
 /* ============= SELECT HERO ============= */
-.select-hero { background: var(--teal); padding: 64px 40px 48px; text-align: center; }
+.select-hero { background: var(--near-black); padding: 64px 40px 48px; text-align: center; }
 .select-hero-inner { max-width: 700px; margin: 0 auto; }
 .hero-tag { font-size: 11px; font-weight: 700; letter-spacing: 2.5px; color: var(--orange); display: block; margin-bottom: 16px; }
 .select-hero h1 { font-size: 40px; font-weight: 700; color: var(--white); line-height: 1.2; margin-bottom: 12px; }
@@ -215,7 +218,7 @@ a { text-decoration: none; color: inherit; }
 .type-btn.active { background: var(--teal); color: var(--white); box-shadow: var(--shadow); }
 
 /* Form steps */
-.form-step { background: var(--gray-50); border: 1px solid var(--gray-200); border-radius: var(--r-lg); padding: 24px; margin-bottom: 20px; }
+.form-step { background: var(--peach-bg); border: 1px solid #F5D7CA; border-radius: var(--r-lg); padding: 24px; margin-bottom: 20px; }
 .step-header { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
 .step-icon { width: 40px; height: 40px; border-radius: 10px; background: #E1F5FE; color: #0277BD; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
 .step-icon.orange-icon { background: var(--orange-light); color: var(--orange); }
@@ -273,11 +276,11 @@ a { text-decoration: none; color: inherit; }
 .cov-card-body { display: flex; align-items: center; gap: 10px; padding: 12px; }
 .cov-card.mini .cov-card-body { padding: 10px; }
 .cov-card-icon { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-.fire-cov { background: #FBE9E7; color: #E65100; }
+.fire-cov { background: #FEF0EB; color: #F15A24; }
 .theft-cov { background: #E8EAF6; color: #283593; }
 .acc-cov { background: #FFF8E1; color: #F9A825; }
 .ar-cov { background: #E8F5E9; color: #2E7D32; }
-.pa-cov { background: #FCE4EC; color: #C62828; }
+.pa-cov { background: #FEF0EB; color: #F15A24; }
 .alt-cov { background: #E1F5FE; color: #0277BD; }
 .cov-card-name { font-size: 13px; font-weight: 600; display: block; }
 .cov-card.mini .cov-card-name { font-size: 12px; }
