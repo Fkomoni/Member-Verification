@@ -140,6 +140,25 @@ a { text-decoration: none; color: inherit; }
 .get-quote-btn:hover { background: var(--orange-hover); transform: translateY(-2px); box-shadow: 0 6px 20px rgba(245,130,32,0.45); }
 .sqc-time { display: block; margin-top: 8px; font-size: 12px; color: var(--gray-500); }
 
+/* ============= POLICY SECTION ============= */
+.policy-section { margin-bottom: 32px; }
+.policy-header { display: flex; align-items: center; gap: 14px; margin-bottom: 16px; }
+.policy-header-icon { width: 44px; height: 44px; border-radius: 12px; background: var(--orange); color: var(--white); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.policy-header h3 { font-size: 18px; font-weight: 700; }
+.policy-header p { font-size: 13px; color: var(--gray-600); }
+.policy-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.policy-card {
+    display: flex; flex-direction: column; padding: 24px;
+    background: var(--white); border: 1.5px solid var(--gray-200); border-radius: var(--r-lg);
+    cursor: pointer; transition: var(--ease); text-decoration: none; color: inherit;
+}
+.policy-card:hover { border-color: var(--orange); box-shadow: var(--shadow); transform: translateY(-2px); }
+.policy-card-icon { width: 48px; height: 48px; border-radius: 12px; background: var(--orange-light); color: var(--orange); display: flex; align-items: center; justify-content: center; margin-bottom: 14px; }
+.policy-card-icon.download-icon { background: #E8F5E9; color: #2E7D32; }
+.policy-card h4 { font-size: 16px; font-weight: 700; margin-bottom: 6px; }
+.policy-card p { font-size: 13px; color: var(--gray-600); line-height: 1.5; flex: 1; margin-bottom: 12px; }
+.policy-card-link { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; color: var(--orange); }
+
 /* ============= STATS BAR ============= */
 .stats-bar {
     display: flex; align-items: center; justify-content: center; gap: 32px; flex-wrap: wrap;
@@ -442,6 +461,7 @@ a { text-decoration: none; color: inherit; }
     .select-hero { padding: 40px 20px 32px; }
     .select-hero h1 { font-size: 28px; }
 
+    .policy-grid { grid-template-columns: 1fr; }
     .sqc-body { flex-direction: column; text-align: center; }
     .sqc-covers { justify-content: center; }
     .sqc-image { height: 180px; }

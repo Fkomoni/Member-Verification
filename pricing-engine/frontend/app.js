@@ -265,6 +265,68 @@ function displayResults(data, buildingSI, contentSI, location, coverType, durati
     showPage('page-results');
 }
 
+// ============= POLICY SUMMARY =============
+
+function showPolicySummary() {
+    const html = `
+        <div style="max-height:70vh;overflow-y:auto;">
+            <h2 style="font-size:22px;font-weight:700;margin-bottom:4px;">Houseowners & Householders Insurance Policy</h2>
+            <p style="color:#6C757D;font-size:13px;margin-bottom:24px;">Leadway Assurance Company Limited — Policy Summary</p>
+
+            <div style="background:#FEF0EB;border-left:4px solid #F15A24;padding:16px;border-radius:8px;margin-bottom:20px;">
+                <strong style="color:#F15A24;">5 Sections of Cover</strong>
+                <p style="font-size:13px;color:#495057;margin-top:4px;">This policy covers buildings, contents, alternative accommodation, public liability, and personal accident.</p>
+            </div>
+
+            <h3 style="font-size:16px;margin-bottom:12px;color:#F15A24;">Sections Covered</h3>
+            <table style="width:100%;border-collapse:collapse;margin-bottom:24px;font-size:13px;">
+                <tr style="border-bottom:1px solid #E8EAED;"><td style="padding:10px 0;font-weight:700;">Section I</td><td style="padding:10px 0;">Loss or Damage to the <strong>Buildings</strong></td></tr>
+                <tr style="border-bottom:1px solid #E8EAED;"><td style="padding:10px 0;font-weight:700;">Section II</td><td style="padding:10px 0;">Loss or Damage to the <strong>Contents</strong></td></tr>
+                <tr style="border-bottom:1px solid #E8EAED;"><td style="padding:10px 0;font-weight:700;">Section III</td><td style="padding:10px 0;"><strong>Alternative Accommodation</strong> & Loss of Rent</td></tr>
+                <tr style="border-bottom:1px solid #E8EAED;"><td style="padding:10px 0;font-weight:700;">Section IV</td><td style="padding:10px 0;"><strong>Liability to the Public</strong></td></tr>
+                <tr><td style="padding:10px 0;font-weight:700;">Section V</td><td style="padding:10px 0;"><strong>Compensation for Death</strong> of the Insured</td></tr>
+            </table>
+
+            <h3 style="font-size:16px;margin-bottom:12px;color:#F15A24;">Insured Perils</h3>
+            <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:24px;">
+                ${['Fire', 'Lightning', 'Explosion', 'Theft', 'Riot & Strike', 'Malicious Damage', 'Aircraft Impact', 'Burst Pipes', 'Impact Damage', 'Earthquake / Volcano', 'Hurricane / Cyclone', 'Flood', 'Storm'].map(p => `<span style="padding:6px 14px;background:#FEF0EB;border-radius:100px;font-size:12px;font-weight:600;color:#F15A24;">${p}</span>`).join('')}
+            </div>
+
+            <h3 style="font-size:16px;margin-bottom:12px;color:#F15A24;">Limits of Liability</h3>
+            <table style="width:100%;border-collapse:collapse;margin-bottom:24px;font-size:13px;">
+                <tr style="border-bottom:1px solid #E8EAED;"><td style="padding:10px 0;">Section I (Building)</td><td style="padding:10px 0;font-weight:600;">Sum Insured on each item</td></tr>
+                <tr style="border-bottom:1px solid #E8EAED;"><td style="padding:10px 0;">Section II (Content)</td><td style="padding:10px 0;font-weight:600;">3% per article (Jewellery exclusive)</td></tr>
+                <tr style="border-bottom:1px solid #E8EAED;"><td style="padding:10px 0;">Platinum items (Gold, Silver, Art)</td><td style="padding:10px 0;font-weight:600;">10% of Contents SI or N500,000</td></tr>
+                <tr style="border-bottom:1px solid #E8EAED;"><td style="padding:10px 0;">Section III (Alt. Accommodation)</td><td style="padding:10px 0;font-weight:600;">10% Building SI + 10% Contents SI</td></tr>
+                <tr style="border-bottom:1px solid #E8EAED;"><td style="padding:10px 0;">Section IV (Public Liability)</td><td style="padding:10px 0;font-weight:600;">N250,000 per event</td></tr>
+                <tr><td style="padding:10px 0;">Section V (Death Compensation)</td><td style="padding:10px 0;font-weight:600;">N25,000 or half Total Sum</td></tr>
+            </table>
+
+            <h3 style="font-size:16px;margin-bottom:12px;color:#F15A24;">Key Conditions</h3>
+            <ul style="font-size:13px;color:#495057;padding-left:20px;line-height:1.8;margin-bottom:24px;">
+                <li>Theft cover only if accompanied by actual forcible and violent breaking in or out</li>
+                <li>Flood includes natural/artificial water, storm surges, overflowing waterways</li>
+                <li>No single jewelry item > 2.5% of contents SI (unless specifically insured)</li>
+                <li>Policy frequency: Annual</li>
+                <li>Currency: NGN</li>
+            </ul>
+
+            <div style="text-align:center;padding-top:16px;border-top:1px solid #E8EAED;">
+                <a href="/static/Leadway-Householder-Policy.pdf" target="_blank" style="display:inline-flex;align-items:center;gap:8px;padding:12px 28px;background:#F15A24;color:#fff;border-radius:8px;font-weight:600;font-size:14px;text-decoration:none;">
+                    Download Full Policy (PDF)
+                </a>
+            </div>
+        </div>
+    `;
+
+    const overlay = document.createElement('div');
+    overlay.id = 'policySummaryOverlay';
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:200;display:flex;align-items:center;justify-content:center;padding:20px;';
+    overlay.onclick = (ev) => { if (ev.target === overlay) overlay.remove(); };
+    overlay.innerHTML = `<div style="background:#fff;border-radius:16px;max-width:720px;width:100%;padding:36px;position:relative;"><button onclick="document.getElementById('policySummaryOverlay').remove()" style="position:absolute;top:16px;right:16px;background:none;border:none;font-size:24px;cursor:pointer;color:#6C757D;">&times;</button>${html}</div>`;
+    document.body.appendChild(overlay);
+}
+
 // ============= RATE CARD =============
 
 async function showRateCard(e) {
