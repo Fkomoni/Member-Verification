@@ -248,6 +248,37 @@ function displayResults(data, buildingSI, contentSI, location, coverType, durati
     showPage('page-results');
 }
 
+// ============= RATE CARD =============
+
+async function showRateCard(e) {
+    if (e) e.preventDefault();
+    try {
+        const res = await fetch('/api/rates');
+        const data = await res.json();
+        let html = '<h3 style="margin-bottom:16px;">Individual (Pre-Priced) Rates</h3><table class="breakdown-table">';
+        const labels = {building:'Building (Fire & Special Perils)',content:'Content (Fire, Burglary & Special Perils)',accidental_damage:'Accidental Damage',all_risks:'All Risks Extension',personal_accident:'Personal Accident',alt_accommodation:'Alternative Accommodation'};
+        for (const [k,v] of Object.entries(data.individual_rates)) {
+            html += `<tr><td>${labels[k]||k}</td><td>${(v*100).toFixed(3)}%</td></tr>`;
+        }
+        html += '</table><h3 style="margin:24px 0 16px;">Corporate (Underwritten) Rates</h3><table class="breakdown-table"><tr><td><strong>Section</strong></td><td><strong>Band 1</strong></td><td><strong>Band 2</strong></td><td><strong>Band 3</strong></td><td><strong>Band 4</strong></td></tr>';
+        for (const [section, bands] of Object.entries(data.corporate_rates)) {
+            html += `<tr><td>${section.charAt(0).toUpperCase()+section.slice(1)}</td>`;
+            for (const b of Object.values(bands)) html += `<td>${(b*100).toFixed(3)}%</td>`;
+            html += '</tr>';
+        }
+        html += '</table>';
+        // Show in a modal-like overlay
+        const overlay = document.createElement('div');
+        overlay.id = 'rateCardOverlay';
+        overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:200;display:flex;align-items:center;justify-content:center;padding:20px;';
+        overlay.onclick = (ev) => { if (ev.target === overlay) overlay.remove(); };
+        overlay.innerHTML = `<div style="background:#fff;border-radius:16px;max-width:700px;width:100%;max-height:80vh;overflow-y:auto;padding:36px;position:relative;"><button onclick="document.getElementById('rateCardOverlay').remove()" style="position:absolute;top:16px;right:16px;background:none;border:none;font-size:24px;cursor:pointer;color:#6C757D;">&times;</button><h2 style="font-size:24px;font-weight:700;margin-bottom:8px;">Leadway Householder Rate Card</h2><p style="color:#6C757D;font-size:13px;margin-bottom:24px;">Official rates from Leadway Assurance PRICING.xlsx</p>${html}</div>`;
+        document.body.appendChild(overlay);
+    } catch (err) {
+        alert('Failed to load rate card: ' + err.message);
+    }
+}
+
 // ============= INIT =============
 document.addEventListener('DOMContentLoaded', () => {
     showPage('page-select');

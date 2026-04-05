@@ -17,28 +17,15 @@
     <nav class="navbar">
         <div class="navbar-inner">
             <div class="logo">
-                <div class="logo-mark">
-                    <svg viewBox="0 0 48 48" width="40" height="40">
-                        <circle cx="24" cy="24" r="22" fill="url(#sunset)"/>
-                        <defs>
-                            <linearGradient id="sunset" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="0%" stop-color="#F58220"/>
-                                <stop offset="60%" stop-color="#E07518"/>
-                                <stop offset="100%" stop-color="#C4581A"/>
-                            </linearGradient>
-                        </defs>
-                        <path d="M14 32 L16 24 L18 22 L17 18 L19 16 L21 18 L22 22 L26 22 L28 18 L30 16 L31 18 L30 22 L32 24 L34 32 L30 32 L29 28 L19 28 L18 32 Z" fill="#1A1A2E" opacity="0.85"/>
-                    </svg>
-                </div>
-                <div class="logo-text">
+                <img src="https://www.leadway.com/wp-content/uploads/2022/07/leadway-logo.svg" alt="Leadway Assurance" class="logo-img" onerror="this.onerror=null;this.src='';this.style.display='none';document.querySelector('.logo-fallback').style.display='flex';">
+                <div class="logo-fallback" style="display:none;">
                     <span class="logo-name">LEADWAY</span>
                     <span class="logo-sub">Assurance</span>
                 </div>
             </div>
             <ul class="nav-links">
                 <li><a href="#" class="nav-active">HOUSEHOLDER</a></li>
-                <li><a href="/api/rates" target="_blank">RATE CARD</a></li>
-                <li><a href="/docs" target="_blank">API</a></li>
+                <li><a href="#rateCardSection" onclick="showRateCard(event)">RATE CARD</a></li>
             </ul>
             <button class="mobile-menu" onclick="document.querySelector('.nav-links').classList.toggle('open')">
                 <i data-lucide="menu" style="width:28px;height:28px;"></i>
@@ -50,64 +37,44 @@
     <!-- PAGE 1: PRODUCT SELECTION                     -->
     <!-- ============================================= -->
     <div id="page-select" class="page active-page">
-        <!-- Hero -->
+        <!-- Hero with background -->
         <section class="select-hero">
             <div class="select-hero-inner">
                 <span class="hero-tag">HOUSEHOLDER INSURANCE</span>
-                <h1>What type of householder<br>cover do you need?</h1>
-                <p>Choose the option that best describes your property</p>
+                <h1>Protect your property.<br><em>Get covered today.</em></h1>
+                <p>Comprehensive cover for buildings and contents — for individuals and businesses across Nigeria.</p>
             </div>
         </section>
 
-        <!-- Product Cards -->
+        <!-- Single Get a Quote Card -->
         <section class="product-cards-section">
             <div class="container">
-                <div class="product-cards">
-                    <!-- Individual / Retail Card -->
-                    <div class="product-card" onclick="selectProduct('individual')">
-                        <div class="product-card-img">
-                            <img src="https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=500&h=320&fit=crop&q=80"
-                                 alt="Residential home" loading="lazy">
-                            <div class="product-card-radio">
-                                <div class="radio-dot"></div>
-                            </div>
-                        </div>
-                        <div class="product-card-body">
-                            <div class="product-card-icon">
-                                <i data-lucide="home" style="width:24px;height:24px;"></i>
-                            </div>
-                            <div class="product-card-info">
-                                <h3>Individual / Retail</h3>
-                                <span class="product-card-sub">PERSONAL PROPERTY</span>
-                            </div>
-                        </div>
-                        <p class="product-card-desc">Protect your home, personal belongings, and household contents against fire, theft, and flood.</p>
-                        <div class="product-card-cta">
-                            Start Quote <i data-lucide="arrow-right" style="width:16px;height:16px;"></i>
+                <div class="single-quote-card" onclick="selectProduct('individual')">
+                    <div class="sqc-image">
+                        <img src="https://images.unsplash.com/photo-1613490493576-7fde63acd811?w=800&h=400&fit=crop&q=85"
+                             alt="Modern Nigerian home" loading="lazy">
+                        <div class="sqc-overlay">
+                            <i data-lucide="shield-check" style="width:28px;height:28px;"></i>
+                            <span>Powered by Leadway</span>
                         </div>
                     </div>
-
-                    <!-- Corporate Card -->
-                    <div class="product-card" onclick="selectProduct('corporate')">
-                        <div class="product-card-img">
-                            <img src="https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=500&h=320&fit=crop&q=80"
-                                 alt="Corporate building" loading="lazy">
-                            <div class="product-card-radio">
-                                <div class="radio-dot"></div>
+                    <div class="sqc-body">
+                        <div class="sqc-info">
+                            <h2>Householder Insurance</h2>
+                            <p>Get an instant premium quote for your property. Choose between <strong>Individual (Retail)</strong> or <strong>Corporate (Commercial)</strong> cover inside the quote builder.</p>
+                            <div class="sqc-covers">
+                                <span class="sqc-tag"><i data-lucide="flame" style="width:14px;height:14px;"></i> Fire &amp; Special Perils</span>
+                                <span class="sqc-tag"><i data-lucide="lock" style="width:14px;height:14px;"></i> Burglary &amp; Theft</span>
+                                <span class="sqc-tag"><i data-lucide="shield-check" style="width:14px;height:14px;"></i> All Risks</span>
+                                <span class="sqc-tag"><i data-lucide="heart-pulse" style="width:14px;height:14px;"></i> Personal Accident</span>
                             </div>
                         </div>
-                        <div class="product-card-body">
-                            <div class="product-card-icon corporate-icon">
-                                <i data-lucide="building-2" style="width:24px;height:24px;"></i>
-                            </div>
-                            <div class="product-card-info">
-                                <h3>Corporate / Commercial</h3>
-                                <span class="product-card-sub">BUSINESS PROPERTY</span>
-                            </div>
-                        </div>
-                        <p class="product-card-desc">Coverage for commercial buildings, office contents, and business assets with volume discounts.</p>
-                        <div class="product-card-cta">
-                            Start Quote <i data-lucide="arrow-right" style="width:16px;height:16px;"></i>
+                        <div class="sqc-cta">
+                            <button class="get-quote-btn" onclick="selectProduct('individual')">
+                                Get a Quote
+                                <i data-lucide="arrow-right" style="width:18px;height:18px;"></i>
+                            </button>
+                            <span class="sqc-time">Takes less than 60 seconds</span>
                         </div>
                     </div>
                 </div>
@@ -131,18 +98,18 @@
                     </div>
                     <div class="stat-divider"></div>
                     <div class="stat-item">
-                        <i data-lucide="trending-down" style="width:20px;height:20px;color:#2E7D32;"></i>
-                        <div>
-                            <strong>34.6%</strong>
-                            <span>Loss Ratio</span>
-                        </div>
-                    </div>
-                    <div class="stat-divider"></div>
-                    <div class="stat-item">
                         <i data-lucide="clock" style="width:20px;height:20px;color:#F58220;"></i>
                         <div>
                             <strong>Instant</strong>
                             <span>Quote Generation</span>
+                        </div>
+                    </div>
+                    <div class="stat-divider"></div>
+                    <div class="stat-item">
+                        <i data-lucide="flame" style="width:20px;height:20px;color:#E65100;"></i>
+                        <div>
+                            <strong>Fire</strong>
+                            <span>Theft &amp; Flood Cover</span>
                         </div>
                     </div>
                 </div>
@@ -302,7 +269,7 @@
                         <label class="cov-card selected" id="cov-building">
                             <input type="checkbox" id="incBuilding" checked onchange="toggleCoverage(this)">
                             <div class="cov-card-img">
-                                <img src="https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=400&h=180&fit=crop&q=80" alt="Building exterior" loading="lazy">
+                                <img src="https://images.unsplash.com/photo-1613490493576-7fde63acd811?w=400&h=180&fit=crop&q=85" alt="Building exterior" loading="lazy">
                                 <div class="cov-card-check"><i data-lucide="check" style="width:14px;height:14px;"></i></div>
                                 <div class="cov-card-badge" id="rateBuilding">0.10%</div>
                             </div>
@@ -317,7 +284,7 @@
                         <label class="cov-card selected" id="cov-content">
                             <input type="checkbox" id="incContent" checked onchange="toggleCoverage(this)">
                             <div class="cov-card-img">
-                                <img src="https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?w=400&h=180&fit=crop&q=80" alt="Living room interior" loading="lazy">
+                                <img src="https://images.unsplash.com/photo-1583847268964-b28dc8f51f92?w=400&h=180&fit=crop&q=85" alt="Living room interior" loading="lazy">
                                 <div class="cov-card-check"><i data-lucide="check" style="width:14px;height:14px;"></i></div>
                                 <div class="cov-card-badge" id="rateContent">0.20%</div>
                             </div>
@@ -336,7 +303,7 @@
                         <label class="cov-card mini" id="cov-accidental">
                             <input type="checkbox" id="incAccidental" onchange="toggleCoverage(this)">
                             <div class="cov-card-img">
-                                <img src="https://images.unsplash.com/photo-1558618666-fcd25c85f82e?w=300&h=130&fit=crop&q=80" alt="Broken screen" loading="lazy">
+                                <img src="https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=300&h=130&fit=crop&q=85" alt="Home repair" loading="lazy">
                                 <div class="cov-card-check"><i data-lucide="check" style="width:12px;height:12px;"></i></div>
                                 <div class="cov-card-badge small">0.125%</div>
                             </div>
@@ -351,7 +318,7 @@
                         <label class="cov-card mini" id="cov-allrisks">
                             <input type="checkbox" id="incAllRisks" onchange="toggleCoverage(this)">
                             <div class="cov-card-img">
-                                <img src="https://images.unsplash.com/photo-1560185893-a55cbc8c57e8?w=300&h=130&fit=crop&q=80" alt="Home valuables" loading="lazy">
+                                <img src="https://images.unsplash.com/photo-1558618666-fcd25c85f82e?w=300&h=130&fit=crop&q=85" alt="Electronics and valuables" loading="lazy">
                                 <div class="cov-card-check"><i data-lucide="check" style="width:12px;height:12px;"></i></div>
                                 <div class="cov-card-badge small">2.0%</div>
                             </div>
@@ -366,7 +333,7 @@
                         <label class="cov-card mini" id="cov-pa">
                             <input type="checkbox" id="incPA" onchange="toggleCoverage(this)">
                             <div class="cov-card-img">
-                                <img src="https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=300&h=130&fit=crop&q=80" alt="Medical care" loading="lazy">
+                                <img src="https://images.unsplash.com/photo-1505751172876-fa1923c5c528?w=300&h=130&fit=crop&q=85" alt="Medical care" loading="lazy">
                                 <div class="cov-card-check"><i data-lucide="check" style="width:12px;height:12px;"></i></div>
                                 <div class="cov-card-badge small">0.185%</div>
                             </div>
@@ -381,7 +348,7 @@
                         <label class="cov-card mini" id="cov-altacc">
                             <input type="checkbox" id="incAltAcc" onchange="toggleCoverage(this)">
                             <div class="cov-card-img">
-                                <img src="https://images.unsplash.com/photo-1631049307264-da0ec9d70304?w=300&h=130&fit=crop&q=80" alt="Hotel room" loading="lazy">
+                                <img src="https://images.unsplash.com/photo-1590490360182-c33d57733427?w=300&h=130&fit=crop&q=85" alt="Hotel room" loading="lazy">
                                 <div class="cov-card-check"><i data-lucide="check" style="width:12px;height:12px;"></i></div>
                                 <div class="cov-card-badge small">0.20%</div>
                             </div>
@@ -574,11 +541,8 @@
     <footer class="footer" id="mainFooter">
         <div class="footer-inner">
             <div class="footer-brand">
-                <div class="logo-text">
-                    <span class="logo-name" style="color:#fff;">LEADWAY</span>
-                    <span class="logo-sub">Assurance</span>
-                </div>
-                <p>Insuring Happiness since 1970. RC 7588</p>
+                <img src="https://www.leadway.com/wp-content/uploads/2022/07/leadway-logo.svg" alt="Leadway" class="footer-logo" onerror="this.style.display='none';">
+                <p>Insuring Happiness since 1970.<br>RC 7588</p>
             </div>
             <div class="footer-col">
                 <h4>Products</h4>
@@ -587,10 +551,14 @@
                 <a href="#">Fire Insurance</a>
             </div>
             <div class="footer-col">
+                <h4>Developer</h4>
+                <a href="/docs" target="_blank">API Documentation</a>
+                <a href="/api/rates" target="_blank">Rate Card (JSON)</a>
+            </div>
+            <div class="footer-col">
                 <h4>Company</h4>
                 <a href="#">About Leadway</a>
                 <a href="#">Contact Us</a>
-                <a href="#">Careers</a>
             </div>
         </div>
         <div class="footer-bottom">
