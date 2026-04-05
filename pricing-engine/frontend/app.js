@@ -211,6 +211,7 @@ function displayResults(data, buildingSI, contentSI, location, coverType, durati
         include_all_risks: document.getElementById('incAllRisks').checked,
         include_personal_accident: document.getElementById('incPA').checked,
         include_alt_accommodation: document.getElementById('incAltAcc').checked,
+        roof_type: document.getElementById('roofType').value,
         building_age_years: parseInt(document.getElementById('buildingAge').value) || 0,
         has_security: document.getElementById('hasSecurity').checked,
         has_fire_extinguisher: document.getElementById('hasFireExtinguisher').checked,

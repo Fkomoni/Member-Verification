@@ -159,7 +159,14 @@ def generate_policy_pdf(data: dict) -> bytes:
     elements.append(Paragraph("INSURED PROPERTY", styles['SectionHead']))
 
     address = data.get('address', 'As declared in proposal')
+    roof_labels = {
+        'concrete_tiles': 'Concrete / Clay Tiles',
+        'metal_sheets': 'Metal Sheets (Corrugated / Standing Seam)',
+        'flat_concrete': 'Flat Concrete / Screed Roof',
+    }
+    roof_type = roof_labels.get(data.get('roof_type', ''), 'Not specified')
     elements.append(Paragraph(f"<b>Address:</b> {address}", styles['PolicyBody']))
+    elements.append(Paragraph(f"<b>Roof Type:</b> {roof_type}", styles['PolicyBody']))
 
     building_si = data.get('building_sum_insured', 0)
     content_si = data.get('content_sum_insured', 0)

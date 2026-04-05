@@ -50,6 +50,7 @@ class QuoteRequest(BaseModel):
     include_all_risks: bool = Field(default=False)
     include_personal_accident: bool = Field(default=False)
     include_alt_accommodation: bool = Field(default=False)
+    roof_type: str = Field(default="", description="Roof type: concrete_tiles, metal_sheets, flat_concrete")
     building_age_years: int = Field(default=0, ge=0)
     has_security: bool = Field(default=False)
     has_fire_extinguisher: bool = Field(default=False)
@@ -204,6 +205,7 @@ class PolicyRequest(BaseModel):
     include_all_risks: bool = False
     include_personal_accident: bool = False
     include_alt_accommodation: bool = False
+    roof_type: str = ""
     building_age_years: int = 0
     has_security: bool = False
     has_fire_extinguisher: bool = False
@@ -270,6 +272,7 @@ async def generate_policy(request: PolicyRequest):
         'location': request.location,
         'building_sum_insured': request.building_sum_insured,
         'content_sum_insured': request.content_sum_insured,
+        'roof_type': request.roof_type,
         'building_photos': request.building_photos,
         'duration_months': request.policy_duration_months,
         'coverages': coverages,
