@@ -7,6 +7,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,600;1,700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/static/styles.css">
     <script src="https://unpkg.com/lucide@0.344.0/dist/umd/lucide.js"></script>
+    <script src="https://js.paystack.co/v1/inline.js"></script>
 </head>
 <body>
 
@@ -618,8 +619,56 @@
                     </div>
                 </div>
 
-                <div class="results-actions">
-                    <button class="action-btn primary" onclick="window.print()">
+                <!-- Proceed to Payment Section -->
+                <div class="payment-section" id="paymentSection">
+                    <h4 class="payment-title">
+                        <i data-lucide="credit-card" style="width:18px;height:18px;"></i>
+                        Proceed to Payment
+                    </h4>
+                    <p class="payment-desc">Enter your details to pay and receive your policy document instantly.</p>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Full Name <span class="req">*</span></label>
+                            <input type="text" id="payName" placeholder="e.g. Taiwo Olawale">
+                        </div>
+                        <div class="form-group">
+                            <label>Email Address <span class="req">*</span></label>
+                            <input type="email" id="payEmail" placeholder="you@email.com">
+                        </div>
+                        <div class="form-group">
+                            <label>Phone Number <span class="req">*</span></label>
+                            <input type="tel" id="payPhone" placeholder="08012345678">
+                        </div>
+                        <div class="form-group">
+                            <label>Property Address</label>
+                            <input type="text" id="payAddress" placeholder="Property address">
+                        </div>
+                    </div>
+                    <button class="action-btn primary pay-btn" id="payBtn" onclick="initiatePayment()" style="width:100%;margin-top:12px;">
+                        <i data-lucide="lock" style="width:16px;height:16px;"></i>
+                        Pay <span id="payAmount"></span> &amp; Get Policy
+                    </button>
+                    <p style="text-align:center;margin-top:8px;font-size:11px;color:#9E9E9E;">
+                        <i data-lucide="shield-check" style="width:12px;height:12px;display:inline;vertical-align:middle;"></i>
+                        Secured by Paystack. Your card details are never stored.
+                    </p>
+                </div>
+
+                <!-- Success state (hidden until payment) -->
+                <div class="payment-success" id="paymentSuccess" style="display:none;">
+                    <div class="success-icon">
+                        <i data-lucide="check-circle" style="width:48px;height:48px;color:#2E7D32;"></i>
+                    </div>
+                    <h4>Payment Successful!</h4>
+                    <p>Your policy document is being generated...</p>
+                    <button class="action-btn primary" id="downloadPolicyBtn" onclick="downloadPolicy()" style="width:100%;margin-top:16px;">
+                        <i data-lucide="download" style="width:16px;height:16px;"></i>
+                        Download Your Policy Document
+                    </button>
+                </div>
+
+                <div class="results-actions" style="margin-top:16px;">
+                    <button class="action-btn secondary" onclick="window.print()">
                         <i data-lucide="printer" style="width:16px;height:16px;"></i>
                         Print Quote
                     </button>

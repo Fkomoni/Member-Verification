@@ -197,6 +197,32 @@ async function getQuote() {
 // ============= DISPLAY RESULTS =============
 
 function displayResults(data, buildingSI, contentSI, location, coverType, duration) {
+    // Store for payment/policy generation
+    lastQuoteData = data;
+    lastQuoteParams = {
+        client_type: clientType,
+        building_sum_insured: buildingSI,
+        content_sum_insured: contentSI,
+        location: location,
+        cover_type: document.getElementById('coverType').value,
+        include_building: document.getElementById('incBuilding').checked,
+        include_content: document.getElementById('incContent').checked,
+        include_accidental_damage: document.getElementById('incAccidental').checked,
+        include_all_risks: document.getElementById('incAllRisks').checked,
+        include_personal_accident: document.getElementById('incPA').checked,
+        include_alt_accommodation: document.getElementById('incAltAcc').checked,
+        building_age_years: parseInt(document.getElementById('buildingAge').value) || 0,
+        has_security: document.getElementById('hasSecurity').checked,
+        has_fire_extinguisher: document.getElementById('hasFireExtinguisher').checked,
+        claims_history_count: parseInt(document.getElementById('claimsHistory').value),
+        policy_duration_months: duration,
+    };
+
+    // Reset payment state
+    document.getElementById('paymentSection').style.display = '';
+    document.getElementById('paymentSuccess').style.display = 'none';
+    document.getElementById('payAmount').textContent = formatNGN(data.gross_premium);
+
     // Left panel
     document.getElementById('grossPremiumBig').textContent = formatNGN(data.gross_premium);
     document.getElementById('rateDisplay').textContent = 'Rate: ' + data.rate_per_mille.toFixed(2) + ' per mille';
@@ -263,6 +289,106 @@ function displayResults(data, buildingSI, contentSI, location, coverType, durati
     document.getElementById('netNet').textContent = formatNGN(data.net_premium);
 
     showPage('page-results');
+}
+
+// ============= PAYMENT & POLICY =============
+
+let lastQuoteData = null;
+let lastQuoteParams = null;
+let paymentReference = null;
+
+function initiatePayment() {
+    const name = document.getElementById('payName').value.trim();
+    const email = document.getElementById('payEmail').value.trim();
+    const phone = document.getElementById('payPhone').value.trim();
+
+    if (!name) { alert('Please enter your full name.'); return; }
+    if (!email || !email.includes('@')) { alert('Please enter a valid email address.'); return; }
+    if (!phone) { alert('Please enter your phone number.'); return; }
+
+    const amount = lastQuoteData.gross_premium;
+
+    // Fetch Paystack public key then initiate
+    fetch('/api/paystack-key')
+        .then(r => r.json())
+        .then(data => {
+            const handler = PaystackPop.setup({
+                key: data.public_key,
+                email: email,
+                amount: Math.round(amount * 100), // Paystack expects kobo
+                currency: 'NGN',
+                ref: 'LW-HH-' + Date.now() + '-' + Math.random().toString(36).substr(2, 6),
+                metadata: {
+                    custom_fields: [
+                        { display_name: "Customer Name", variable_name: "customer_name", value: name },
+                        { display_name: "Phone", variable_name: "phone", value: phone },
+                        { display_name: "Product", variable_name: "product", value: "Householder Insurance" },
+                    ]
+                },
+                callback: function(response) {
+                    // Payment successful
+                    paymentReference = response.reference;
+                    onPaymentSuccess(name, email, phone);
+                },
+                onClose: function() {
+                    // User closed payment window
+                }
+            });
+            handler.openIframe();
+        })
+        .catch(err => {
+            alert('Could not initialize payment: ' + err.message);
+        });
+}
+
+function onPaymentSuccess(name, email, phone) {
+    // Hide payment form, show success
+    document.getElementById('paymentSection').style.display = 'none';
+    document.getElementById('paymentSuccess').style.display = 'block';
+    if (window.lucide) lucide.createIcons();
+}
+
+async function downloadPolicy() {
+    const btn = document.getElementById('downloadPolicyBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> Generating...';
+
+    const name = document.getElementById('payName').value.trim();
+    const email = document.getElementById('payEmail').value.trim();
+    const phone = document.getElementById('payPhone').value.trim();
+    const address = document.getElementById('payAddress').value.trim();
+
+    try {
+        const response = await fetch('/api/generate-policy', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                customer_name: name,
+                customer_email: email,
+                customer_phone: phone,
+                address: address,
+                payment_reference: paymentReference || 'N/A',
+                ...lastQuoteParams,
+            })
+        });
+
+        if (!response.ok) throw new Error('Failed to generate policy');
+
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `Leadway-Householder-Policy-${name.replace(/\s+/g, '-')}.pdf`;
+        a.click();
+        window.URL.revokeObjectURL(url);
+
+    } catch (error) {
+        alert('Error generating policy: ' + error.message);
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i data-lucide="download" style="width:16px;height:16px;"></i> Download Your Policy Document';
+        if (window.lucide) lucide.createIcons();
+    }
 }
 
 // ============= POLICY SUMMARY =============

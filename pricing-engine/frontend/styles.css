@@ -431,6 +431,17 @@ a { text-decoration: none; color: inherit; }
 .action-btn.secondary { background: var(--white); color: var(--dark); border: 2px solid var(--gray-300); }
 .action-btn.secondary:hover { border-color: var(--dark); }
 
+/* ============= PAYMENT SECTION ============= */
+.payment-section { background: var(--gray-100); border: 2px solid var(--orange); border-radius: var(--r-lg); padding: 24px; margin-bottom: 16px; }
+.payment-title { display: flex; align-items: center; gap: 8px; font-size: 16px; font-weight: 800; color: var(--orange); text-transform: uppercase; margin-bottom: 6px; }
+.payment-desc { font-size: 13px; color: var(--gray-600); margin-bottom: 16px; }
+.pay-btn { font-size: 16px !important; padding: 16px !important; }
+
+.payment-success { text-align: center; background: var(--green-light); border: 2px solid var(--green); border-radius: var(--r-lg); padding: 32px; margin-bottom: 16px; }
+.success-icon { margin-bottom: 12px; }
+.payment-success h4 { font-size: 20px; font-weight: 800; color: var(--green); margin-bottom: 4px; }
+.payment-success p { font-size: 13px; color: var(--gray-600); }
+
 /* ============= FOOTER — Dark with orange accents ============= */
 .footer { background: var(--dark); color: rgba(255,255,255,0.7); }
 .footer-inner { max-width: 1100px; margin: 0 auto; padding: 48px 40px 32px; display: grid; grid-template-columns: 1.5fr 1fr 1fr 1fr; gap: 32px; }

@@ -13,10 +13,12 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, Response
 from pydantic import BaseModel, Field
+import os
 
 from engine import ClientType, CoverType, Location, RiskProfile, calculate_premium
+from engine.policy_generator import generate_policy_pdf
 
 app = FastAPI(
     title="Leadway Householder Pricing Engine",
@@ -178,6 +180,130 @@ async def get_rate_card():
         "minimum_premiums": {k.value: v for k, v in MINIMUM_PREMIUMS.items()},
         "commission_rates": {k.value: v for k, v in COMMISSION_RATES.items()},
     }
+
+
+class PolicyRequest(BaseModel):
+    # Customer details
+    customer_name: str
+    customer_email: str
+    customer_phone: str
+    address: str = ""
+    # Payment
+    payment_reference: str
+    # Quote details (passed from frontend)
+    client_type: str
+    building_sum_insured: float = 0
+    content_sum_insured: float = 0
+    location: str
+    cover_type: str = "standard"
+    include_building: bool = True
+    include_content: bool = True
+    include_accidental_damage: bool = False
+    include_all_risks: bool = False
+    include_personal_accident: bool = False
+    include_alt_accommodation: bool = False
+    building_age_years: int = 0
+    has_security: bool = False
+    has_fire_extinguisher: bool = False
+    claims_history_count: int = 0
+    policy_duration_months: int = 12
+
+
+@app.post("/api/generate-policy")
+async def generate_policy(request: PolicyRequest):
+    """Generate a policy document PDF after payment."""
+
+    # Re-calculate premium to validate
+    try:
+        client_type = ClientType(request.client_type.lower())
+        location = Location(request.location.lower())
+        cover_type = CoverType(request.cover_type.lower())
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+
+    risk = RiskProfile(
+        client_type=client_type,
+        building_sum_insured=request.building_sum_insured,
+        content_sum_insured=request.content_sum_insured,
+        location=location,
+        cover_type=cover_type,
+        include_building=request.include_building,
+        include_content=request.include_content,
+        include_accidental_damage=request.include_accidental_damage,
+        include_all_risks=request.include_all_risks,
+        include_personal_accident=request.include_personal_accident,
+        include_alt_accommodation=request.include_alt_accommodation,
+        building_age_years=request.building_age_years,
+        has_security=request.has_security,
+        has_fire_extinguisher=request.has_fire_extinguisher,
+        claims_history_count=request.claims_history_count,
+        policy_duration_months=request.policy_duration_months,
+    )
+
+    result = calculate_premium(risk)
+
+    coverages = []
+    if request.include_building:
+        coverages.append("Building (Fire & Special Perils)")
+    if request.include_content:
+        coverages.append("Content (Fire, Burglary & Special Perils)")
+    if request.include_accidental_damage:
+        coverages.append("Accidental Damage to Content")
+    if request.include_all_risks:
+        coverages.append("All Risks Extension")
+    if request.include_personal_accident:
+        coverages.append("Personal Accident")
+    if request.include_alt_accommodation:
+        coverages.append("Alternative Accommodation")
+
+    # Build policy data
+    policy_data = {
+        'customer_name': request.customer_name,
+        'customer_email': request.customer_email,
+        'customer_phone': request.customer_phone,
+        'address': request.address,
+        'payment_reference': request.payment_reference,
+        'client_type': request.client_type,
+        'cover_type': request.cover_type,
+        'location': request.location,
+        'building_sum_insured': request.building_sum_insured,
+        'content_sum_insured': request.content_sum_insured,
+        'duration_months': request.policy_duration_months,
+        'coverages': coverages,
+        'building_premium': result.building_premium,
+        'content_premium': result.content_premium,
+        'accidental_damage_premium': result.accidental_damage_premium,
+        'all_risks_premium': result.all_risks_premium,
+        'personal_accident_premium': result.personal_accident_premium,
+        'alt_accommodation_premium': result.alt_accommodation_premium,
+        'base_premium': result.base_premium,
+        'location_adjustment': result.location_adjustment,
+        'cover_type_adjustment': result.cover_type_adjustment,
+        'claims_loading': result.claims_loading,
+        'security_discount': result.security_discount,
+        'fire_equipment_discount': result.fire_equipment_discount,
+        'duration_adjustment': result.duration_adjustment,
+        'gross_premium': result.gross_premium,
+        'commission': result.commission,
+        'net_premium': result.net_premium,
+    }
+
+    pdf_bytes = generate_policy_pdf(policy_data)
+
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": f'attachment; filename="Leadway-Householder-Policy-{request.customer_name.replace(" ", "-")}.pdf"'
+        }
+    )
+
+
+@app.get("/api/paystack-key")
+async def get_paystack_key():
+    """Return the Paystack public key (safe to expose)."""
+    key = os.environ.get("PAYSTACK_PUBLIC_KEY", "pk_test_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")
+    return {"public_key": key}
 
 
 if __name__ == "__main__":
