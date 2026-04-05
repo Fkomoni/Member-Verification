@@ -289,6 +289,73 @@ function displayResults(data, buildingSI, contentSI, location, coverType, durati
     showPage('page-results');
 }
 
+// ============= PHOTO UPLOAD =============
+
+let uploadedPhotos = []; // Array of { file, dataUrl }
+const MAX_PHOTOS = 4;
+const MAX_SIZE_MB = 5;
+
+function handleDrop(e) {
+    e.preventDefault();
+    e.currentTarget.classList.remove('drag-over');
+    handleFiles(e.dataTransfer.files);
+}
+
+function handleFiles(files) {
+    for (const file of files) {
+        if (uploadedPhotos.length >= MAX_PHOTOS) {
+            alert('Maximum ' + MAX_PHOTOS + ' photos allowed.');
+            break;
+        }
+        if (!file.type.startsWith('image/')) {
+            alert(file.name + ' is not an image file.');
+            continue;
+        }
+        if (file.size > MAX_SIZE_MB * 1024 * 1024) {
+            alert(file.name + ' exceeds ' + MAX_SIZE_MB + 'MB limit.');
+            continue;
+        }
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            uploadedPhotos.push({ file: file, dataUrl: e.target.result });
+            renderPreviews();
+        };
+        reader.readAsDataURL(file);
+    }
+}
+
+function removePhoto(index) {
+    uploadedPhotos.splice(index, 1);
+    renderPreviews();
+}
+
+function renderPreviews() {
+    const container = document.getElementById('uploadPreviews');
+    const placeholder = document.getElementById('uploadPlaceholder');
+
+    if (uploadedPhotos.length === 0) {
+        placeholder.style.display = '';
+        container.innerHTML = '';
+        return;
+    }
+
+    placeholder.style.display = 'none';
+    container.innerHTML = uploadedPhotos.map((photo, i) =>
+        `<div class="upload-thumb">
+            <img src="${photo.dataUrl}" alt="Building photo ${i + 1}">
+            <button class="upload-thumb-remove" onclick="event.stopPropagation();removePhoto(${i});">&times;</button>
+        </div>`
+    ).join('');
+
+    // Show add more button if under limit
+    if (uploadedPhotos.length < MAX_PHOTOS) {
+        container.innerHTML += `<div class="upload-thumb" style="display:flex;align-items:center;justify-content:center;background:#F5F5F5;border-style:dashed;">
+            <span style="font-size:28px;color:#9E9E9E;">+</span>
+        </div>`;
+    }
+}
+
 // ============= PAYMENT & POLICY =============
 
 let lastQuoteData = null;
@@ -366,6 +433,7 @@ async function downloadPolicy() {
                 customer_phone: phone,
                 address: address,
                 payment_reference: paymentReference || 'N/A',
+                building_photos: uploadedPhotos.map(p => p.dataUrl),
                 ...lastQuoteParams,
             })
         });

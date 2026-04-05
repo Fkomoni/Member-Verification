@@ -190,6 +190,8 @@ class PolicyRequest(BaseModel):
     address: str = ""
     # Payment
     payment_reference: str
+    # Building photos (base64 data URLs)
+    building_photos: list[str] = []
     # Quote details (passed from frontend)
     client_type: str
     building_sum_insured: float = 0
@@ -268,6 +270,7 @@ async def generate_policy(request: PolicyRequest):
         'location': request.location,
         'building_sum_insured': request.building_sum_insured,
         'content_sum_insured': request.content_sum_insured,
+        'building_photos': request.building_photos,
         'duration_months': request.policy_duration_months,
         'coverages': coverages,
         'building_premium': result.building_premium,

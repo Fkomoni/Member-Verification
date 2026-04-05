@@ -189,7 +189,39 @@ def generate_policy_pdf(data: dict) -> bytes:
         ('GRID', (0, 0), (-1, 0), 0.5, ORANGE),
     ]))
     elements.append(si_table)
-    elements.append(Spacer(1, 6*mm))
+    elements.append(Spacer(1, 4*mm))
+
+    # --- BUILDING PHOTOS ---
+    building_photos = data.get('building_photos', [])
+    if building_photos:
+        elements.append(Paragraph("BUILDING PHOTOGRAPHS", styles['SectionHead']))
+        photo_row = []
+        for i, photo_data in enumerate(building_photos[:4]):
+            try:
+                # photo_data is a base64 data URL: "data:image/jpeg;base64,..."
+                if ',' in photo_data:
+                    header, b64 = photo_data.split(',', 1)
+                else:
+                    b64 = photo_data
+                import base64
+                img_bytes = base64.b64decode(b64)
+                img_buffer = io.BytesIO(img_bytes)
+                photo_img = Image(img_buffer, width=36*mm, height=28*mm)
+                photo_row.append(photo_img)
+            except Exception:
+                pass
+
+        if photo_row:
+            # Arrange photos in a row (max 4)
+            photo_table = Table([photo_row], colWidths=[40*mm] * len(photo_row))
+            photo_table.setStyle(TableStyle([
+                ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+                ('TOPPADDING', (0, 0), (-1, -1), 2),
+                ('BOTTOMPADDING', (0, 0), (-1, -1), 2),
+            ]))
+            elements.append(photo_table)
+        elements.append(Spacer(1, 4*mm))
 
     # --- COVERAGES ---
     elements.append(Paragraph("COVERAGES INCLUDED", styles['SectionHead']))
