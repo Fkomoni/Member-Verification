@@ -17,11 +17,7 @@
     <nav class="navbar">
         <div class="navbar-inner">
             <div class="logo">
-                <img src="https://www.leadway.com/wp-content/uploads/2022/07/leadway-logo.svg" alt="Leadway Assurance" class="logo-img" onerror="this.onerror=null;this.src='';this.style.display='none';document.querySelector('.logo-fallback').style.display='flex';">
-                <div class="logo-fallback" style="display:none;">
-                    <span class="logo-name">LEADWAY</span>
-                    <span class="logo-sub">Assurance</span>
-                </div>
+                <img src="/static/leadway-logo.jpeg" alt="Leadway Assurance" class="logo-img">
             </div>
             <ul class="nav-links">
                 <li class="nav-dropdown">
@@ -72,8 +68,8 @@
             <div class="container">
                 <div class="single-quote-card" onclick="selectProduct('individual')">
                     <div class="sqc-image">
-                        <img src="https://images.unsplash.com/photo-1613490493576-7fde63acd811?w=800&h=400&fit=crop&q=85"
-                             alt="Modern Nigerian home" loading="lazy">
+                        <img src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=900&h=420&fit=crop&q=90"
+                             alt="Modern home exterior" loading="lazy">
                         <div class="sqc-overlay">
                             <i data-lucide="shield-check" style="width:28px;height:28px;"></i>
                             <span>Powered by Leadway</span>
@@ -151,6 +147,7 @@
                 </button>
 
                 <div class="quote-info-content">
+                    <img src="/static/leadway-logo.jpeg" alt="Leadway" class="panel-logo">
                     <span class="info-tag" id="infoTag">HOUSEHOLDER INSURANCE</span>
                     <h2 id="infoTitle">Protect What Matters</h2>
                     <p id="infoDesc">Get comprehensive cover for your property against the most common risks — with pricing powered by real claims data.</p>
@@ -290,7 +287,7 @@
                         <label class="cov-card selected" id="cov-building">
                             <input type="checkbox" id="incBuilding" checked onchange="toggleCoverage(this)">
                             <div class="cov-card-img">
-                                <img src="https://images.unsplash.com/photo-1613490493576-7fde63acd811?w=400&h=180&fit=crop&q=85" alt="Building exterior" loading="lazy">
+                                <img id="buildingCovImg" src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=400&h=180&fit=crop&q=90" alt="Building exterior" loading="lazy">
                                 <div class="cov-card-check"><i data-lucide="check" style="width:14px;height:14px;"></i></div>
                                 <div class="cov-card-badge" id="rateBuilding">0.10%</div>
                             </div>
@@ -305,7 +302,7 @@
                         <label class="cov-card selected" id="cov-content">
                             <input type="checkbox" id="incContent" checked onchange="toggleCoverage(this)">
                             <div class="cov-card-img">
-                                <img src="https://images.unsplash.com/photo-1583847268964-b28dc8f51f92?w=400&h=180&fit=crop&q=85" alt="Living room interior" loading="lazy">
+                                <img src="https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?w=400&h=180&fit=crop&q=90" alt="Furnished living room" loading="lazy">
                                 <div class="cov-card-check"><i data-lucide="check" style="width:14px;height:14px;"></i></div>
                                 <div class="cov-card-badge" id="rateContent">0.20%</div>
                             </div>
@@ -324,7 +321,7 @@
                         <label class="cov-card mini" id="cov-accidental">
                             <input type="checkbox" id="incAccidental" onchange="toggleCoverage(this)">
                             <div class="cov-card-img">
-                                <img src="https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=300&h=130&fit=crop&q=85" alt="Home repair" loading="lazy">
+                                <img src="https://images.unsplash.com/photo-1558449028-b53a39d100fc?w=400&h=160&fit=crop&q=90" alt="Broken window damage" loading="lazy">
                                 <div class="cov-card-check"><i data-lucide="check" style="width:12px;height:12px;"></i></div>
                                 <div class="cov-card-badge small">0.125%</div>
                             </div>
@@ -339,7 +336,7 @@
                         <label class="cov-card mini" id="cov-allrisks">
                             <input type="checkbox" id="incAllRisks" onchange="toggleCoverage(this)">
                             <div class="cov-card-img">
-                                <img src="https://images.unsplash.com/photo-1558618666-fcd25c85f82e?w=300&h=130&fit=crop&q=85" alt="Electronics and valuables" loading="lazy">
+                                <img src="https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400&h=160&fit=crop&q=90" alt="Watch and valuables" loading="lazy">
                                 <div class="cov-card-check"><i data-lucide="check" style="width:12px;height:12px;"></i></div>
                                 <div class="cov-card-badge small">2.0%</div>
                             </div>
@@ -354,7 +351,7 @@
                         <label class="cov-card mini" id="cov-pa">
                             <input type="checkbox" id="incPA" onchange="toggleCoverage(this)">
                             <div class="cov-card-img">
-                                <img src="https://images.unsplash.com/photo-1505751172876-fa1923c5c528?w=300&h=130&fit=crop&q=85" alt="Medical care" loading="lazy">
+                                <img src="https://images.unsplash.com/photo-1551190822-a9ce113ac100?w=400&h=160&fit=crop&q=90" alt="First aid kit" loading="lazy">
                                 <div class="cov-card-check"><i data-lucide="check" style="width:12px;height:12px;"></i></div>
                                 <div class="cov-card-badge small">0.185%</div>
                             </div>
@@ -369,7 +366,7 @@
                         <label class="cov-card mini" id="cov-altacc">
                             <input type="checkbox" id="incAltAcc" onchange="toggleCoverage(this)">
                             <div class="cov-card-img">
-                                <img src="https://images.unsplash.com/photo-1590490360182-c33d57733427?w=300&h=130&fit=crop&q=85" alt="Hotel room" loading="lazy">
+                                <img src="https://images.unsplash.com/photo-1566665797739-1674de7a421a?w=400&h=160&fit=crop&q=90" alt="Hotel room" loading="lazy">
                                 <div class="cov-card-check"><i data-lucide="check" style="width:12px;height:12px;"></i></div>
                                 <div class="cov-card-badge small">0.20%</div>
                             </div>
@@ -397,16 +394,53 @@
                     </div>
 
                     <div class="form-grid">
-                        <div class="form-group">
+                        <div class="form-group full-width">
                             <label>Cover Type</label>
-                            <select id="coverType" onchange="updateRateDisplay()">
-                                <option value="standard">Standard Cover</option>
-                                <option value="basic">Basic</option>
-                                <option value="bronze">Bronze</option>
-                                <option value="silver">Silver</option>
-                                <option value="gold">Gold</option>
-                                <option value="platinum">Platinum</option>
-                            </select>
+                            <div class="cover-type-cards" id="coverTypeCards">
+                                <label class="ct-card" data-val="basic" onclick="selectCoverType('basic')">
+                                    <div class="ct-radio"></div>
+                                    <div class="ct-info">
+                                        <span class="ct-name">Basic</span>
+                                        <span class="ct-desc">Building only — fire &amp; special perils</span>
+                                    </div>
+                                </label>
+                                <label class="ct-card" data-val="bronze" onclick="selectCoverType('bronze')">
+                                    <div class="ct-radio"></div>
+                                    <div class="ct-info">
+                                        <span class="ct-name">Bronze</span>
+                                        <span class="ct-desc">Building + contents with basic burglary</span>
+                                    </div>
+                                </label>
+                                <label class="ct-card" data-val="silver" onclick="selectCoverType('silver')">
+                                    <div class="ct-radio"></div>
+                                    <div class="ct-info">
+                                        <span class="ct-name">Silver</span>
+                                        <span class="ct-desc">Building + contents + accidental damage</span>
+                                    </div>
+                                </label>
+                                <label class="ct-card active" data-val="standard" onclick="selectCoverType('standard')">
+                                    <div class="ct-radio"></div>
+                                    <div class="ct-info">
+                                        <span class="ct-name">Standard <span class="ct-popular">Popular</span></span>
+                                        <span class="ct-desc">Full building + contents + burglary + special perils</span>
+                                    </div>
+                                </label>
+                                <label class="ct-card" data-val="gold" onclick="selectCoverType('gold')">
+                                    <div class="ct-radio"></div>
+                                    <div class="ct-info">
+                                        <span class="ct-name">Gold</span>
+                                        <span class="ct-desc">Standard + all risks extension + personal accident</span>
+                                    </div>
+                                </label>
+                                <label class="ct-card" data-val="platinum" onclick="selectCoverType('platinum')">
+                                    <div class="ct-radio"></div>
+                                    <div class="ct-info">
+                                        <span class="ct-name">Platinum</span>
+                                        <span class="ct-desc">Comprehensive — all coverages + alt. accommodation</span>
+                                    </div>
+                                </label>
+                            </div>
+                            <input type="hidden" id="coverType" value="standard">
                         </div>
                         <div class="form-group">
                             <label>Policy Duration</label>
@@ -473,6 +507,7 @@
                 </button>
 
                 <div class="results-info-content">
+                    <img src="/static/leadway-logo.jpeg" alt="Leadway" class="panel-logo">
                     <span class="info-tag">YOUR QUOTE</span>
                     <h2 id="resultsTitle">Premium Quote</h2>
 
@@ -562,7 +597,7 @@
     <footer class="footer" id="mainFooter">
         <div class="footer-inner">
             <div class="footer-brand">
-                <img src="https://www.leadway.com/wp-content/uploads/2022/07/leadway-logo.svg" alt="Leadway" class="footer-logo" onerror="this.style.display='none';">
+                <img src="/static/leadway-logo.jpeg" alt="Leadway" class="footer-logo">
                 <p>Insuring Happiness since 1970.<br>RC 7588</p>
             </div>
             <div class="footer-col">

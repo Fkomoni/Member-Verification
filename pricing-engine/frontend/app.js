@@ -47,6 +47,19 @@ function updateTypeToggle() {
     });
 }
 
+const BUILDING_IMAGES = {
+    individual: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=400&h=180&fit=crop&q=90',
+    corporate: 'https://images.unsplash.com/photo-1497366216548-37526070297c?w=400&h=180&fit=crop&q=90',
+};
+
+function selectCoverType(val) {
+    document.getElementById('coverType').value = val;
+    document.querySelectorAll('.ct-card').forEach(c => {
+        c.classList.toggle('active', c.dataset.val === val);
+    });
+    updateRateDisplay();
+}
+
 function updateInfoPanel() {
     const title = document.getElementById('infoTitle');
     const desc = document.getElementById('infoDesc');
@@ -61,6 +74,10 @@ function updateInfoPanel() {
         desc.textContent = 'Get comprehensive cover for your home and personal property — using Leadway\'s official pre-priced rates.';
         feat3.textContent = 'Discounts for security & fire equipment';
     }
+
+    // Swap building coverage image based on client type
+    const bldgImg = document.getElementById('buildingCovImg');
+    if (bldgImg) bldgImg.src = BUILDING_IMAGES[clientType] || BUILDING_IMAGES.individual;
 }
 
 function updateRateDisplay() {

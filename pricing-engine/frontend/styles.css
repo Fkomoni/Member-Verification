@@ -174,6 +174,7 @@ a { text-decoration: none; color: inherit; }
 .back-btn:hover { background: rgba(255,255,255,0.2); }
 
 .quote-info-content { flex: 1; position: relative; z-index: 1; }
+.panel-logo { width: 80px; height: auto; border-radius: 8px; margin-bottom: 20px; }
 .info-tag { font-size: 11px; font-weight: 700; letter-spacing: 2.5px; color: var(--orange); display: block; margin-bottom: 16px; }
 .quote-info-content h2 { font-size: 28px; font-weight: 700; margin-bottom: 12px; line-height: 1.25; }
 .quote-info-content > p { font-size: 14px; color: rgba(255,255,255,0.65); line-height: 1.6; margin-bottom: 32px; }
@@ -307,6 +308,28 @@ a { text-decoration: none; color: inherit; }
 .mitigation-toggle input:checked + .mt-inner .mt-switch { background: var(--green); }
 .mitigation-toggle input:checked + .mt-inner .mt-switch::after { transform: translateX(16px); }
 
+/* Cover type cards */
+.cover-type-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 6px; }
+.ct-card {
+    display: flex; align-items: flex-start; gap: 10px; padding: 12px;
+    background: var(--white); border: 1.5px solid var(--gray-300); border-radius: var(--r-sm);
+    cursor: pointer; transition: var(--ease);
+}
+.ct-card:hover { border-color: var(--orange); }
+.ct-card.active { border-color: var(--orange); background: var(--orange-light); }
+.ct-radio {
+    width: 18px; height: 18px; border-radius: 50%; border: 2px solid var(--gray-400);
+    flex-shrink: 0; margin-top: 2px; position: relative; transition: var(--ease);
+}
+.ct-card.active .ct-radio { border-color: var(--orange); }
+.ct-card.active .ct-radio::after {
+    content: ''; position: absolute; inset: 3px; border-radius: 50%; background: var(--orange);
+}
+.ct-info { flex: 1; }
+.ct-name { font-size: 13px; font-weight: 700; display: block; }
+.ct-desc { font-size: 11px; color: var(--gray-500); line-height: 1.4; display: block; margin-top: 2px; }
+.ct-popular { font-size: 9px; background: var(--orange); color: var(--white); padding: 2px 6px; border-radius: var(--r-pill); font-weight: 700; letter-spacing: 0.5px; vertical-align: middle; }
+
 /* CTA */
 .quote-cta {
     width: 100%; padding: 16px;
@@ -387,7 +410,7 @@ a { text-decoration: none; color: inherit; }
 /* ============= FOOTER ============= */
 .footer { background: var(--teal); color: rgba(255,255,255,0.7); }
 .footer-inner { max-width: 1100px; margin: 0 auto; padding: 48px 40px 32px; display: grid; grid-template-columns: 1.5fr 1fr 1fr 1fr; gap: 32px; }
-.footer-logo { height: 40px; width: auto; margin-bottom: 8px; filter: brightness(0) invert(1); opacity: 0.9; }
+.footer-logo { height: 50px; width: auto; margin-bottom: 8px; border-radius: 6px; }
 .footer-brand p { font-size: 13px; margin-top: 10px; }
 .footer-col h4 { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; color: var(--white); margin-bottom: 14px; }
 .footer-col a { display: block; font-size: 13px; padding: 3px 0; transition: var(--ease); }
