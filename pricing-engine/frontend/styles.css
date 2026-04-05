@@ -223,24 +223,48 @@ a { text-decoration: none; color: inherit; }
 .prefix { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); font-size: 15px; font-weight: 600; color: var(--gray-400); }
 .input-prefix input { padding-left: 32px; }
 
-/* Coverage grid */
-.coverage-grid { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
-.coverage-option { cursor: pointer; }
-.coverage-option input { display: none; }
-.cov-inner { display: flex; align-items: center; gap: 12px; padding: 12px 14px; background: var(--white); border: 1.5px solid var(--gray-300); border-radius: var(--r-sm); transition: var(--ease); }
-.coverage-option.selected .cov-inner { border-color: var(--orange); background: var(--orange-light); }
-.coverage-option:hover .cov-inner { border-color: var(--orange); }
-.cov-icon { width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+/* Coverage cards with images */
+.coverage-cards-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 8px; }
+.coverage-cards-grid.four-col { grid-template-columns: 1fr 1fr; }
+.cov-card { cursor: pointer; border-radius: var(--r-md); overflow: hidden; border: 2px solid var(--gray-200); background: var(--white); transition: var(--ease); }
+.cov-card input { display: none; }
+.cov-card:hover { border-color: var(--orange); transform: translateY(-2px); box-shadow: var(--shadow); }
+.cov-card.selected { border-color: var(--orange); }
+
+.cov-card-img { position: relative; height: 110px; overflow: hidden; }
+.cov-card.mini .cov-card-img { height: 80px; }
+.cov-card-img img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.4s; }
+.cov-card:hover .cov-card-img img { transform: scale(1.05); }
+
+.cov-card-check {
+    position: absolute; top: 8px; right: 8px;
+    width: 24px; height: 24px; border-radius: 50%;
+    background: rgba(255,255,255,0.3); border: 2px solid rgba(255,255,255,0.6);
+    display: flex; align-items: center; justify-content: center;
+    color: transparent; transition: var(--ease);
+}
+.cov-card.selected .cov-card-check { background: var(--orange); border-color: var(--orange); color: var(--white); }
+
+.cov-card-badge {
+    position: absolute; bottom: 8px; right: 8px;
+    background: rgba(0,0,0,0.7); color: var(--orange);
+    padding: 4px 10px; border-radius: var(--r-pill);
+    font-size: 12px; font-weight: 700; backdrop-filter: blur(4px);
+}
+.cov-card-badge.small { font-size: 10px; padding: 3px 8px; }
+
+.cov-card-body { display: flex; align-items: center; gap: 10px; padding: 12px; }
+.cov-card.mini .cov-card-body { padding: 10px; }
+.cov-card-icon { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
 .fire-cov { background: #FBE9E7; color: #E65100; }
 .theft-cov { background: #E8EAF6; color: #283593; }
 .acc-cov { background: #FFF8E1; color: #F9A825; }
 .ar-cov { background: #E8F5E9; color: #2E7D32; }
 .pa-cov { background: #FCE4EC; color: #C62828; }
 .alt-cov { background: #E1F5FE; color: #0277BD; }
-.cov-text { flex: 1; display: flex; flex-direction: column; }
-.cov-name { font-size: 13px; font-weight: 600; }
-.cov-desc { font-size: 11px; color: var(--gray-500); }
-.cov-rate { font-size: 12px; font-weight: 700; color: var(--orange); background: var(--orange-light); padding: 4px 10px; border-radius: var(--r-pill); flex-shrink: 0; }
+.cov-card-name { font-size: 13px; font-weight: 600; display: block; }
+.cov-card.mini .cov-card-name { font-size: 12px; }
+.cov-card-desc { font-size: 11px; color: var(--gray-500); display: block; }
 
 /* Peril chips */
 .perils-row { display: flex; gap: 10px; margin: 8px 0 20px; flex-wrap: wrap; }
@@ -376,6 +400,8 @@ a { text-decoration: none; color: inherit; }
     .quote-info-panel, .results-info-panel { width: 100%; min-height: auto; padding: 24px 20px; }
     .quote-form-panel, .results-detail-panel { padding: 24px 20px; }
     .form-grid { grid-template-columns: 1fr; }
+    .coverage-cards-grid { grid-template-columns: 1fr; }
+    .coverage-cards-grid.four-col { grid-template-columns: 1fr; }
     .perils-row { flex-direction: column; }
     .mitigation-row { flex-direction: column; }
 

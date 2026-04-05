@@ -298,75 +298,99 @@
                     </div>
 
                     <label class="field-label">Core Coverages</label>
-                    <div class="coverage-grid">
-                        <label class="coverage-option selected" id="cov-building">
+                    <div class="coverage-cards-grid">
+                        <label class="cov-card selected" id="cov-building">
                             <input type="checkbox" id="incBuilding" checked onchange="toggleCoverage(this)">
-                            <div class="cov-inner">
-                                <div class="cov-icon fire-cov"><i data-lucide="building" style="width:18px;height:18px;"></i></div>
-                                <div class="cov-text">
-                                    <span class="cov-name">Building</span>
-                                    <span class="cov-desc">Fire &amp; Special Perils</span>
+                            <div class="cov-card-img">
+                                <img src="https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=400&h=180&fit=crop&q=80" alt="Building exterior" loading="lazy">
+                                <div class="cov-card-check"><i data-lucide="check" style="width:14px;height:14px;"></i></div>
+                                <div class="cov-card-badge" id="rateBuilding">0.10%</div>
+                            </div>
+                            <div class="cov-card-body">
+                                <div class="cov-card-icon fire-cov"><i data-lucide="building" style="width:16px;height:16px;"></i></div>
+                                <div>
+                                    <span class="cov-card-name">Building</span>
+                                    <span class="cov-card-desc">Fire &amp; Special Perils</span>
                                 </div>
-                                <div class="cov-rate" id="rateBuilding">0.10%</div>
                             </div>
                         </label>
-                        <label class="coverage-option selected" id="cov-content">
+                        <label class="cov-card selected" id="cov-content">
                             <input type="checkbox" id="incContent" checked onchange="toggleCoverage(this)">
-                            <div class="cov-inner">
-                                <div class="cov-icon theft-cov"><i data-lucide="sofa" style="width:18px;height:18px;"></i></div>
-                                <div class="cov-text">
-                                    <span class="cov-name">Content</span>
-                                    <span class="cov-desc">Fire, Burglary &amp; Special Perils</span>
+                            <div class="cov-card-img">
+                                <img src="https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?w=400&h=180&fit=crop&q=80" alt="Living room interior" loading="lazy">
+                                <div class="cov-card-check"><i data-lucide="check" style="width:14px;height:14px;"></i></div>
+                                <div class="cov-card-badge" id="rateContent">0.20%</div>
+                            </div>
+                            <div class="cov-card-body">
+                                <div class="cov-card-icon theft-cov"><i data-lucide="sofa" style="width:16px;height:16px;"></i></div>
+                                <div>
+                                    <span class="cov-card-name">Content</span>
+                                    <span class="cov-card-desc">Fire, Burglary &amp; Special Perils</span>
                                 </div>
-                                <div class="cov-rate" id="rateContent">0.20%</div>
                             </div>
                         </label>
                     </div>
 
-                    <label class="field-label" style="margin-top:16px;">Additional Coverages</label>
-                    <div class="coverage-grid">
-                        <label class="coverage-option" id="cov-accidental">
+                    <label class="field-label" style="margin-top:20px;">Additional Coverages</label>
+                    <div class="coverage-cards-grid four-col">
+                        <label class="cov-card mini" id="cov-accidental">
                             <input type="checkbox" id="incAccidental" onchange="toggleCoverage(this)">
-                            <div class="cov-inner">
-                                <div class="cov-icon acc-cov"><i data-lucide="alert-triangle" style="width:18px;height:18px;"></i></div>
-                                <div class="cov-text">
-                                    <span class="cov-name">Accidental Damage</span>
-                                    <span class="cov-desc">To household content</span>
+                            <div class="cov-card-img">
+                                <img src="https://images.unsplash.com/photo-1558618666-fcd25c85f82e?w=300&h=130&fit=crop&q=80" alt="Broken screen" loading="lazy">
+                                <div class="cov-card-check"><i data-lucide="check" style="width:12px;height:12px;"></i></div>
+                                <div class="cov-card-badge small">0.125%</div>
+                            </div>
+                            <div class="cov-card-body">
+                                <div class="cov-card-icon acc-cov"><i data-lucide="alert-triangle" style="width:14px;height:14px;"></i></div>
+                                <div>
+                                    <span class="cov-card-name">Accidental Damage</span>
+                                    <span class="cov-card-desc">Content damage</span>
                                 </div>
-                                <div class="cov-rate">0.125%</div>
                             </div>
                         </label>
-                        <label class="coverage-option" id="cov-allrisks">
+                        <label class="cov-card mini" id="cov-allrisks">
                             <input type="checkbox" id="incAllRisks" onchange="toggleCoverage(this)">
-                            <div class="cov-inner">
-                                <div class="cov-icon ar-cov"><i data-lucide="shield-check" style="width:18px;height:18px;"></i></div>
-                                <div class="cov-text">
-                                    <span class="cov-name">All Risks Extension</span>
-                                    <span class="cov-desc">Max 10% of content SI</span>
+                            <div class="cov-card-img">
+                                <img src="https://images.unsplash.com/photo-1560185893-a55cbc8c57e8?w=300&h=130&fit=crop&q=80" alt="Home valuables" loading="lazy">
+                                <div class="cov-card-check"><i data-lucide="check" style="width:12px;height:12px;"></i></div>
+                                <div class="cov-card-badge small">2.0%</div>
+                            </div>
+                            <div class="cov-card-body">
+                                <div class="cov-card-icon ar-cov"><i data-lucide="shield-check" style="width:14px;height:14px;"></i></div>
+                                <div>
+                                    <span class="cov-card-name">All Risks</span>
+                                    <span class="cov-card-desc">Max 10% of content</span>
                                 </div>
-                                <div class="cov-rate">2.0%</div>
                             </div>
                         </label>
-                        <label class="coverage-option" id="cov-pa">
+                        <label class="cov-card mini" id="cov-pa">
                             <input type="checkbox" id="incPA" onchange="toggleCoverage(this)">
-                            <div class="cov-inner">
-                                <div class="cov-icon pa-cov"><i data-lucide="heart-pulse" style="width:18px;height:18px;"></i></div>
-                                <div class="cov-text">
-                                    <span class="cov-name">Personal Accident</span>
-                                    <span class="cov-desc">Injury &amp; death cover</span>
+                            <div class="cov-card-img">
+                                <img src="https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=300&h=130&fit=crop&q=80" alt="Medical care" loading="lazy">
+                                <div class="cov-card-check"><i data-lucide="check" style="width:12px;height:12px;"></i></div>
+                                <div class="cov-card-badge small">0.185%</div>
+                            </div>
+                            <div class="cov-card-body">
+                                <div class="cov-card-icon pa-cov"><i data-lucide="heart-pulse" style="width:14px;height:14px;"></i></div>
+                                <div>
+                                    <span class="cov-card-name">Personal Accident</span>
+                                    <span class="cov-card-desc">Injury &amp; death</span>
                                 </div>
-                                <div class="cov-rate">0.185%</div>
                             </div>
                         </label>
-                        <label class="coverage-option" id="cov-altacc">
+                        <label class="cov-card mini" id="cov-altacc">
                             <input type="checkbox" id="incAltAcc" onchange="toggleCoverage(this)">
-                            <div class="cov-inner">
-                                <div class="cov-icon alt-cov"><i data-lucide="bed" style="width:18px;height:18px;"></i></div>
-                                <div class="cov-text">
-                                    <span class="cov-name">Alt. Accommodation</span>
-                                    <span class="cov-desc">Temporary housing</span>
+                            <div class="cov-card-img">
+                                <img src="https://images.unsplash.com/photo-1631049307264-da0ec9d70304?w=300&h=130&fit=crop&q=80" alt="Hotel room" loading="lazy">
+                                <div class="cov-card-check"><i data-lucide="check" style="width:12px;height:12px;"></i></div>
+                                <div class="cov-card-badge small">0.20%</div>
+                            </div>
+                            <div class="cov-card-body">
+                                <div class="cov-card-icon alt-cov"><i data-lucide="bed" style="width:14px;height:14px;"></i></div>
+                                <div>
+                                    <span class="cov-card-name">Alt. Accommodation</span>
+                                    <span class="cov-card-desc">Temporary housing</span>
                                 </div>
-                                <div class="cov-rate">0.20%</div>
                             </div>
                         </label>
                     </div>

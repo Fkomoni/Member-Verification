@@ -99,7 +99,7 @@ function toggleChip(checkbox) {
 }
 
 function toggleCoverage(checkbox) {
-    checkbox.closest('.coverage-option').classList.toggle('selected', checkbox.checked);
+    checkbox.closest('.cov-card').classList.toggle('selected', checkbox.checked);
 }
 
 // ============= GENERATE QUOTE =============
