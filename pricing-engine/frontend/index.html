@@ -3,10 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Leadway Assurance — Householder Pricing Engine</title>
+    <title>Leadway Assurance — Householder Insurance</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,600;1,700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/static/styles.css">
-    <!-- Lucide icons CDN -->
     <script src="https://unpkg.com/lucide@0.344.0/dist/umd/lucide.js"></script>
 </head>
 <body>
@@ -19,7 +18,7 @@
         <div class="navbar-inner">
             <div class="logo">
                 <div class="logo-mark">
-                    <svg viewBox="0 0 48 48" width="42" height="42">
+                    <svg viewBox="0 0 48 48" width="40" height="40">
                         <circle cx="24" cy="24" r="22" fill="url(#sunset)"/>
                         <defs>
                             <linearGradient id="sunset" x1="0" y1="0" x2="0" y2="1">
@@ -28,7 +27,6 @@
                                 <stop offset="100%" stop-color="#C4581A"/>
                             </linearGradient>
                         </defs>
-                        <!-- Stylized camel silhouette -->
                         <path d="M14 32 L16 24 L18 22 L17 18 L19 16 L21 18 L22 22 L26 22 L28 18 L30 16 L31 18 L30 22 L32 24 L34 32 L30 32 L29 28 L19 28 L18 32 Z" fill="#1A1A2E" opacity="0.85"/>
                     </svg>
                 </div>
@@ -38,9 +36,9 @@
                 </div>
             </div>
             <ul class="nav-links">
-                <li><a href="#" class="nav-active">PRICING ENGINE</a></li>
+                <li><a href="#" class="nav-active">HOUSEHOLDER</a></li>
                 <li><a href="/api/rates" target="_blank">RATE CARD</a></li>
-                <li><a href="/docs" target="_blank">API DOCS</a></li>
+                <li><a href="/docs" target="_blank">API</a></li>
             </ul>
             <button class="mobile-menu" onclick="document.querySelector('.nav-links').classList.toggle('open')">
                 <i data-lucide="menu" style="width:28px;height:28px;"></i>
@@ -48,456 +46,478 @@
         </div>
     </nav>
 
-    <!-- Hero with background image -->
-    <section class="hero">
-        <div class="hero-overlay"></div>
-        <div class="hero-content">
-            <div class="hero-left">
-                <span class="hero-badge">HOUSEHOLDER INSURANCE</span>
-                <h1>Get your premium<br>quote <em>instantly</em></h1>
-                <p>Our pricing engine uses real claims data to generate accurate premiums for Fire, Theft, and Flood cover — tailored for Corporate and Individual clients.</p>
-                <div class="hero-stats">
-                    <div class="hero-stat">
-                        <div class="hero-stat-value">N845M+</div>
-                        <div class="hero-stat-label">Premium Portfolio</div>
+    <!-- ============================================= -->
+    <!-- PAGE 1: PRODUCT SELECTION                     -->
+    <!-- ============================================= -->
+    <div id="page-select" class="page active-page">
+        <!-- Hero -->
+        <section class="select-hero">
+            <div class="select-hero-inner">
+                <span class="hero-tag">HOUSEHOLDER INSURANCE</span>
+                <h1>What type of householder<br>cover do you need?</h1>
+                <p>Choose the option that best describes your property</p>
+            </div>
+        </section>
+
+        <!-- Product Cards -->
+        <section class="product-cards-section">
+            <div class="container">
+                <div class="product-cards">
+                    <!-- Individual / Retail Card -->
+                    <div class="product-card" onclick="selectProduct('individual')">
+                        <div class="product-card-img">
+                            <img src="https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=500&h=320&fit=crop&q=80"
+                                 alt="Residential home" loading="lazy">
+                            <div class="product-card-radio">
+                                <div class="radio-dot"></div>
+                            </div>
+                        </div>
+                        <div class="product-card-body">
+                            <div class="product-card-icon">
+                                <i data-lucide="home" style="width:24px;height:24px;"></i>
+                            </div>
+                            <div class="product-card-info">
+                                <h3>Individual / Retail</h3>
+                                <span class="product-card-sub">PERSONAL PROPERTY</span>
+                            </div>
+                        </div>
+                        <p class="product-card-desc">Protect your home, personal belongings, and household contents against fire, theft, and flood.</p>
+                        <div class="product-card-cta">
+                            Start Quote <i data-lucide="arrow-right" style="width:16px;height:16px;"></i>
+                        </div>
                     </div>
-                    <div class="hero-stat">
-                        <div class="hero-stat-value">1,410</div>
-                        <div class="hero-stat-label">Active Policies</div>
-                    </div>
-                    <div class="hero-stat">
-                        <div class="hero-stat-value">34.6%</div>
-                        <div class="hero-stat-label">Loss Ratio</div>
+
+                    <!-- Corporate Card -->
+                    <div class="product-card" onclick="selectProduct('corporate')">
+                        <div class="product-card-img">
+                            <img src="https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=500&h=320&fit=crop&q=80"
+                                 alt="Corporate building" loading="lazy">
+                            <div class="product-card-radio">
+                                <div class="radio-dot"></div>
+                            </div>
+                        </div>
+                        <div class="product-card-body">
+                            <div class="product-card-icon corporate-icon">
+                                <i data-lucide="building-2" style="width:24px;height:24px;"></i>
+                            </div>
+                            <div class="product-card-info">
+                                <h3>Corporate / Commercial</h3>
+                                <span class="product-card-sub">BUSINESS PROPERTY</span>
+                            </div>
+                        </div>
+                        <p class="product-card-desc">Coverage for commercial buildings, office contents, and business assets with volume discounts.</p>
+                        <div class="product-card-cta">
+                            Start Quote <i data-lucide="arrow-right" style="width:16px;height:16px;"></i>
+                        </div>
                     </div>
                 </div>
-                <a href="#quoteSection" class="hero-cta">
-                    Get a Quote
-                    <i data-lucide="arrow-down" style="width:18px;height:18px;"></i>
-                </a>
-            </div>
-            <div class="hero-right">
-                <div class="hero-image-card">
-                    <img src="https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=600&h=400&fit=crop&q=80"
-                         alt="Modern house" class="hero-img" loading="lazy">
-                    <div class="hero-image-overlay">
-                        <i data-lucide="shield-check" style="width:24px;height:24px;color:#F58220;"></i>
-                        <span>Protected by Leadway</span>
+
+                <!-- Stats bar -->
+                <div class="stats-bar">
+                    <div class="stat-item">
+                        <i data-lucide="shield-check" style="width:20px;height:20px;color:#F58220;"></i>
+                        <div>
+                            <strong>N845M+</strong>
+                            <span>Premium Portfolio</span>
+                        </div>
                     </div>
+                    <div class="stat-divider"></div>
+                    <div class="stat-item">
+                        <i data-lucide="users" style="width:20px;height:20px;color:#F58220;"></i>
+                        <div>
+                            <strong>1,410</strong>
+                            <span>Active Policies</span>
+                        </div>
+                    </div>
+                    <div class="stat-divider"></div>
+                    <div class="stat-item">
+                        <i data-lucide="trending-down" style="width:20px;height:20px;color:#2E7D32;"></i>
+                        <div>
+                            <strong>34.6%</strong>
+                            <span>Loss Ratio</span>
+                        </div>
+                    </div>
+                    <div class="stat-divider"></div>
+                    <div class="stat-item">
+                        <i data-lucide="clock" style="width:20px;height:20px;color:#F58220;"></i>
+                        <div>
+                            <strong>Instant</strong>
+                            <span>Quote Generation</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- ============================================= -->
+    <!-- PAGE 2: QUOTE BUILDER (Split Layout)          -->
+    <!-- ============================================= -->
+    <div id="page-quote" class="page">
+        <div class="quote-builder">
+            <!-- LEFT: Dark info panel -->
+            <div class="quote-info-panel">
+                <button class="back-btn" onclick="goBack()">
+                    <i data-lucide="arrow-left" style="width:16px;height:16px;"></i>
+                    Back
+                </button>
+
+                <div class="quote-info-content">
+                    <span class="info-tag" id="infoTag">HOUSEHOLDER INSURANCE</span>
+                    <h2 id="infoTitle">Protect What Matters</h2>
+                    <p id="infoDesc">Get comprehensive cover for your property against the most common risks — with pricing powered by real claims data.</p>
+
+                    <div class="info-features">
+                        <div class="info-feature">
+                            <i data-lucide="check-circle" style="width:18px;height:18px;color:#F58220;"></i>
+                            <span>Fire, Theft &amp; Flood cover in one policy</span>
+                        </div>
+                        <div class="info-feature">
+                            <i data-lucide="check-circle" style="width:18px;height:18px;color:#F58220;"></i>
+                            <span>Instant premium calculation</span>
+                        </div>
+                        <div class="info-feature">
+                            <i data-lucide="check-circle" style="width:18px;height:18px;color:#F58220;"></i>
+                            <span id="infoFeature3">Discounts for security &amp; fire equipment</span>
+                        </div>
+                    </div>
+
+                    <div class="info-steps">
+                        <h4>WHAT HAPPENS NEXT</h4>
+                        <div class="info-step">
+                            <span class="step-num">1</span>
+                            <span>Fill in your property details</span>
+                        </div>
+                        <div class="info-step">
+                            <span class="step-num">2</span>
+                            <span>Select the perils you want covered</span>
+                        </div>
+                        <div class="info-step">
+                            <span class="step-num">3</span>
+                            <span>Get your premium quote instantly</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="info-footer">
+                    <a href="#" class="info-link">
+                        Learn More About Householder
+                        <i data-lucide="arrow-right" style="width:14px;height:14px;"></i>
+                    </a>
+                </div>
+            </div>
+
+            <!-- RIGHT: Quote form -->
+            <div class="quote-form-panel">
+                <div class="quote-form-header">
+                    <span class="form-tag">QUOTE BUILDER</span>
+                    <h2>HOUSEHOLDER</h2>
+                    <button class="close-btn" onclick="goBack()">
+                        <i data-lucide="x" style="width:18px;height:18px;"></i>
+                        Close
+                    </button>
+                </div>
+
+                <!-- Client type toggle -->
+                <div class="form-type-toggle">
+                    <button class="type-btn" data-type="individual" id="typeIndividual" onclick="switchType('individual')">
+                        <i data-lucide="home" style="width:16px;height:16px;"></i>
+                        Individual
+                    </button>
+                    <button class="type-btn" data-type="corporate" id="typeCorporate" onclick="switchType('corporate')">
+                        <i data-lucide="building-2" style="width:16px;height:16px;"></i>
+                        Corporate
+                    </button>
+                </div>
+
+                <!-- STEP 1: Property Information -->
+                <div class="form-step" id="step1">
+                    <div class="step-header">
+                        <div class="step-icon">
+                            <i data-lucide="home" style="width:20px;height:20px;"></i>
+                        </div>
+                        <div>
+                            <h3>Property Information</h3>
+                            <span class="step-sub">Step 1 of 2</span>
+                        </div>
+                    </div>
+
+                    <div class="form-grid">
+                        <div class="form-group full-width">
+                            <label>Property Address</label>
+                            <input type="text" id="address" placeholder="Enter property address">
+                        </div>
+                        <div class="form-group">
+                            <label>Location / State <span class="req">*</span></label>
+                            <select id="location" required>
+                                <option value="">Select Location</option>
+                                <option value="lagos">Lagos</option>
+                                <option value="abuja">Abuja</option>
+                                <option value="port_harcourt">Port Harcourt</option>
+                                <option value="ibadan">Ibadan</option>
+                                <option value="kaduna">Kaduna</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Building Age (Years)</label>
+                            <select id="buildingAge">
+                                <option value="0">New (0-5 years)</option>
+                                <option value="10">6-15 years</option>
+                                <option value="20">16-30 years</option>
+                                <option value="35">30+ years</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Sum Insured (NGN) <span class="req">*</span></label>
+                            <div class="input-prefix">
+                                <span class="prefix">&#x20A6;</span>
+                                <input type="text" id="sumInsured" placeholder="50,000,000" required oninput="formatCurrency(this)">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Cover Type</label>
+                            <select id="coverType">
+                                <option value="standard">Standard Cover</option>
+                                <option value="basic">Basic</option>
+                                <option value="bronze">Bronze</option>
+                                <option value="silver">Silver</option>
+                                <option value="gold">Gold</option>
+                                <option value="platinum">Platinum</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- STEP 2: Risk & Coverage Details -->
+                <div class="form-step" id="step2">
+                    <div class="step-header">
+                        <div class="step-icon orange-icon">
+                            <i data-lucide="shield" style="width:20px;height:20px;"></i>
+                        </div>
+                        <div>
+                            <h3>Coverage Details</h3>
+                            <span class="step-sub">Step 2 of 2</span>
+                        </div>
+                    </div>
+
+                    <!-- Perils -->
+                    <label class="field-label">Select Perils to Cover <span class="req">*</span></label>
+                    <div class="perils-row">
+                        <label class="peril-chip selected" id="chip-fire">
+                            <input type="checkbox" value="fire" checked onchange="toggleChip(this)">
+                            <i data-lucide="flame" style="width:16px;height:16px;"></i>
+                            Fire
+                        </label>
+                        <label class="peril-chip" id="chip-theft">
+                            <input type="checkbox" value="theft" onchange="toggleChip(this)">
+                            <i data-lucide="lock" style="width:16px;height:16px;"></i>
+                            Theft
+                        </label>
+                        <label class="peril-chip" id="chip-flood">
+                            <input type="checkbox" value="flood" onchange="toggleChip(this)">
+                            <i data-lucide="waves" style="width:16px;height:16px;"></i>
+                            Flood
+                        </label>
+                    </div>
+
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Policy Duration</label>
+                            <select id="duration">
+                                <option value="12">12 Months</option>
+                                <option value="9">9 Months</option>
+                                <option value="6">6 Months</option>
+                                <option value="3">3 Months</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Claims in Last 3 Years</label>
+                            <select id="claimsHistory">
+                                <option value="0">No claims</option>
+                                <option value="1">1 claim</option>
+                                <option value="2">2 claims</option>
+                                <option value="3">3+ claims</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Risk mitigation -->
+                    <label class="field-label">Risk Mitigation</label>
+                    <div class="mitigation-row">
+                        <label class="mitigation-toggle">
+                            <input type="checkbox" id="hasSecurity">
+                            <div class="mt-inner">
+                                <div class="mt-switch"></div>
+                                <span>Security system <em>(-5%)</em></span>
+                            </div>
+                        </label>
+                        <label class="mitigation-toggle">
+                            <input type="checkbox" id="hasFireExtinguisher">
+                            <div class="mt-inner">
+                                <div class="mt-switch"></div>
+                                <span>Fire extinguisher <em>(-3%)</em></span>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- CTA Button -->
+                <button class="quote-cta" id="quoteBtn" onclick="getQuote()">
+                    Get Your Householder Quote
+                </button>
+
+                <!-- Consent -->
+                <p class="consent-text">
+                    By generating a quote, you consent to the use of your information to process your request. Kindly see our <a href="#">Privacy Policy</a>.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================= -->
+    <!-- PAGE 3: RESULTS                               -->
+    <!-- ============================================= -->
+    <div id="page-results" class="page">
+        <div class="results-page">
+            <!-- Left: Dark panel -->
+            <div class="results-info-panel">
+                <button class="back-btn" onclick="goToQuote()">
+                    <i data-lucide="arrow-left" style="width:16px;height:16px;"></i>
+                    Modify Quote
+                </button>
+
+                <div class="results-info-content">
+                    <span class="info-tag">YOUR QUOTE</span>
+                    <h2 id="resultsTitle">Premium Quote</h2>
+
+                    <div class="results-premium-hero">
+                        <span class="premium-label-big">Gross Premium</span>
+                        <div class="premium-big" id="grossPremiumBig"></div>
+                        <span class="premium-rate" id="rateDisplay"></span>
+                    </div>
+
+                    <!-- Peril breakdown mini -->
+                    <div class="peril-mini-cards">
+                        <div class="peril-mini" id="miniFireCard">
+                            <div class="peril-mini-icon fire-mini"><i data-lucide="flame" style="width:16px;height:16px;"></i></div>
+                            <div>
+                                <span class="peril-mini-label">Fire</span>
+                                <span class="peril-mini-amount" id="miniFireAmt">-</span>
+                            </div>
+                        </div>
+                        <div class="peril-mini" id="miniTheftCard">
+                            <div class="peril-mini-icon theft-mini"><i data-lucide="lock" style="width:16px;height:16px;"></i></div>
+                            <div>
+                                <span class="peril-mini-label">Theft</span>
+                                <span class="peril-mini-amount" id="miniTheftAmt">-</span>
+                            </div>
+                        </div>
+                        <div class="peril-mini" id="miniFloodCard">
+                            <div class="peril-mini-icon flood-mini"><i data-lucide="waves" style="width:16px;height:16px;"></i></div>
+                            <div>
+                                <span class="peril-mini-label">Flood</span>
+                                <span class="peril-mini-amount" id="miniFloodAmt">-</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right: Breakdown -->
+            <div class="results-detail-panel">
+                <div class="results-detail-header">
+                    <span class="form-tag">PREMIUM BREAKDOWN</span>
+                    <h2>HOUSEHOLDER</h2>
+                    <div class="results-badges">
+                        <span class="rbadge" id="clientBadge">INDIVIDUAL</span>
+                        <span class="rbadge outline" id="coverBadge">STANDARD</span>
+                    </div>
+                </div>
+
+                <!-- Summary card -->
+                <div class="summary-card">
+                    <div class="summary-row">
+                        <span>Sum Insured</span>
+                        <strong id="sumDisplay"></strong>
+                    </div>
+                    <div class="summary-row">
+                        <span>Location</span>
+                        <strong id="locDisplay"></strong>
+                    </div>
+                    <div class="summary-row">
+                        <span>Perils Covered</span>
+                        <strong id="perilsDisplay"></strong>
+                    </div>
+                    <div class="summary-row">
+                        <span>Duration</span>
+                        <strong id="durationDisplay"></strong>
+                    </div>
+                </div>
+
+                <!-- Breakdown table -->
+                <div class="detail-breakdown">
+                    <h4>Adjustments</h4>
+                    <table class="breakdown-table">
+                        <tbody id="breakdownBody"></tbody>
+                    </table>
+                </div>
+
+                <!-- Net premium -->
+                <div class="net-card">
+                    <div class="net-row">
+                        <span>Gross Premium</span>
+                        <span class="net-val" id="grossNet"></span>
+                    </div>
+                    <div class="net-row">
+                        <span>Commission (15%)</span>
+                        <span class="net-val discount" id="commNet"></span>
+                    </div>
+                    <div class="net-row total">
+                        <span>Net Premium</span>
+                        <span class="net-val" id="netNet"></span>
+                    </div>
+                </div>
+
+                <div class="results-actions">
+                    <button class="action-btn primary" onclick="window.print()">
+                        <i data-lucide="printer" style="width:16px;height:16px;"></i>
+                        Print Quote
+                    </button>
+                    <button class="action-btn secondary" onclick="goToQuote()">
+                        <i data-lucide="refresh-cw" style="width:16px;height:16px;"></i>
+                        New Quote
+                    </button>
                 </div>
             </div>
         </div>
-    </section>
+    </div>
 
-    <!-- Trust strip -->
-    <section class="trust-strip">
-        <div class="trust-inner">
-            <div class="trust-item">
-                <i data-lucide="clock" style="width:20px;height:20px;"></i>
-                <span>Instant Quotes</span>
-            </div>
-            <div class="trust-divider"></div>
-            <div class="trust-item">
-                <i data-lucide="bar-chart-3" style="width:20px;height:20px;"></i>
-                <span>Data-Driven Pricing</span>
-            </div>
-            <div class="trust-divider"></div>
-            <div class="trust-item">
-                <i data-lucide="shield" style="width:20px;height:20px;"></i>
-                <span>Fire &bull; Theft &bull; Flood</span>
-            </div>
-            <div class="trust-divider"></div>
-            <div class="trust-item">
-                <i data-lucide="building-2" style="width:20px;height:20px;"></i>
-                <span>Corporate &amp; Individual</span>
-            </div>
-        </div>
-    </section>
-
-    <!-- Perils showcase -->
-    <section class="perils-showcase">
-        <div class="container">
-            <div class="section-header">
-                <span class="section-tag">WHAT WE COVER</span>
-                <h2>Choose the perils that matter to you</h2>
-                <p>Our householder policy covers the three most common risks to Nigerian homes and properties.</p>
-            </div>
-            <div class="peril-showcase-grid">
-                <div class="peril-showcase-card">
-                    <div class="peril-showcase-img">
-                        <img src="https://images.unsplash.com/photo-1486551937199-baf066858de7?w=400&h=260&fit=crop&q=80"
-                             alt="Fire damage" loading="lazy">
-                        <div class="peril-showcase-badge fire-badge">FIRE</div>
-                    </div>
-                    <div class="peril-showcase-body">
-                        <h3>Fire Cover</h3>
-                        <p>Protection against fire damage to buildings and contents. Covers electrical faults, gas explosions, and lightning strikes.</p>
-                        <div class="peril-showcase-stat">
-                            <span class="stat-label">Avg Claim</span>
-                            <span class="stat-value">N1.9M</span>
-                        </div>
-                    </div>
-                </div>
-                <div class="peril-showcase-card">
-                    <div class="peril-showcase-img">
-                        <img src="https://images.unsplash.com/photo-1558618666-fcd25c85f82e?w=400&h=260&fit=crop&q=80"
-                             alt="Home security" loading="lazy">
-                        <div class="peril-showcase-badge theft-badge">THEFT</div>
-                    </div>
-                    <div class="peril-showcase-body">
-                        <h3>Theft Cover</h3>
-                        <p>Coverage for burglary, armed robbery, and theft of household items including electronics, jewelry, and personal effects.</p>
-                        <div class="peril-showcase-stat">
-                            <span class="stat-label">Avg Claim</span>
-                            <span class="stat-value">N841K</span>
-                        </div>
-                    </div>
-                </div>
-                <div class="peril-showcase-card">
-                    <div class="peril-showcase-img">
-                        <img src="https://images.unsplash.com/photo-1547683905-f686c993aae5?w=400&h=260&fit=crop&q=80"
-                             alt="Flood damage" loading="lazy">
-                        <div class="peril-showcase-badge flood-badge">FLOOD</div>
-                    </div>
-                    <div class="peril-showcase-body">
-                        <h3>Flood Cover</h3>
-                        <p>Protection against flood damage from heavy rainfall, storm surges, and overflowing waterways. Location-adjusted pricing.</p>
-                        <div class="peril-showcase-stat">
-                            <span class="stat-label">Avg Claim</span>
-                            <span class="stat-value">N2.8M</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Quote Section -->
-    <section class="quote-section" id="quoteSection">
-        <div class="container">
-            <div class="quote-layout">
-                <!-- Left: Form -->
-                <div class="quote-form-wrap">
-                    <div class="section-header left-align">
-                        <span class="section-tag">GET YOUR QUOTE</span>
-                        <h2>Calculate your premium</h2>
-                    </div>
-
-                    <!-- Client Type Toggle -->
-                    <div class="segment-toggle">
-                        <button class="segment-btn active" data-type="individual" onclick="setClientType('individual')">
-                            <i data-lucide="user" style="width:18px;height:18px;"></i>
-                            Individual
-                        </button>
-                        <button class="segment-btn" data-type="corporate" onclick="setClientType('corporate')">
-                            <i data-lucide="building-2" style="width:18px;height:18px;"></i>
-                            Corporate
-                        </button>
-                    </div>
-
-                    <!-- Segment info card -->
-                    <div class="segment-info" id="segmentInfo">
-                        <div class="segment-info-icon">
-                            <i data-lucide="info" style="width:16px;height:16px;"></i>
-                        </div>
-                        <p id="segmentDesc">Individual policies for homeowners and tenants. Covers personal property and household contents.</p>
-                    </div>
-
-                    <div class="form-section">
-                        <form id="quoteForm" onsubmit="return false;">
-                            <div class="form-grid">
-                                <!-- Sum Insured -->
-                                <div class="form-group">
-                                    <label>Sum Insured (NGN) <span class="required">*</span></label>
-                                    <div class="input-with-icon">
-                                        <span class="input-icon">&#x20A6;</span>
-                                        <input type="text" id="sumInsured" placeholder="50,000,000" required oninput="formatCurrency(this)">
-                                    </div>
-                                </div>
-
-                                <!-- Location -->
-                                <div class="form-group">
-                                    <label>Location <span class="required">*</span></label>
-                                    <select id="location" required>
-                                        <option value="">Select Location</option>
-                                        <option value="lagos">Lagos</option>
-                                        <option value="abuja">Abuja</option>
-                                        <option value="port_harcourt">Port Harcourt</option>
-                                        <option value="ibadan">Ibadan</option>
-                                        <option value="kaduna">Kaduna</option>
-                                        <option value="other">Other</option>
-                                    </select>
-                                </div>
-
-                                <!-- Cover Type -->
-                                <div class="form-group">
-                                    <label>Cover Type <span class="required">*</span></label>
-                                    <select id="coverType" required>
-                                        <option value="standard">Standard Cover</option>
-                                        <option value="basic">Basic</option>
-                                        <option value="bronze">Bronze</option>
-                                        <option value="silver">Silver</option>
-                                        <option value="gold">Gold</option>
-                                        <option value="platinum">Platinum</option>
-                                    </select>
-                                </div>
-
-                                <!-- Policy Duration -->
-                                <div class="form-group">
-                                    <label>Policy Duration <span class="required">*</span></label>
-                                    <select id="duration">
-                                        <option value="12">12 Months</option>
-                                        <option value="9">9 Months</option>
-                                        <option value="6">6 Months</option>
-                                        <option value="3">3 Months</option>
-                                    </select>
-                                </div>
-
-                                <!-- Building Age -->
-                                <div class="form-group">
-                                    <label>Building Age (Years)</label>
-                                    <input type="number" id="buildingAge" placeholder="e.g. 10" min="0" value="0">
-                                </div>
-
-                                <!-- Claims History -->
-                                <div class="form-group">
-                                    <label>Claims in Last 3 Years</label>
-                                    <select id="claimsHistory">
-                                        <option value="0">No claims</option>
-                                        <option value="1">1 claim</option>
-                                        <option value="2">2 claims</option>
-                                        <option value="3">3 claims</option>
-                                        <option value="4">4+ claims</option>
-                                    </select>
-                                </div>
-                            </div>
-
-                            <!-- Perils Selection -->
-                            <div class="perils-section">
-                                <label class="section-label">Select Perils to Cover <span class="required">*</span></label>
-                                <div class="perils-grid">
-                                    <label class="peril-option selected" id="peril-fire">
-                                        <input type="checkbox" value="fire" checked onchange="togglePeril(this)">
-                                        <div class="peril-option-inner">
-                                            <div class="peril-icon-wrap fire-icon">
-                                                <i data-lucide="flame" style="width:24px;height:24px;"></i>
-                                            </div>
-                                            <div class="peril-text">
-                                                <span class="peril-name">Fire</span>
-                                                <span class="peril-desc">Building & contents</span>
-                                            </div>
-                                            <div class="peril-check">
-                                                <i data-lucide="check" style="width:16px;height:16px;"></i>
-                                            </div>
-                                        </div>
-                                    </label>
-                                    <label class="peril-option" id="peril-theft">
-                                        <input type="checkbox" value="theft" onchange="togglePeril(this)">
-                                        <div class="peril-option-inner">
-                                            <div class="peril-icon-wrap theft-icon">
-                                                <i data-lucide="lock" style="width:24px;height:24px;"></i>
-                                            </div>
-                                            <div class="peril-text">
-                                                <span class="peril-name">Theft</span>
-                                                <span class="peril-desc">Burglary & robbery</span>
-                                            </div>
-                                            <div class="peril-check">
-                                                <i data-lucide="check" style="width:16px;height:16px;"></i>
-                                            </div>
-                                        </div>
-                                    </label>
-                                    <label class="peril-option" id="peril-flood">
-                                        <input type="checkbox" value="flood" onchange="togglePeril(this)">
-                                        <div class="peril-option-inner">
-                                            <div class="peril-icon-wrap flood-icon">
-                                                <i data-lucide="waves" style="width:24px;height:24px;"></i>
-                                            </div>
-                                            <div class="peril-text">
-                                                <span class="peril-name">Flood</span>
-                                                <span class="peril-desc">Water & storm damage</span>
-                                            </div>
-                                            <div class="peril-check">
-                                                <i data-lucide="check" style="width:16px;height:16px;"></i>
-                                            </div>
-                                        </div>
-                                    </label>
-                                </div>
-                            </div>
-
-                            <!-- Discount Section -->
-                            <div class="discount-section">
-                                <label class="section-label">Risk Mitigation Discounts</label>
-                                <div class="discount-grid">
-                                    <label class="discount-toggle">
-                                        <input type="checkbox" id="hasSecurity">
-                                        <div class="discount-toggle-inner">
-                                            <div class="discount-icon">
-                                                <i data-lucide="cctv" style="width:20px;height:20px;"></i>
-                                            </div>
-                                            <div class="discount-info">
-                                                <span class="discount-name">Security System</span>
-                                                <span class="discount-value">5% discount</span>
-                                            </div>
-                                            <div class="discount-switch"></div>
-                                        </div>
-                                    </label>
-                                    <label class="discount-toggle">
-                                        <input type="checkbox" id="hasFireExtinguisher">
-                                        <div class="discount-toggle-inner">
-                                            <div class="discount-icon">
-                                                <i data-lucide="fire-extinguisher" style="width:20px;height:20px;"></i>
-                                            </div>
-                                            <div class="discount-info">
-                                                <span class="discount-name">Fire Extinguisher</span>
-                                                <span class="discount-value">3% discount</span>
-                                            </div>
-                                            <div class="discount-switch"></div>
-                                        </div>
-                                    </label>
-                                </div>
-                            </div>
-
-                            <!-- Buttons -->
-                            <div class="btn-row">
-                                <button type="button" class="btn-secondary" onclick="resetForm()">
-                                    <i data-lucide="rotate-ccw" style="width:16px;height:16px;"></i>
-                                    Reset
-                                </button>
-                                <button type="button" class="btn-primary" id="quoteBtn" onclick="getQuote()">
-                                    Generate Quote
-                                    <i data-lucide="arrow-right" style="width:18px;height:18px;"></i>
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-
-                <!-- Right: Results -->
-                <div class="quote-results-wrap">
-                    <!-- Placeholder when no quote -->
-                    <div class="results-placeholder" id="resultsPlaceholder">
-                        <div class="placeholder-inner">
-                            <div class="placeholder-icon">
-                                <i data-lucide="calculator" style="width:48px;height:48px;color:#F58220;"></i>
-                            </div>
-                            <h3>Your quote will appear here</h3>
-                            <p>Fill in the risk details and click "Generate Quote" to see your premium breakdown.</p>
-                            <div class="placeholder-features">
-                                <div class="placeholder-feature">
-                                    <i data-lucide="check-circle" style="width:16px;height:16px;color:#F58220;"></i>
-                                    <span>Per-peril breakdown</span>
-                                </div>
-                                <div class="placeholder-feature">
-                                    <i data-lucide="check-circle" style="width:16px;height:16px;color:#F58220;"></i>
-                                    <span>Loadings &amp; discounts</span>
-                                </div>
-                                <div class="placeholder-feature">
-                                    <i data-lucide="check-circle" style="width:16px;height:16px;color:#F58220;"></i>
-                                    <span>Commission split</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Results Panel (hidden initially) -->
-                    <div class="results-panel" id="resultsPanel">
-                        <!-- Header -->
-                        <div class="results-top">
-                            <div class="results-badge" id="clientBadge">INDIVIDUAL</div>
-                            <div class="results-rate" id="rateBadge"></div>
-                        </div>
-
-                        <div class="results-premium-card">
-                            <span class="premium-label">Gross Premium</span>
-                            <div class="premium-amount" id="grossPremium"></div>
-                            <span class="premium-sub" id="premiumSub"></span>
-                        </div>
-
-                        <!-- Peril cards -->
-                        <div class="peril-results-grid">
-                            <div class="peril-result-card" id="fireCard">
-                                <div class="peril-result-icon fire-icon">
-                                    <i data-lucide="flame" style="width:20px;height:20px;"></i>
-                                </div>
-                                <div class="peril-result-info">
-                                    <span class="peril-result-label">Fire</span>
-                                    <span class="peril-result-amount" id="fireAmount">-</span>
-                                </div>
-                            </div>
-                            <div class="peril-result-card" id="theftCard">
-                                <div class="peril-result-icon theft-icon">
-                                    <i data-lucide="lock" style="width:20px;height:20px;"></i>
-                                </div>
-                                <div class="peril-result-info">
-                                    <span class="peril-result-label">Theft</span>
-                                    <span class="peril-result-amount" id="theftAmount">-</span>
-                                </div>
-                            </div>
-                            <div class="peril-result-card" id="floodCard">
-                                <div class="peril-result-icon flood-icon">
-                                    <i data-lucide="waves" style="width:20px;height:20px;"></i>
-                                </div>
-                                <div class="peril-result-info">
-                                    <span class="peril-result-label">Flood</span>
-                                    <span class="peril-result-amount" id="floodAmount">-</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Breakdown -->
-                        <div class="breakdown-section">
-                            <h4>Premium Breakdown</h4>
-                            <table class="breakdown-table">
-                                <tbody id="breakdownBody"></tbody>
-                            </table>
-                        </div>
-
-                        <!-- Net premium card -->
-                        <div class="net-premium-card">
-                            <div class="net-row">
-                                <span>Commission (15%)</span>
-                                <span class="net-commission" id="commissionAmount"></span>
-                            </div>
-                            <div class="net-row net-total">
-                                <span>Net Premium</span>
-                                <span id="netPremium"></span>
-                            </div>
-                        </div>
-
-                        <button class="btn-print" onclick="window.print()">
-                            <i data-lucide="printer" style="width:16px;height:16px;"></i>
-                            Print Quote
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Footer -->
-    <footer class="footer">
+    <!-- Footer (visible on select page only) -->
+    <footer class="footer" id="mainFooter">
         <div class="footer-inner">
             <div class="footer-brand">
                 <div class="logo-text">
                     <span class="logo-name" style="color:#fff;">LEADWAY</span>
                     <span class="logo-sub">Assurance</span>
                 </div>
-                <p>Insuring Happiness since 1970.<br>RC 7588</p>
+                <p>Insuring Happiness since 1970. RC 7588</p>
             </div>
-            <div class="footer-links">
-                <h4>Quick Links</h4>
+            <div class="footer-col">
+                <h4>Products</h4>
                 <a href="#">Householder Insurance</a>
-                <a href="/api/rates" target="_blank">Rate Card</a>
-                <a href="/docs" target="_blank">API Documentation</a>
+                <a href="#">Motor Insurance</a>
+                <a href="#">Fire Insurance</a>
             </div>
-            <div class="footer-contact">
-                <h4>Contact</h4>
-                <p>Leadway Assurance Company Ltd<br>
-                121/123 Funsho Williams Avenue<br>
-                Surulere, Lagos, Nigeria</p>
+            <div class="footer-col">
+                <h4>Company</h4>
+                <a href="#">About Leadway</a>
+                <a href="#">Contact Us</a>
+                <a href="#">Careers</a>
             </div>
         </div>
         <div class="footer-bottom">
-            <p>&copy; 2025 Leadway Assurance Company Limited. All rights reserved. &mdash; Pricing Engine v1.0</p>
+            &copy; 2025 Leadway Assurance Company Limited. All rights reserved.
         </div>
     </footer>
 

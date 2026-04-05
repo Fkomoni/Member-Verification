@@ -1,33 +1,73 @@
 /**
- * Leadway Householder Pricing Engine — Frontend Logic
+ * Leadway Householder Pricing Engine
+ * Multi-page flow: Select -> Quote Builder -> Results
  */
 
 let clientType = 'individual';
 
-const SEGMENT_DESCRIPTIONS = {
-    individual: 'Individual policies for homeowners and tenants. Covers personal property and household contents.',
-    corporate: 'Corporate policies for businesses and commercial properties. Lower base rates with volume discounts for large sums insured.'
-};
+// ============= PAGE NAVIGATION =============
 
-function setClientType(type) {
-    clientType = type;
-    document.querySelectorAll('.segment-btn').forEach(btn => {
-        btn.classList.toggle('active', btn.dataset.type === type);
-    });
-    document.getElementById('segmentDesc').textContent = SEGMENT_DESCRIPTIONS[type];
+function showPage(pageId) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active-page'));
+    document.getElementById(pageId).classList.add('active-page');
 
-    // Hide results
-    document.getElementById('resultsPanel').classList.remove('visible');
-    document.getElementById('resultsPlaceholder').style.display = '';
+    // Show footer only on select page
+    const footer = document.getElementById('mainFooter');
+    if (footer) footer.style.display = pageId === 'page-select' ? '' : 'none';
 
-    // Re-initialize icons after DOM changes
+    // Scroll to top
+    window.scrollTo(0, 0);
+
+    // Re-init icons
     if (window.lucide) lucide.createIcons();
 }
 
-function togglePeril(checkbox) {
-    const option = checkbox.closest('.peril-option');
-    option.classList.toggle('selected', checkbox.checked);
+function selectProduct(type) {
+    clientType = type;
+    updateTypeToggle();
+    updateInfoPanel();
+    showPage('page-quote');
 }
+
+function goBack() {
+    showPage('page-select');
+}
+
+function goToQuote() {
+    showPage('page-quote');
+}
+
+// ============= TYPE TOGGLE =============
+
+function switchType(type) {
+    clientType = type;
+    updateTypeToggle();
+    updateInfoPanel();
+}
+
+function updateTypeToggle() {
+    document.querySelectorAll('.type-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.type === clientType);
+    });
+}
+
+function updateInfoPanel() {
+    const title = document.getElementById('infoTitle');
+    const desc = document.getElementById('infoDesc');
+    const feat3 = document.getElementById('infoFeature3');
+
+    if (clientType === 'corporate') {
+        title.textContent = 'Cover Your Business Property';
+        desc.textContent = 'Comprehensive cover for commercial buildings, office contents, and business assets. Volume discounts for large sums insured.';
+        feat3.textContent = 'Volume discounts for sums over N100M';
+    } else {
+        title.textContent = 'Protect What Matters';
+        desc.textContent = 'Get comprehensive cover for your home and personal property against the most common risks — with pricing powered by real claims data.';
+        feat3.textContent = 'Discounts for security & fire equipment';
+    }
+}
+
+// ============= FORM HELPERS =============
 
 function formatCurrency(input) {
     let value = input.value.replace(/[^0-9]/g, '');
@@ -48,34 +88,17 @@ function formatNGN(amount) {
     });
 }
 
+function toggleChip(checkbox) {
+    checkbox.closest('.peril-chip').classList.toggle('selected', checkbox.checked);
+}
+
 function getSelectedPerils() {
     const perils = [];
-    document.querySelectorAll('.peril-option input[type="checkbox"]:checked').forEach(cb => {
-        perils.push(cb.value);
-    });
+    document.querySelectorAll('.peril-chip input:checked').forEach(cb => perils.push(cb.value));
     return perils;
 }
 
-function resetForm() {
-    document.getElementById('sumInsured').value = '';
-    document.getElementById('location').value = '';
-    document.getElementById('coverType').value = 'standard';
-    document.getElementById('duration').value = '12';
-    document.getElementById('buildingAge').value = '0';
-    document.getElementById('claimsHistory').value = '0';
-    document.getElementById('hasSecurity').checked = false;
-    document.getElementById('hasFireExtinguisher').checked = false;
-
-    // Reset perils — only fire checked
-    document.querySelectorAll('.peril-option input[type="checkbox"]').forEach(cb => {
-        const isFire = cb.value === 'fire';
-        cb.checked = isFire;
-        cb.closest('.peril-option').classList.toggle('selected', isFire);
-    });
-
-    document.getElementById('resultsPanel').classList.remove('visible');
-    document.getElementById('resultsPlaceholder').style.display = '';
-}
+// ============= GENERATE QUOTE =============
 
 async function getQuote() {
     const sumInsured = parseCurrency(document.getElementById('sumInsured').value);
@@ -89,18 +112,9 @@ async function getQuote() {
     const perils = getSelectedPerils();
 
     // Validation
-    if (!sumInsured || sumInsured <= 0) {
-        alert('Please enter a valid Sum Insured amount.');
-        return;
-    }
-    if (!location) {
-        alert('Please select a location.');
-        return;
-    }
-    if (perils.length === 0) {
-        alert('Please select at least one peril to cover.');
-        return;
-    }
+    if (!sumInsured || sumInsured <= 0) { alert('Please enter a valid Sum Insured amount.'); return; }
+    if (!location) { alert('Please select a location.'); return; }
+    if (perils.length === 0) { alert('Please select at least one peril to cover.'); return; }
 
     const btn = document.getElementById('quoteBtn');
     btn.disabled = true;
@@ -113,9 +127,9 @@ async function getQuote() {
             body: JSON.stringify({
                 client_type: clientType,
                 sum_insured: sumInsured,
-                location: location,
+                location,
                 cover_type: coverType,
-                perils: perils,
+                perils,
                 building_age_years: buildingAge,
                 has_security: hasSecurity,
                 has_fire_extinguisher: hasFireExtinguisher,
@@ -130,56 +144,55 @@ async function getQuote() {
         }
 
         const data = await response.json();
-        displayResults(data, perils, sumInsured);
+        displayResults(data, perils, sumInsured, location, coverType, duration);
 
     } catch (error) {
         alert('Error: ' + error.message);
     } finally {
         btn.disabled = false;
-        btn.innerHTML = 'Generate Quote <i data-lucide="arrow-right" style="width:18px;height:18px;"></i>';
-        if (window.lucide) lucide.createIcons();
+        btn.textContent = 'Get Your Householder Quote';
     }
 }
 
-function displayResults(data, selectedPerils, sumInsured) {
-    // Hide placeholder, show results
-    document.getElementById('resultsPlaceholder').style.display = 'none';
-    const panel = document.getElementById('resultsPanel');
+// ============= DISPLAY RESULTS =============
 
-    // Client badge
-    document.getElementById('clientBadge').textContent = data.client_type.toUpperCase();
+function displayResults(data, selectedPerils, sumInsured, location, coverType, duration) {
+    // Left panel
+    document.getElementById('grossPremiumBig').textContent = formatNGN(data.gross_premium);
+    document.getElementById('rateDisplay').textContent = 'Rate: ' + data.rate_per_mille.toFixed(2) + ' per mille';
+    document.getElementById('resultsTitle').textContent =
+        (clientType === 'corporate' ? 'Corporate' : 'Individual') + ' Quote';
 
-    // Rate
-    document.getElementById('rateBadge').textContent =
-        `Rate: ${data.rate_per_mille.toFixed(2)} per mille`;
-
-    // Gross premium
-    document.getElementById('grossPremium').textContent = formatNGN(data.gross_premium);
-
-    // Sub text
-    document.getElementById('premiumSub').textContent =
-        `Sum Insured: ${formatNGN(sumInsured)}`;
-
-    // Peril cards
-    const perilMap = {
-        fire: { card: 'fireCard', amount: 'fireAmount', value: data.fire_premium },
-        theft: { card: 'theftCard', amount: 'theftAmount', value: data.theft_premium },
-        flood: { card: 'floodCard', amount: 'floodAmount', value: data.flood_premium },
+    // Peril mini cards
+    const perilMinis = {
+        fire: { card: 'miniFireCard', amount: 'miniFireAmt', value: data.fire_premium },
+        theft: { card: 'miniTheftCard', amount: 'miniTheftAmt', value: data.theft_premium },
+        flood: { card: 'miniFloodCard', amount: 'miniFloodAmt', value: data.flood_premium },
     };
-
-    for (const [peril, info] of Object.entries(perilMap)) {
+    for (const [peril, info] of Object.entries(perilMinis)) {
         const card = document.getElementById(info.card);
-        const amountEl = document.getElementById(info.amount);
+        const amt = document.getElementById(info.amount);
         if (selectedPerils.includes(peril)) {
             card.classList.remove('inactive');
-            amountEl.textContent = formatNGN(info.value);
+            amt.textContent = formatNGN(info.value);
         } else {
             card.classList.add('inactive');
-            amountEl.textContent = 'N/A';
+            amt.textContent = 'Not covered';
         }
     }
 
-    // Breakdown table
+    // Right panel
+    document.getElementById('clientBadge').textContent = clientType.toUpperCase();
+    document.getElementById('coverBadge').textContent = coverType.toUpperCase();
+
+    // Summary
+    document.getElementById('sumDisplay').textContent = formatNGN(sumInsured);
+    const locMap = { lagos: 'Lagos', abuja: 'Abuja', port_harcourt: 'Port Harcourt', ibadan: 'Ibadan', kaduna: 'Kaduna', other: 'Other' };
+    document.getElementById('locDisplay').textContent = locMap[location] || location;
+    document.getElementById('perilsDisplay').textContent = selectedPerils.map(p => p.charAt(0).toUpperCase() + p.slice(1)).join(', ');
+    document.getElementById('durationDisplay').textContent = duration + ' months';
+
+    // Breakdown
     const rows = [
         ['Base Premium', data.base_premium, ''],
         ['Location Adjustment', data.location_adjustment, data.location_adjustment > 0 ? 'loading' : data.location_adjustment < 0 ? 'discount' : ''],
@@ -194,44 +207,21 @@ function displayResults(data, selectedPerils, sumInsured) {
     for (const [label, amount, cls] of rows) {
         if (amount === 0) continue;
         const sign = amount > 0 ? '+' : '';
-        html += `<tr>
-            <td>${label}</td>
-            <td class="${cls}">${sign}${formatNGN(Math.abs(amount))}${amount < 0 ? ' (-)' : ''}</td>
-        </tr>`;
+        const displayAmt = amount < 0 ? '-' + formatNGN(Math.abs(amount)) : '+' + formatNGN(amount);
+        html += `<tr><td>${label}</td><td class="${cls}">${displayAmt}</td></tr>`;
     }
-
-    html += `<tr class="total-row">
-        <td>Gross Premium</td>
-        <td>${formatNGN(data.gross_premium)}</td>
-    </tr>`;
-
     document.getElementById('breakdownBody').innerHTML = html;
 
-    // Net premium card
-    document.getElementById('commissionAmount').textContent = '-' + formatNGN(data.commission);
-    document.getElementById('netPremium').textContent = formatNGN(data.net_premium);
+    // Net
+    document.getElementById('grossNet').textContent = formatNGN(data.gross_premium);
+    document.getElementById('commNet').textContent = '-' + formatNGN(data.commission);
+    document.getElementById('netNet').textContent = formatNGN(data.net_premium);
 
-    // Show panel
-    panel.classList.add('visible');
-
-    // Re-init icons
-    if (window.lucide) lucide.createIcons();
-
-    // Scroll to results on mobile
-    if (window.innerWidth <= 1024) {
-        panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
+    // Show results page
+    showPage('page-results');
 }
 
-// Smooth scroll for anchor links
+// ============= INIT =============
 document.addEventListener('DOMContentLoaded', () => {
-    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-        anchor.addEventListener('click', function (e) {
-            e.preventDefault();
-            const target = document.querySelector(this.getAttribute('href'));
-            if (target) {
-                target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            }
-        });
-    });
+    showPage('page-select');
 });
