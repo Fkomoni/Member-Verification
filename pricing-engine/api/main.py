@@ -305,6 +305,65 @@ async def generate_policy(request: PolicyRequest):
     )
 
 
+class GoogleLookupRequest(BaseModel):
+    address: str
+
+
+@app.post("/api/google-lookup")
+async def google_lookup(request: GoogleLookupRequest):
+    """Lookup an address using Google Maps and return Street View + Satellite images."""
+    import httpx
+
+    api_key = os.environ.get("GOOGLE_MAPS_API_KEY", "")
+    if not api_key:
+        raise HTTPException(400, "Google Maps API key not configured. Please set GOOGLE_MAPS_API_KEY environment variable.")
+
+    # Geocode the address
+    geocode_url = f"https://maps.googleapis.com/maps/api/geocode/json?address={request.address}&key={api_key}"
+
+    async with httpx.AsyncClient() as client:
+        geo_response = await client.get(geocode_url)
+        geo_data = geo_response.json()
+
+    if geo_data.get("status") != "OK" or not geo_data.get("results"):
+        raise HTTPException(404, "Address not found. Please try a more specific address.")
+
+    result = geo_data["results"][0]
+    lat = result["geometry"]["location"]["lat"]
+    lng = result["geometry"]["location"]["lng"]
+    formatted_address = result.get("formatted_address", request.address)
+
+    # Build Street View and Satellite image URLs
+    street_view_url = (
+        f"https://maps.googleapis.com/maps/api/streetview"
+        f"?size=600x400&location={lat},{lng}&fov=90&pitch=10&key={api_key}"
+    )
+
+    satellite_url = (
+        f"https://maps.googleapis.com/maps/api/staticmap"
+        f"?center={lat},{lng}&zoom=18&size=600x400&maptype=satellite"
+        f"&markers=color:orange|{lat},{lng}&key={api_key}"
+    )
+
+    # Check if Street View is available
+    async with httpx.AsyncClient() as client:
+        sv_meta_url = (
+            f"https://maps.googleapis.com/maps/api/streetview/metadata"
+            f"?location={lat},{lng}&key={api_key}"
+        )
+        sv_meta = await client.get(sv_meta_url)
+        sv_data = sv_meta.json()
+        sv_available = sv_data.get("status") == "OK"
+
+    return {
+        "formatted_address": formatted_address,
+        "latitude": lat,
+        "longitude": lng,
+        "street_view_url": street_view_url if sv_available else None,
+        "satellite_url": satellite_url,
+    }
+
+
 @app.get("/api/paystack-key")
 async def get_paystack_key():
     """Return the Paystack public key (safe to expose)."""

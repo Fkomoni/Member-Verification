@@ -273,6 +273,34 @@ a { text-decoration: none; color: inherit; }
 .prefix { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); font-size: 15px; font-weight: 700; color: var(--orange); }
 .input-prefix input { padding-left: 32px; }
 
+/* ============= PHOTO METHOD TOGGLE ============= */
+.photo-method-toggle { display: flex; gap: 0; border-radius: var(--r-sm); overflow: hidden; border: 2px solid var(--gray-300); margin-bottom: 12px; }
+.pm-btn { flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px; padding: 10px 16px; border: none; font-family: var(--font); font-size: 13px; font-weight: 600; cursor: pointer; transition: var(--ease); background: var(--white); color: var(--gray-600); }
+.pm-btn.active { background: var(--orange); color: var(--white); }
+.pm-btn:hover:not(.active) { background: var(--orange-light); color: var(--orange); }
+
+/* ============= GOOGLE MAPS LOOKUP ============= */
+.google-lookup-box { background: var(--gray-100); border: 1px solid var(--gray-200); border-radius: var(--r-md); padding: 16px; }
+.gl-input-row { display: flex; gap: 8px; }
+.gl-input { flex: 1; padding: 12px 14px; border: 2px solid var(--gray-300); border-radius: var(--r-sm); font-family: var(--font); font-size: 14px; font-weight: 500; outline: none; transition: var(--ease); }
+.gl-input:focus { border-color: var(--orange); }
+.gl-search-btn { display: flex; align-items: center; gap: 6px; padding: 12px 20px; background: var(--orange); color: var(--white); border: none; border-radius: var(--r-sm); font-family: var(--font); font-size: 13px; font-weight: 700; cursor: pointer; transition: var(--ease); flex-shrink: 0; }
+.gl-search-btn:hover { background: var(--orange-hover); }
+.gl-images { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 16px; }
+.gl-image-card { border-radius: var(--r-sm); overflow: hidden; background: var(--white); border: 1px solid var(--gray-200); }
+.gl-image-label { display: block; padding: 8px 12px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--orange); background: var(--orange-light); }
+.gl-image-card img { width: 100%; height: 160px; object-fit: cover; display: block; }
+.gl-image-placeholder { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 160px; gap: 8px; }
+.gl-image-placeholder span { font-size: 12px; color: var(--gray-500); }
+.gl-confirm { margin-top: 14px; }
+.gl-location-info { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: var(--dark); margin-bottom: 12px; padding: 10px 14px; background: var(--white); border-radius: var(--r-sm); border: 1px solid var(--gray-200); }
+.gl-confirm-btns { display: flex; gap: 8px; }
+.gl-confirm-yes { display: flex; align-items: center; gap: 6px; padding: 10px 20px; background: #2E7D32; color: var(--white); border: none; border-radius: var(--r-sm); font-family: var(--font); font-size: 13px; font-weight: 700; cursor: pointer; transition: var(--ease); }
+.gl-confirm-yes:hover { background: #1B5E20; }
+.gl-confirm-no { padding: 10px 20px; background: var(--white); color: var(--gray-600); border: 1px solid var(--gray-300); border-radius: var(--r-sm); font-family: var(--font); font-size: 13px; font-weight: 600; cursor: pointer; transition: var(--ease); }
+.gl-confirm-no:hover { border-color: var(--dark); }
+.gl-confirmed { display: flex; align-items: center; gap: 8px; margin-top: 14px; padding: 12px 16px; background: #E8F5E9; border-radius: var(--r-sm); font-size: 13px; font-weight: 700; color: #2E7D32; }
+
 /* ============= PHOTO UPLOAD ============= */
 .upload-area {
     border: 2px dashed var(--gray-300); border-radius: var(--r-md);

@@ -316,17 +316,83 @@
                                 <input type="text" id="contentSI" placeholder="e.g. 10,000,000" oninput="formatCurrency(this)">
                             </div>
                         </div>
-                        <!-- Building Photos Upload -->
+                        <!-- Building Photos: Toggle between Upload and Google Maps -->
                         <div class="form-group full-width">
-                            <label>Building Photos <span style="font-weight:400;color:#9E9E9E;">(Upload photos of the property)</span></label>
-                            <div class="upload-area" id="uploadArea" onclick="document.getElementById('photoInput').click();" ondragover="event.preventDefault();this.classList.add('drag-over');" ondragleave="this.classList.remove('drag-over');" ondrop="handleDrop(event);">
-                                <input type="file" id="photoInput" accept="image/*" multiple style="display:none;" onchange="handleFiles(this.files)">
-                                <div class="upload-placeholder" id="uploadPlaceholder">
-                                    <i data-lucide="camera" style="width:32px;height:32px;color:#FF6B22;"></i>
-                                    <p><strong>Click to upload</strong> or drag and drop</p>
-                                    <span>JPG, PNG up to 5MB each. Max 4 photos.</span>
+                            <label>Building Photos <span class="req">*</span></label>
+                            <div class="photo-method-toggle">
+                                <button type="button" class="pm-btn active" id="pmUpload" onclick="switchPhotoMethod('upload')">
+                                    <i data-lucide="camera" style="width:16px;height:16px;"></i>
+                                    Upload Photos
+                                </button>
+                                <button type="button" class="pm-btn" id="pmGoogle" onclick="switchPhotoMethod('google')">
+                                    <i data-lucide="map-pin" style="width:16px;height:16px;"></i>
+                                    Google Maps Lookup
+                                </button>
+                            </div>
+
+                            <!-- Option 1: Manual Upload -->
+                            <div id="uploadMethod" class="photo-method">
+                                <div class="upload-area" id="uploadArea" onclick="document.getElementById('photoInput').click();" ondragover="event.preventDefault();this.classList.add('drag-over');" ondragleave="this.classList.remove('drag-over');" ondrop="handleDrop(event);">
+                                    <input type="file" id="photoInput" accept="image/*" multiple style="display:none;" onchange="handleFiles(this.files)">
+                                    <div class="upload-placeholder" id="uploadPlaceholder">
+                                        <i data-lucide="camera" style="width:32px;height:32px;color:#FF6B22;"></i>
+                                        <p><strong>Click to upload</strong> or drag and drop</p>
+                                        <span>JPG, PNG up to 5MB each. Max 4 photos.</span>
+                                    </div>
+                                    <div class="upload-previews" id="uploadPreviews"></div>
                                 </div>
-                                <div class="upload-previews" id="uploadPreviews"></div>
+                            </div>
+
+                            <!-- Option 2: Google Maps Lookup -->
+                            <div id="googleMethod" class="photo-method" style="display:none;">
+                                <div class="google-lookup-box">
+                                    <div class="gl-input-row">
+                                        <input type="text" id="googleAddress" placeholder="Enter full address e.g. 17 Okotie Eboh Close, Ikoyi, Lagos" class="gl-input">
+                                        <button type="button" class="gl-search-btn" onclick="lookupGoogleAddress()">
+                                            <i data-lucide="search" style="width:16px;height:16px;"></i>
+                                            Search
+                                        </button>
+                                    </div>
+                                    <div id="googleResults" style="display:none;">
+                                        <div class="gl-images">
+                                            <div class="gl-image-card">
+                                                <span class="gl-image-label">Street View</span>
+                                                <img id="streetViewImg" alt="Street View" style="display:none;">
+                                                <div class="gl-image-placeholder" id="streetViewPlaceholder">
+                                                    <i data-lucide="image" style="width:24px;height:24px;color:#9E9E9E;"></i>
+                                                    <span>Street View will appear here</span>
+                                                </div>
+                                            </div>
+                                            <div class="gl-image-card">
+                                                <span class="gl-image-label">Satellite View</span>
+                                                <img id="satelliteImg" alt="Satellite View" style="display:none;">
+                                                <div class="gl-image-placeholder" id="satellitePlaceholder">
+                                                    <i data-lucide="image" style="width:24px;height:24px;color:#9E9E9E;"></i>
+                                                    <span>Satellite View will appear here</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="gl-confirm" id="glConfirm" style="display:none;">
+                                            <div class="gl-location-info">
+                                                <i data-lucide="map-pin" style="width:16px;height:16px;color:#FF6B22;"></i>
+                                                <span id="glResolvedAddress"></span>
+                                            </div>
+                                            <div class="gl-confirm-btns">
+                                                <button type="button" class="gl-confirm-yes" onclick="confirmGooglePhotos()">
+                                                    <i data-lucide="check" style="width:14px;height:14px;"></i>
+                                                    Yes, this is my property
+                                                </button>
+                                                <button type="button" class="gl-confirm-no" onclick="rejectGooglePhotos()">
+                                                    Try different address
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div class="gl-confirmed" id="glConfirmed" style="display:none;">
+                                            <i data-lucide="check-circle" style="width:20px;height:20px;color:#2E7D32;"></i>
+                                            <span>Property location confirmed</span>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>

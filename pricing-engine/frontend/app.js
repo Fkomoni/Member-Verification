@@ -290,6 +290,110 @@ function displayResults(data, buildingSI, contentSI, location, coverType, durati
     showPage('page-results');
 }
 
+// ============= PHOTO METHOD TOGGLE =============
+
+let photoMethod = 'upload'; // 'upload' or 'google'
+let googlePhotosConfirmed = false;
+let googlePhotoUrls = [];
+
+function switchPhotoMethod(method) {
+    photoMethod = method;
+    document.getElementById('pmUpload').classList.toggle('active', method === 'upload');
+    document.getElementById('pmGoogle').classList.toggle('active', method === 'google');
+    document.getElementById('uploadMethod').style.display = method === 'upload' ? '' : 'none';
+    document.getElementById('googleMethod').style.display = method === 'google' ? '' : 'none';
+    if (window.lucide) lucide.createIcons();
+}
+
+async function lookupGoogleAddress() {
+    const address = document.getElementById('googleAddress').value.trim();
+    if (!address) { alert('Please enter an address.'); return; }
+
+    const btn = document.querySelector('.gl-search-btn');
+    btn.innerHTML = '<span class="spinner" style="width:14px;height:14px;border-width:2px;"></span> Searching...';
+    btn.disabled = true;
+
+    try {
+        const response = await fetch('/api/google-lookup', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ address })
+        });
+
+        if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.detail || 'Lookup failed');
+        }
+
+        const data = await response.json();
+
+        // Show results
+        document.getElementById('googleResults').style.display = '';
+        document.getElementById('glConfirm').style.display = '';
+        document.getElementById('glConfirmed').style.display = 'none';
+        googlePhotosConfirmed = false;
+
+        // Street View
+        const svImg = document.getElementById('streetViewImg');
+        const svPh = document.getElementById('streetViewPlaceholder');
+        if (data.street_view_url) {
+            svImg.src = data.street_view_url;
+            svImg.style.display = '';
+            svPh.style.display = 'none';
+        } else {
+            svImg.style.display = 'none';
+            svPh.style.display = '';
+            svPh.querySelector('span').textContent = 'Street View not available for this location';
+        }
+
+        // Satellite
+        const satImg = document.getElementById('satelliteImg');
+        const satPh = document.getElementById('satellitePlaceholder');
+        if (data.satellite_url) {
+            satImg.src = data.satellite_url;
+            satImg.style.display = '';
+            satPh.style.display = 'none';
+        } else {
+            satImg.style.display = 'none';
+            satPh.style.display = '';
+        }
+
+        document.getElementById('glResolvedAddress').textContent = data.formatted_address || address;
+
+        // Store URLs for policy
+        googlePhotoUrls = [];
+        if (data.street_view_url) googlePhotoUrls.push(data.street_view_url);
+        if (data.satellite_url) googlePhotoUrls.push(data.satellite_url);
+
+        // Also fill the property address field
+        if (data.formatted_address) {
+            document.getElementById('address').value = data.formatted_address;
+        }
+
+    } catch (error) {
+        alert('Error: ' + error.message);
+    } finally {
+        btn.innerHTML = '<i data-lucide="search" style="width:16px;height:16px;"></i> Search';
+        btn.disabled = false;
+        if (window.lucide) lucide.createIcons();
+    }
+}
+
+function confirmGooglePhotos() {
+    googlePhotosConfirmed = true;
+    document.getElementById('glConfirm').style.display = 'none';
+    document.getElementById('glConfirmed').style.display = 'flex';
+    if (window.lucide) lucide.createIcons();
+}
+
+function rejectGooglePhotos() {
+    document.getElementById('googleResults').style.display = 'none';
+    document.getElementById('googleAddress').value = '';
+    document.getElementById('googleAddress').focus();
+    googlePhotosConfirmed = false;
+    googlePhotoUrls = [];
+}
+
 // ============= PHOTO UPLOAD =============
 
 let uploadedPhotos = []; // Array of { file, dataUrl }
