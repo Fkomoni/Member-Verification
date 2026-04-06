@@ -430,15 +430,18 @@ function removePhoto(index) {
 
 function renderPreviews() {
     const container = document.getElementById('uploadPreviews');
-    const placeholder = document.getElementById('uploadPlaceholder');
+    const wrap = document.getElementById('uploadPreviewsWrap');
+    const count = document.getElementById('photoCount');
 
     if (uploadedPhotos.length === 0) {
-        placeholder.style.display = '';
+        wrap.style.display = 'none';
         container.innerHTML = '';
         return;
     }
 
-    placeholder.style.display = 'none';
+    wrap.style.display = '';
+    count.textContent = uploadedPhotos.length;
+
     container.innerHTML = uploadedPhotos.map((photo, i) =>
         `<div class="upload-thumb">
             <img src="${photo.dataUrl}" alt="Building photo ${i + 1}">
@@ -446,9 +449,9 @@ function renderPreviews() {
         </div>`
     ).join('');
 
-    // Show add more button if under limit
+    // Show add more tile if under limit
     if (uploadedPhotos.length < MAX_PHOTOS) {
-        container.innerHTML += `<div class="upload-thumb" style="display:flex;align-items:center;justify-content:center;background:#F5F5F5;border-style:dashed;">
+        container.innerHTML += `<div class="upload-thumb" onclick="document.getElementById('photoInput').click();" style="display:flex;align-items:center;justify-content:center;background:#F5F5F5;border-style:dashed;cursor:pointer;">
             <span style="font-size:28px;color:#9E9E9E;">+</span>
         </div>`;
     }

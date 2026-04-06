@@ -370,14 +370,45 @@
                         </div>
 
                         <div class="form-group full-width">
-                            <label>Upload Building Photos <span style="font-weight:400;color:#9E9E9E;">(Required if Street View is unavailable)</span></label>
-                            <div class="upload-area" id="uploadArea" onclick="document.getElementById('photoInput').click();" ondragover="event.preventDefault();this.classList.add('drag-over');" ondragleave="this.classList.remove('drag-over');" ondrop="handleDrop(event);">
-                                <input type="file" id="photoInput" accept="image/*" multiple style="display:none;" onchange="handleFiles(this.files)">
-                                <div class="upload-placeholder" id="uploadPlaceholder">
-                                    <i data-lucide="camera" style="width:32px;height:32px;color:#FF6B22;"></i>
-                                    <p><strong>Click to upload</strong> or drag and drop</p>
-                                    <span>Upload photos of the front, sides, and roof. JPG/PNG, max 5MB each, up to 6 photos.</span>
+                            <label>Upload Building Photos <span class="req">*</span></label>
+                            <p style="font-size:12px;color:#757575;margin-bottom:10px;">Take or upload clear photos of the property. These are required for underwriting.</p>
+
+                            <!-- Photo guide -->
+                            <div class="photo-guide">
+                                <div class="photo-guide-item">
+                                    <div class="pg-icon"><i data-lucide="home" style="width:20px;height:20px;"></i></div>
+                                    <div><strong>Front View</strong><br><span>Full front of building</span></div>
                                 </div>
+                                <div class="photo-guide-item">
+                                    <div class="pg-icon"><i data-lucide="move-horizontal" style="width:20px;height:20px;"></i></div>
+                                    <div><strong>Side Views</strong><br><span>Left &amp; right sides</span></div>
+                                </div>
+                                <div class="photo-guide-item">
+                                    <div class="pg-icon"><i data-lucide="arrow-up" style="width:20px;height:20px;"></i></div>
+                                    <div><strong>Roof</strong><br><span>Roof type &amp; condition</span></div>
+                                </div>
+                                <div class="photo-guide-item">
+                                    <div class="pg-icon"><i data-lucide="door-open" style="width:20px;height:20px;"></i></div>
+                                    <div><strong>Entrance</strong><br><span>Main entrance/gate</span></div>
+                                </div>
+                            </div>
+
+                            <!-- Camera capture (mobile) + file upload -->
+                            <div class="upload-buttons">
+                                <button type="button" class="upload-cam-btn" onclick="document.getElementById('cameraInput').click();">
+                                    <i data-lucide="camera" style="width:20px;height:20px;"></i>
+                                    Take Photo
+                                </button>
+                                <button type="button" class="upload-file-btn" onclick="document.getElementById('photoInput').click();">
+                                    <i data-lucide="upload" style="width:20px;height:20px;"></i>
+                                    Upload from Gallery
+                                </button>
+                                <input type="file" id="cameraInput" accept="image/*" capture="environment" style="display:none;" onchange="handleFiles(this.files)">
+                                <input type="file" id="photoInput" accept="image/*" multiple style="display:none;" onchange="handleFiles(this.files)">
+                            </div>
+
+                            <div class="upload-previews-wrap" id="uploadPreviewsWrap" style="display:none;">
+                                <div class="upload-count"><span id="photoCount">0</span>/6 photos</div>
                                 <div class="upload-previews" id="uploadPreviews"></div>
                             </div>
                         </div>
