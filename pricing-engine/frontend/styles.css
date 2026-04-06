@@ -273,12 +273,6 @@ a { text-decoration: none; color: inherit; }
 .prefix { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); font-size: 15px; font-weight: 700; color: var(--orange); }
 .input-prefix input { padding-left: 32px; }
 
-/* ============= PHOTO METHOD TOGGLE ============= */
-.photo-method-toggle { display: flex; gap: 0; border-radius: var(--r-sm); overflow: hidden; border: 2px solid var(--gray-300); margin-bottom: 12px; }
-.pm-btn { flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px; padding: 10px 16px; border: none; font-family: var(--font); font-size: 13px; font-weight: 600; cursor: pointer; transition: var(--ease); background: var(--white); color: var(--gray-600); }
-.pm-btn.active { background: var(--orange); color: var(--white); }
-.pm-btn:hover:not(.active) { background: var(--orange-light); color: var(--orange); }
-
 /* ============= GOOGLE MAPS LOOKUP ============= */
 .google-lookup-box { background: var(--gray-100); border: 1px solid var(--gray-200); border-radius: var(--r-md); padding: 16px; }
 .gl-input-row { display: flex; gap: 8px; }

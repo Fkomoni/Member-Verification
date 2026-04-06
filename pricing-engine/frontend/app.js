@@ -149,6 +149,9 @@ async function getQuote() {
     if (!incBuilding && !incContent && !incAccidental && !incAllRisks && !incPA && !incAltAcc) {
         alert('Please select at least one coverage.'); return;
     }
+    if (uploadedPhotos.length === 0) {
+        alert('Please upload at least one photo of the building (front, sides, or roof). This is required for underwriting.'); return;
+    }
 
     const btn = document.getElementById('quoteBtn');
     btn.disabled = true;
@@ -290,20 +293,10 @@ function displayResults(data, buildingSI, contentSI, location, coverType, durati
     showPage('page-results');
 }
 
-// ============= PHOTO METHOD TOGGLE =============
+// ============= GOOGLE MAPS LOCATION VERIFICATION =============
 
-let photoMethod = 'upload'; // 'upload' or 'google'
 let googlePhotosConfirmed = false;
 let googlePhotoUrls = [];
-
-function switchPhotoMethod(method) {
-    photoMethod = method;
-    document.getElementById('pmUpload').classList.toggle('active', method === 'upload');
-    document.getElementById('pmGoogle').classList.toggle('active', method === 'google');
-    document.getElementById('uploadMethod').style.display = method === 'upload' ? '' : 'none';
-    document.getElementById('googleMethod').style.display = method === 'google' ? '' : 'none';
-    if (window.lucide) lucide.createIcons();
-}
 
 async function lookupGoogleAddress() {
     const address = document.getElementById('googleAddress').value.trim();
@@ -397,7 +390,7 @@ function rejectGooglePhotos() {
 // ============= PHOTO UPLOAD =============
 
 let uploadedPhotos = []; // Array of { file, dataUrl }
-const MAX_PHOTOS = 4;
+const MAX_PHOTOS = 6;
 const MAX_SIZE_MB = 5;
 
 function handleDrop(e) {
