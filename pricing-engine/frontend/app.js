@@ -149,8 +149,8 @@ async function getQuote() {
     if (!incBuilding && !incContent && !incAccidental && !incAllRisks && !incPA && !incAltAcc) {
         alert('Please select at least one coverage.'); return;
     }
-    if (uploadedPhotos.length === 0) {
-        alert('Please upload at least one photo of the building (front, sides, or roof). This is required for underwriting.'); return;
+    if (uploadedPhotos.length === 0 && !googlePhotosConfirmed) {
+        alert('Please either upload photos of the building OR verify the property location via Google Maps.'); return;
     }
 
     const btn = document.getElementById('quoteBtn');
