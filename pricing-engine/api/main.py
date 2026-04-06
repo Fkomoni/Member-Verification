@@ -314,7 +314,7 @@ async def google_lookup(request: GoogleLookupRequest):
     """Lookup an address using Google Maps and return Street View + Satellite images."""
     import httpx
 
-    api_key = os.environ.get("GOOGLE_MAPS_API_KEY", "")
+    api_key = os.environ.get("GOOGLE_MAPS_API_KEY", "AIzaSyDC1dwYgPKDjT7arMlAZBDysp5uajjZ9pE")
     if not api_key:
         raise HTTPException(400, "Google Maps API key not configured. Please set GOOGLE_MAPS_API_KEY environment variable.")
 
