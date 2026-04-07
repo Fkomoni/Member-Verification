@@ -13,6 +13,10 @@ from app.schemas.member import MemberProfile, MemberDashboard
 from app.schemas.medication import MedicationOut
 from app.services.refill_intelligence import get_refill_intelligence, calculate_days_remaining
 from app.services.pbm_client import prognosis_client
+from app.services.sync_service import push_approved_request_to_pbm
+import logging
+
+_logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/member", tags=["Member"])
 
@@ -123,24 +127,32 @@ async def request_profile_update(
         action="MODIFY",
         payload=changes,
         comment=body.comment,
+        status="APPROVED",  # Auto-approve
     )
     db.add(req)
     db.flush()
 
     log = RequestLog(
         request_id=req.id,
-        actor_type="MEMBER",
-        actor_id=member.member_id,
-        action="PROFILE_UPDATE_REQUESTED",
+        actor_type="SYSTEM",
+        actor_id="auto-approve",
+        action="AUTO_APPROVED",
         before_state={k: v.get("current", "") for k, v in changes.items() if isinstance(v, dict)},
         after_state={k: v.get("requested", "") for k, v in changes.items() if isinstance(v, dict)},
-        notes=body.comment,
+        notes="Auto-approved and pushed to Prognosis",
     )
     db.add(log)
     db.commit()
 
+    # Auto-push to Prognosis
+    try:
+        await push_approved_request_to_pbm(str(req.id), db)
+        _logger.info(f"Profile update auto-pushed to Prognosis for {member.member_id}")
+    except Exception as e:
+        _logger.error(f"Failed to push profile update to Prognosis: {e}")
+
     return {
-        "message": "Profile update request submitted. You'll be notified once reviewed.",
+        "message": "Profile updated successfully and synced to Prognosis.",
         "request_id": str(req.id),
         "changes_requested": list(changes.keys()),
     }

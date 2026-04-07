@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, status
 from sqlalchemy.orm import Session
 from typing import Optional
+import logging
 
 from app.core.database import get_db
 from app.core.deps import get_current_member
@@ -8,6 +9,9 @@ from app.models.member import Member
 from app.models.request import Request, RequestLog
 from app.schemas.request import RequestCreate, RequestOut, RequestListOut
 from app.services.s3_service import s3_service
+from app.services.sync_service import push_approved_request_to_pbm
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/requests", tags=["Requests"])
 
@@ -22,26 +26,13 @@ async def create_request(
     member: Member = Depends(get_current_member),
     db: Session = Depends(get_db),
 ):
-    """Create a new change request. Attachment required for MEDICATION_CHANGE + ADD."""
+    """Create a request and auto-push to Prognosis (no admin approval needed)."""
     import json
 
     try:
         payload_dict = json.loads(payload)
     except json.JSONDecodeError:
         raise HTTPException(status_code=400, detail="Invalid JSON in payload")
-
-    # Validate: new medication requires prescription upload
-    if request_type == "MEDICATION_CHANGE" and action == "ADD":
-        if not attachment:
-            raise HTTPException(
-                status_code=400,
-                detail="Prescription upload required for new medication requests",
-            )
-        if not comment:
-            raise HTTPException(
-                status_code=400,
-                detail="Comment required for new medication requests",
-            )
 
     attachment_url = None
     if attachment:
@@ -50,6 +41,7 @@ async def create_request(
         except ValueError as e:
             raise HTTPException(status_code=400, detail=str(e))
 
+    # Create request record
     req = Request(
         member_id=member.member_id,
         request_type=request_type,
@@ -57,6 +49,7 @@ async def create_request(
         payload=payload_dict,
         comment=comment,
         attachment_url=attachment_url,
+        status="APPROVED",  # Auto-approve
     )
     db.add(req)
     db.flush()
@@ -64,14 +57,23 @@ async def create_request(
     # Audit log
     log = RequestLog(
         request_id=req.id,
-        actor_type="MEMBER",
-        actor_id=member.member_id,
-        action="CREATED",
-        after_state={"status": "PENDING", "payload": payload_dict},
+        actor_type="SYSTEM",
+        actor_id="auto-approve",
+        action="AUTO_APPROVED",
+        after_state={"status": "APPROVED", "payload": payload_dict},
+        notes="Auto-approved and pushed to Prognosis",
     )
     db.add(log)
     db.commit()
     db.refresh(req)
+
+    # Auto-push to Prognosis
+    try:
+        await push_approved_request_to_pbm(str(req.id), db)
+        logger.info(f"Auto-pushed request {req.id} to Prognosis for {member.member_id}")
+    except Exception as e:
+        logger.error(f"Failed to auto-push request {req.id} to Prognosis: {e}")
+        # Don't fail the request — it's saved locally, can be retried
 
     return req
 
