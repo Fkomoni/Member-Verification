@@ -129,6 +129,19 @@ MAX_CLAIMS_LOADING = 0.75
 # DISCOUNTS
 # =============================================================
 
+# Individual security item discounts
+SECURITY_DISCOUNTS = {
+    "cctv": 0.02,            # 2%
+    "electric_fence": 0.02,  # 2%
+    "fire_alarm": 0.02,      # 2%
+    "fire_extinguisher": 0.015,  # 1.5%
+    "security_guard": 0.015, # 1.5%
+    "burglar_proof": 0.01,   # 1%
+}
+# Maximum total security discount cap
+MAX_SECURITY_DISCOUNT = 0.10  # 10%
+
+# Legacy compatibility
 SECURITY_DISCOUNT = 0.05
 FIRE_EQUIPMENT_DISCOUNT = 0.03
 

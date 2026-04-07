@@ -54,6 +54,7 @@ class QuoteRequest(BaseModel):
     building_age_years: int = Field(default=0, ge=0)
     has_security: bool = Field(default=False)
     has_fire_extinguisher: bool = Field(default=False)
+    security_items: list[str] = Field(default=[], description="Security items: cctv, electric_fence, fire_alarm, fire_extinguisher, security_guard, burglar_proof")
     claims_history_count: int = Field(default=0, ge=0)
     policy_duration_months: int = Field(default=12, ge=3, le=12)
 
@@ -123,6 +124,7 @@ async def generate_quote(request: QuoteRequest):
         building_age_years=request.building_age_years,
         has_security=request.has_security,
         has_fire_extinguisher=request.has_fire_extinguisher,
+        security_items=request.security_items,
         claims_history_count=request.claims_history_count,
         policy_duration_months=request.policy_duration_months,
     )
@@ -209,6 +211,7 @@ class PolicyRequest(BaseModel):
     building_age_years: int = 0
     has_security: bool = False
     has_fire_extinguisher: bool = False
+    security_items: list[str] = []
     claims_history_count: int = 0
     policy_duration_months: int = 12
 
@@ -240,6 +243,7 @@ async def generate_policy(request: PolicyRequest):
         building_age_years=request.building_age_years,
         has_security=request.has_security,
         has_fire_extinguisher=request.has_fire_extinguisher,
+        security_items=request.security_items,
         claims_history_count=request.claims_history_count,
         policy_duration_months=request.policy_duration_months,
     )

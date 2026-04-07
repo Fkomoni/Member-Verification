@@ -46,6 +46,7 @@ class RiskProfile:
     building_age_years: int = 0
     has_security: bool = False
     has_fire_extinguisher: bool = False
+    security_items: list[str] = field(default_factory=list)  # e.g. ["cctv", "electric_fence", "fire_alarm"]
     claims_history_count: int = 0
     policy_duration_months: int = 12
 

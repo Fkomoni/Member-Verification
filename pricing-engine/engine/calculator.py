@@ -13,6 +13,7 @@ from .rates import (
     get_rates, LOCATION_FACTORS, INDIVIDUAL_COVER_MULTIPLIERS,
     CLAIMS_LOADING, MAX_CLAIMS_LOADING,
     SECURITY_DISCOUNT, FIRE_EQUIPMENT_DISCOUNT,
+    SECURITY_DISCOUNTS, MAX_SECURITY_DISCOUNT,
     COMMISSION_RATES, MINIMUM_PREMIUMS, ALL_RISKS_MAX_PCT,
     get_building_age_loading, get_volume_discount,
 )
@@ -82,9 +83,17 @@ def calculate_premium(risk: RiskProfile) -> PremiumBreakdown:
     claims_adj = adjusted * claims_factor
     adjusted += claims_adj
 
-    # --- Discounts ---
-    security_disc = adjusted * SECURITY_DISCOUNT if risk.has_security else 0.0
-    fire_disc = adjusted * FIRE_EQUIPMENT_DISCOUNT if risk.has_fire_extinguisher else 0.0
+    # --- Security & Equipment Discounts ---
+    if risk.security_items:
+        # Use itemized security discounts
+        total_sec_pct = sum(SECURITY_DISCOUNTS.get(item, 0) for item in risk.security_items)
+        total_sec_pct = min(total_sec_pct, MAX_SECURITY_DISCOUNT)  # Cap at 10%
+        security_disc = adjusted * total_sec_pct
+        fire_disc = 0.0  # included in itemized
+    else:
+        # Legacy fallback
+        security_disc = adjusted * SECURITY_DISCOUNT if risk.has_security else 0.0
+        fire_disc = adjusted * FIRE_EQUIPMENT_DISCOUNT if risk.has_fire_extinguisher else 0.0
     adjusted -= (security_disc + fire_disc)
 
     # --- Volume discount ---

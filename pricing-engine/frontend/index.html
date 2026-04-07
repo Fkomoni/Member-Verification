@@ -642,20 +642,73 @@
                         </div>
                     </div>
 
-                    <label class="field-label">Risk Mitigation Discounts</label>
-                    <div class="mitigation-row">
-                        <label class="mitigation-toggle">
-                            <input type="checkbox" id="hasSecurity">
-                            <div class="mt-inner">
+                    <label class="field-label">Security &amp; Risk Mitigation</label>
+                    <p style="font-size:11px;color:#757575;margin-bottom:8px;">Select all that apply — each provides a discount on your premium.</p>
+                    <div class="security-grid">
+                        <label class="security-item">
+                            <input type="checkbox" id="hasCCTV">
+                            <div class="si-inner">
+                                <div class="si-icon"><i data-lucide="eye" style="width:16px;height:16px;"></i></div>
+                                <div class="si-text">
+                                    <strong>CCTV Camera</strong>
+                                    <em>-2% discount</em>
+                                </div>
                                 <div class="mt-switch"></div>
-                                <span>Security system <em>(-5%)</em></span>
                             </div>
                         </label>
-                        <label class="mitigation-toggle">
-                            <input type="checkbox" id="hasFireExtinguisher">
-                            <div class="mt-inner">
+                        <label class="security-item">
+                            <input type="checkbox" id="hasElectricFence">
+                            <div class="si-inner">
+                                <div class="si-icon"><i data-lucide="zap" style="width:16px;height:16px;"></i></div>
+                                <div class="si-text">
+                                    <strong>Electric Fencing</strong>
+                                    <em>-2% discount</em>
+                                </div>
                                 <div class="mt-switch"></div>
-                                <span>Fire extinguisher <em>(-3%)</em></span>
+                            </div>
+                        </label>
+                        <label class="security-item">
+                            <input type="checkbox" id="hasFireAlarm">
+                            <div class="si-inner">
+                                <div class="si-icon"><i data-lucide="bell-ring" style="width:16px;height:16px;"></i></div>
+                                <div class="si-text">
+                                    <strong>Fire Alarm System</strong>
+                                    <em>-2% discount</em>
+                                </div>
+                                <div class="mt-switch"></div>
+                            </div>
+                        </label>
+                        <label class="security-item">
+                            <input type="checkbox" id="hasFireExtinguisher">
+                            <div class="si-inner">
+                                <div class="si-icon"><i data-lucide="flame" style="width:16px;height:16px;"></i></div>
+                                <div class="si-text">
+                                    <strong>Fire Extinguisher</strong>
+                                    <em>-1.5% discount</em>
+                                </div>
+                                <div class="mt-switch"></div>
+                            </div>
+                        </label>
+                        <label class="security-item">
+                            <input type="checkbox" id="hasSecurityGuard">
+                            <div class="si-inner">
+                                <div class="si-icon"><i data-lucide="shield" style="width:16px;height:16px;"></i></div>
+                                <div class="si-text">
+                                    <strong>Security Guard</strong>
+                                    <em>-1.5% discount</em>
+                                </div>
+                                <div class="mt-switch"></div>
+                            </div>
+                        </label>
+                        <label class="security-item">
+                            <input type="checkbox" id="hasBurglarProof">
+                            <div class="si-inner">
+                                <div class="si-icon"><i data-lucide="lock" style="width:16px;height:16px;"></i></div>
+                                <div class="si-text">
+                                    <strong>Burglar Proof</strong>
+                                    <em>-1% discount</em>
+                                </div>
+                                <div class="mt-switch"></div>
                             </div>
                         </label>
                     </div>
@@ -805,8 +858,8 @@
                         Print Quote
                     </button>
                     <button class="action-btn secondary" onclick="goToQuote()">
-                        <i data-lucide="refresh-cw" style="width:16px;height:16px;"></i>
-                        New Quote
+                        <i data-lucide="pencil" style="width:16px;height:16px;"></i>
+                        Edit Quote
                     </button>
                 </div>
             </div>

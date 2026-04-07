@@ -129,8 +129,16 @@ async function getQuote() {
     const duration = parseInt(document.getElementById('duration').value);
     const buildingAge = parseInt(document.getElementById('buildingAge').value) || 0;
     const claimsHistory = parseInt(document.getElementById('claimsHistory').value);
-    const hasSecurity = document.getElementById('hasSecurity').checked;
-    const hasFireExtinguisher = document.getElementById('hasFireExtinguisher').checked;
+    // Collect security items
+    const securityItems = [];
+    if (document.getElementById('hasCCTV') && document.getElementById('hasCCTV').checked) securityItems.push('cctv');
+    if (document.getElementById('hasElectricFence') && document.getElementById('hasElectricFence').checked) securityItems.push('electric_fence');
+    if (document.getElementById('hasFireAlarm') && document.getElementById('hasFireAlarm').checked) securityItems.push('fire_alarm');
+    if (document.getElementById('hasFireExtinguisher') && document.getElementById('hasFireExtinguisher').checked) securityItems.push('fire_extinguisher');
+    if (document.getElementById('hasSecurityGuard') && document.getElementById('hasSecurityGuard').checked) securityItems.push('security_guard');
+    if (document.getElementById('hasBurglarProof') && document.getElementById('hasBurglarProof').checked) securityItems.push('burglar_proof');
+    const hasSecurity = securityItems.length > 0;
+    const hasFireExtinguisher = securityItems.includes('fire_extinguisher');
 
     // Coverages
     const incBuilding = document.getElementById('incBuilding').checked;
@@ -176,6 +184,7 @@ async function getQuote() {
                 building_age_years: buildingAge,
                 has_security: hasSecurity,
                 has_fire_extinguisher: hasFireExtinguisher,
+                security_items: securityItems,
                 claims_history_count: claimsHistory,
                 policy_duration_months: duration,
             })
@@ -216,8 +225,9 @@ function displayResults(data, buildingSI, contentSI, location, coverType, durati
         include_alt_accommodation: document.getElementById('incAltAcc').checked,
         roof_type: document.getElementById('roofType').value,
         building_age_years: parseInt(document.getElementById('buildingAge').value) || 0,
-        has_security: document.getElementById('hasSecurity').checked,
-        has_fire_extinguisher: document.getElementById('hasFireExtinguisher').checked,
+        has_security: hasSecurity,
+        has_fire_extinguisher: hasFireExtinguisher,
+        security_items: securityItems,
         claims_history_count: parseInt(document.getElementById('claimsHistory').value),
         policy_duration_months: duration,
     };
