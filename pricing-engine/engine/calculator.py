@@ -60,10 +60,11 @@ def calculate_premium(risk: RiskProfile) -> PremiumBreakdown:
         all_risks_prem + pa_prem + alt_acc_prem
     )
 
-    # --- Location adjustment ---
-    location_factor = LOCATION_FACTORS[risk.location]
-    location_adj = base_premium * (location_factor - 1.0)
-    adjusted = base_premium + location_adj
+    # --- Location adjustment (REMOVED per underwriting review) ---
+    # Location adjustment expunged as it lacks clarity and may not
+    # be an appropriate rating factor for householder policies.
+    location_adj = 0.0
+    adjusted = base_premium
 
     # --- Cover type adjustment (Individual only; Corporate uses rate bands) ---
     cover_adj = 0.0
