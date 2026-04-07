@@ -24,6 +24,7 @@ export default function NewRequestPage() {
   const [diagnosisName, setDiagnosisName] = useState('');
   const [diagnosisId, setDiagnosisId] = useState('');
   const [medComment, setMedComment] = useState('');
+  const [dosage, setDosage] = useState('');
   const [file, setFile] = useState(null);
 
   // Medication search/autocomplete
@@ -91,13 +92,10 @@ export default function NewRequestPage() {
         ProcedureName: drugName,
         ProcedureId: procedureId,
         ProcedureQuantity: parseInt(quantity) || 1,
+        Dosage: dosage,
         DiagnosisName: diagnosisName,
         DiagnosisId: diagnosisId,
       };
-
-      if (medAction === 'MODIFY') {
-        payload.new_dosage = quantity;
-      }
 
       const fd = new FormData();
       fd.append('request_type', 'MEDICATION_CHANGE');
@@ -207,6 +205,9 @@ export default function NewRequestPage() {
             <>
               <label style={s.label}>Quantity</label>
               <input style={s.input} type="number" value={quantity} onChange={e => setQuantity(e.target.value)} placeholder="e.g. 3" min="1" />
+
+              <label style={s.label}>Dosage / Directions</label>
+              <input style={s.input} value={dosage} onChange={e => setDosage(e.target.value)} placeholder="e.g. One tab daily, Two tabs twice daily" />
 
               <label style={s.label}>Diagnosis</label>
               <input style={s.input} value={diagnosisName} onChange={e => setDiagnosisName(e.target.value)} placeholder="e.g. Essential (primary) hypertension" />
