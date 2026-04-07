@@ -304,11 +304,118 @@ class PrognosisClient:
                 return str(val).strip()
         return ""
 
+    async def update_member_profile(self, enrollee_id: str, payload: dict, db: Session = None) -> dict:
+        """
+        POST /Member/UpdatePharmacyMemberInfo
+        Push profile changes (email, address, phone) to Prognosis.
+        """
+        url = f"{self.base_url}/Member/UpdatePharmacyMemberInfo"
+        body = {"EnrolleeID": enrollee_id}
+
+        # Map our fields to Prognosis fields
+        if payload.get("email") or payload.get("Email"):
+            body["Email"] = payload.get("email", {}).get("requested") if isinstance(payload.get("email"), dict) else payload.get("email") or payload.get("Email", "")
+
+        if payload.get("phone") or payload.get("Phone"):
+            phone_val = payload.get("phone", {}).get("requested") if isinstance(payload.get("phone"), dict) else payload.get("phone") or payload.get("Phone", "")
+            body["PhoneNumber"] = phone_val
+
+        if payload.get("address") or payload.get("Address"):
+            addr_val = payload.get("address", {}).get("requested") if isinstance(payload.get("address"), dict) else payload.get("address") or payload.get("Address", "")
+            body["Address"] = addr_val
+
+        if payload.get("city") or payload.get("City"):
+            body["City"] = payload.get("city") or payload.get("City", "")
+
+        if payload.get("state") or payload.get("State"):
+            body["State"] = payload.get("state") or payload.get("State", "")
+
+        if payload.get("alternative_phone") or payload.get("AlternativePhone"):
+            body["AlternativePhone"] = payload.get("alternative_phone") or payload.get("AlternativePhone", "")
+
+        logger.info(f"Pushing profile update to Prognosis for {enrollee_id}: {list(body.keys())}")
+        result = await self._request("POST", url, db=db, json=body)
+
+        if "error" in result:
+            logger.error(f"Prognosis profile update failed: {result}")
+        else:
+            logger.info(f"Prognosis profile update successful for {enrollee_id}")
+
+        return result
+
+    async def insert_or_update_medication(self, enrollee_id: str, payload: dict, db: Session = None) -> dict:
+        """
+        POST /PharmacyDelivery/InsertMemberDelivery
+        Add new medication or update existing one in Prognosis.
+        - Without EntryNo = new medication
+        - With EntryNo = update existing medication
+        """
+        url = f"{self.base_url}/PharmacyDelivery/InsertMemberDelivery"
+        body = {
+            "EnrolleeId": enrollee_id,
+        }
+
+        # Map fields
+        if payload.get("diagnosis_name") or payload.get("DiagnosisName"):
+            body["DiagnosisName"] = payload.get("diagnosis_name") or payload.get("DiagnosisName", "")
+        if payload.get("diagnosis_id") or payload.get("DiagnosisId"):
+            body["DiagnosisId"] = payload.get("diagnosis_id") or payload.get("DiagnosisId", "")
+
+        # Drug/Procedure info
+        drug_name = (payload.get("drug_name") or payload.get("ProcedureName") or
+                     payload.get("procedure_name") or payload.get("medication_name") or "")
+        if drug_name:
+            body["ProcedureName"] = drug_name
+
+        procedure_id = payload.get("procedure_id") or payload.get("ProcedureId") or ""
+        if procedure_id:
+            body["ProcedureId"] = procedure_id
+
+        quantity = payload.get("quantity") or payload.get("ProcedureQuantity") or payload.get("procedure_quantity")
+        if quantity:
+            body["ProcedureQuantity"] = int(quantity) if str(quantity).isdigit() else 1
+
+        # EntryNo for updates only (not for new medications)
+        entry_no = payload.get("entry_no") or payload.get("EntryNo")
+        if entry_no:
+            body["EntryNo"] = int(entry_no)
+
+        logger.info(f"Pushing medication {'update' if entry_no else 'insert'} to Prognosis for {enrollee_id}: {body}")
+        result = await self._request("POST", url, db=db, json=body)
+
+        if "error" in result:
+            logger.error(f"Prognosis medication push failed: {result}")
+        else:
+            logger.info(f"Prognosis medication push successful for {enrollee_id}")
+
+        return result
+
     async def submit_change_request(self, payload: dict, db: Session = None) -> dict:
-        """POST change request to Prognosis (when available)."""
-        # TODO: Integrate with actual Prognosis change request endpoint when provided
-        logger.info(f"Change request queued for PBM sync: {payload}")
-        return {"status": "queued", "message": "Request queued for PBM processing"}
+        """Route change requests to the appropriate Prognosis API."""
+        request_type = payload.get("request_type", "")
+        member_id = payload.get("member_id", "")
+        action = payload.get("action", "")
+        data = payload.get("payload", {})
+
+        if request_type == "PROFILE_UPDATE":
+            return await self.update_member_profile(member_id, data, db=db)
+
+        elif request_type == "MEDICATION_CHANGE" and action in ("ADD", "MODIFY"):
+            return await self.insert_or_update_medication(member_id, data, db=db)
+
+        elif request_type == "MEDICATION_CHANGE" and action == "REMOVE":
+            # For removal, we log it but Prognosis may not have a delete endpoint
+            logger.info(f"Medication removal request for {member_id}: {data}")
+            return {"status": "logged", "message": "Removal request logged for manual processing"}
+
+        elif request_type == "REFILL_ACTION":
+            # Refill requests may need a separate endpoint — log for now
+            logger.info(f"Refill action for {member_id}: {action} - {data}")
+            return {"status": "logged", "message": f"Refill {action} logged for processing"}
+
+        else:
+            logger.info(f"Unhandled request type {request_type}/{action} for {member_id}")
+            return {"status": "queued", "message": "Request queued for manual processing"}
 
 
 prognosis_client = PrognosisClient()
