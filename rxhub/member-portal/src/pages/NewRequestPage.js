@@ -34,6 +34,36 @@ export default function NewRequestPage() {
   const [searching, setSearching] = useState(false);
   const searchTimeout = useRef(null);
 
+  // Diagnosis search
+  const [diagSearchTerm, setDiagSearchTerm] = useState('');
+  const [diagResults, setDiagResults] = useState([]);
+  const [showDiagDropdown, setShowDiagDropdown] = useState(false);
+  const [diagSearching, setDiagSearching] = useState(false);
+  const diagTimeout = useRef(null);
+
+  // Debounced diagnosis search
+  useEffect(() => {
+    if (diagSearchTerm.length < 2) { setDiagResults([]); setShowDiagDropdown(false); return; }
+    if (diagTimeout.current) clearTimeout(diagTimeout.current);
+    diagTimeout.current = setTimeout(async () => {
+      setDiagSearching(true);
+      try {
+        const { data } = await api.get('/member/search-diagnoses', { params: { q: diagSearchTerm } });
+        setDiagResults(data);
+        setShowDiagDropdown(data.length > 0);
+      } catch { setDiagResults([]); }
+      finally { setDiagSearching(false); }
+    }, 300);
+    return () => { if (diagTimeout.current) clearTimeout(diagTimeout.current); };
+  }, [diagSearchTerm]);
+
+  const selectDiagnosis = (diag) => {
+    setDiagnosisName(diag.diagnosis_name);
+    setDiagnosisId(diag.diagnosis_id);
+    setDiagSearchTerm(diag.diagnosis_name);
+    setShowDiagDropdown(false);
+  };
+
   // Debounced medication search
   useEffect(() => {
     if (searchTerm.length < 2) {
@@ -209,11 +239,27 @@ export default function NewRequestPage() {
               <label style={s.label}>Dosage / Directions</label>
               <input style={s.input} value={dosage} onChange={e => setDosage(e.target.value)} placeholder="e.g. One tab daily, Two tabs twice daily" />
 
-              <label style={s.label}>Diagnosis</label>
-              <input style={s.input} value={diagnosisName} onChange={e => setDiagnosisName(e.target.value)} placeholder="e.g. Essential (primary) hypertension" />
-
-              <label style={s.label}>Diagnosis Code (if known)</label>
-              <input style={s.input} value={diagnosisId} onChange={e => setDiagnosisId(e.target.value)} placeholder="e.g. I10" />
+              <label style={s.label}>Search Diagnosis</label>
+              <div style={s.searchWrap}>
+                <input style={s.input} value={diagSearchTerm}
+                  onChange={e => { setDiagSearchTerm(e.target.value); setDiagnosisName(''); setDiagnosisId(''); }}
+                  placeholder="Start typing diagnosis..."
+                  onFocus={() => diagResults.length > 0 && setShowDiagDropdown(true)} />
+                {diagSearching && <span style={s.searchSpinner}>Searching...</span>}
+                {showDiagDropdown && (
+                  <div style={s.dropdown}>
+                    {diagResults.map((d, i) => (
+                      <div key={i} style={s.dropdownItem} onClick={() => selectDiagnosis(d)}>
+                        <div style={s.dropdownName}>{d.diagnosis_name}</div>
+                        <div style={s.dropdownId}>Code: {d.diagnosis_id}</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+              {diagnosisName && (
+                <div style={s.selectedMed}>Diagnosis: <strong>{diagnosisName}</strong> <span style={s.selectedId}>({diagnosisId})</span></div>
+              )}
             </>
           )}
 

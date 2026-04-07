@@ -352,6 +352,67 @@ class PrognosisClient:
 
                 return result
 
+    async def search_diagnoses(self, search_term: str = "", db: Session = None) -> list:
+        """
+        GET /ListValues/GetPharmacyDiagnosisList
+        Fetch diagnosis list from Prognosis for autocomplete.
+        """
+        url = f"{self.base_url}/ListValues/GetPharmacyDiagnosisList"
+
+        token = await self._authenticate()
+        headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
+
+        try:
+            async with httpx.AsyncClient(timeout=self.timeout, verify=False) as client:
+                response = await client.get(url, headers=headers)
+                if not response.is_success:
+                    logger.error(f"Diagnosis search failed: {response.status_code}")
+                    return []
+
+                data = response.json() if response.content else {}
+                result = data.get("result") or data.get("Result") or data
+                if not isinstance(result, list):
+                    if isinstance(data, list):
+                        result = data
+                    else:
+                        result = []
+
+                # Filter by search term if provided
+                if search_term and result:
+                    term_lower = search_term.lower()
+                    result = [r for r in result if term_lower in str(r.get("diagnosisName", r.get("DiagnosisName", r.get("name", "")))).lower()]
+
+                logger.info(f"Diagnosis search '{search_term}': {len(result)} results")
+                if result and len(result) > 0:
+                    logger.info(f"Diagnosis fields: {list(result[0].keys())}")
+
+                return result[:20]
+
+        except Exception as e:
+            logger.error(f"Diagnosis search error: {e}")
+            return []
+
+    async def delete_member_medication(self, entry_no: int, comment: str, db: Session = None) -> dict:
+        """
+        POST /PharmacyDelivery/DeletedByMember
+        Delete a medication from the member's PBM record.
+        """
+        url = f"{self.base_url}/PharmacyDelivery/DeletedByMember"
+        body = {
+            "EntryNo": entry_no,
+            "Comment": comment,
+        }
+
+        logger.info(f"Deleting medication EntryNo={entry_no} from Prognosis: {comment}")
+        result = await self._request("POST", url, db=db, json=body)
+
+        if "error" in result:
+            logger.error(f"Prognosis medication delete failed: {result}")
+        else:
+            logger.info(f"Prognosis medication delete successful: EntryNo={entry_no}")
+
+        return result
+
         except Exception as e:
             logger.error(f"Medication search error: {e}")
             return []
@@ -436,6 +497,11 @@ class PrognosisClient:
         entry_no = payload.get("entry_no") or payload.get("EntryNo")
         if entry_no:
             body["EntryNo"] = int(entry_no)
+
+        # Comment from member
+        comment_val = payload.get("Comment") or payload.get("comment") or ""
+        if comment_val:
+            body["Comment"] = comment_val
 
         logger.info(f"Pushing medication {'update' if entry_no else 'insert'} to Prognosis for {enrollee_id}: {body}")
         result = await self._request("POST", url, db=db, json=body)

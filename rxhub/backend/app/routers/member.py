@@ -226,3 +226,114 @@ async def search_medications(
             })
 
     return meds
+
+
+@router.get("/search-diagnoses")
+async def search_diagnoses(
+    q: str = "",
+    member: Member = Depends(get_current_member),
+    db: Session = Depends(get_db),
+):
+    """Search Prognosis diagnosis list by name."""
+    if len(q) < 2:
+        return []
+
+    results = await prognosis_client.search_diagnoses(q, db=db)
+
+    diagnoses = []
+    for r in results[:20]:
+        name = (r.get("diagnosisName") or r.get("DiagnosisName") or
+                r.get("name") or r.get("Name") or
+                r.get("tariff_desc") or r.get("Description") or "")
+        code = (r.get("diagnosisId") or r.get("DiagnosisId") or
+                r.get("id") or r.get("Id") or
+                r.get("code") or r.get("Code") or
+                r.get("tariff_code") or "")
+        if name:
+            diagnoses.append({"diagnosis_name": str(name), "diagnosis_id": str(code)})
+
+    return diagnoses
+
+
+@router.post("/medications/{medication_id}/delete")
+async def delete_medication(
+    medication_id: str,
+    member: Member = Depends(get_current_member),
+    db: Session = Depends(get_db),
+):
+    """Delete a medication from the member's list and push to Prognosis."""
+    from pydantic import BaseModel
+    # We'll parse the body manually since FastAPI needs the model
+
+    med = (
+        db.query(Medication)
+        .filter(Medication.id == medication_id, Medication.member_id == member.member_id)
+        .first()
+    )
+    if not med:
+        raise HTTPException(status_code=404, detail="Medication not found")
+
+    return {"medication_id": str(med.id), "drug_name": med.drug_name, "pbm_drug_id": med.pbm_drug_id}
+
+
+@router.post("/medications/delete-with-reason")
+async def delete_medication_with_reason(
+    body: dict,
+    member: Member = Depends(get_current_member),
+    db: Session = Depends(get_db),
+):
+    """
+    Delete a medication and push to Prognosis DeletedByMember API.
+    Body: {"medication_id": "uuid", "comment": "reason for deletion"}
+    """
+    medication_id = body.get("medication_id")
+    comment = body.get("comment", "Deleted by member")
+
+    med = (
+        db.query(Medication)
+        .filter(Medication.id == medication_id, Medication.member_id == member.member_id)
+        .first()
+    )
+    if not med:
+        raise HTTPException(status_code=404, detail="Medication not found")
+
+    # Get EntryNo from pbm_drug_id (Prognosis uses this as the entry identifier)
+    entry_no = med.pbm_drug_id
+    drug_name = med.drug_name
+
+    # Push deletion to Prognosis
+    try:
+        if entry_no and entry_no.isdigit():
+            result = await prognosis_client.delete_member_medication(int(entry_no), comment, db=db)
+            _logger.info(f"Pushed delete to Prognosis: EntryNo={entry_no}, result={result}")
+        else:
+            _logger.warning(f"No valid EntryNo for medication {medication_id}, skipping Prognosis delete")
+    except Exception as e:
+        _logger.error(f"Failed to push delete to Prognosis: {e}")
+
+    # Delete locally
+    db.delete(med)
+
+    # Audit log
+    req = Request(
+        member_id=member.member_id,
+        request_type="MEDICATION_CHANGE",
+        action="REMOVE",
+        payload={"drug_name": drug_name, "entry_no": str(entry_no), "comment": comment},
+        comment=comment,
+        status="APPROVED",
+    )
+    db.add(req)
+
+    log = RequestLog(
+        request_id=req.id,
+        actor_type="SYSTEM",
+        actor_id="auto-approve",
+        action="MEDICATION_DELETED",
+        after_state={"drug_name": drug_name, "entry_no": str(entry_no)},
+        notes=f"Deleted by member: {comment}",
+    )
+    db.add(log)
+    db.commit()
+
+    return {"message": f"{drug_name} deleted successfully", "synced_to_prognosis": True}

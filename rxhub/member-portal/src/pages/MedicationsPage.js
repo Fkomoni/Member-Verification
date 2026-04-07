@@ -11,6 +11,16 @@ export default function MedicationsPage() {
 
   useEffect(() => { fetchMeds(); }, []);
 
+  const deleteMedication = async (med) => {
+    const reason = prompt(`Why do you want to delete ${med.drug_name}?\n\nThis will permanently remove it from your medication list.`);
+    if (!reason) return;
+    try {
+      await api.post('/member/medications/delete-with-reason', { medication_id: med.id, comment: reason });
+      setMeds(prev => prev.filter(m => m.id !== med.id));
+      alert(`${med.drug_name} has been deleted and synced to Prognosis.`);
+    } catch (err) { alert(err.response?.data?.detail || 'Failed to delete'); }
+  };
+
   const requestRefill = async (med) => {
     try {
       await api.post('/refill/request', { medication_id: med.id, comment: 'Refill requested from portal' });
@@ -100,6 +110,7 @@ export default function MedicationsPage() {
 
             <div style={s.actions}>
               <button style={s.refillBtn} onClick={() => requestRefill(m)}>Request Refill</button>
+              <button style={s.deleteBtn} onClick={() => deleteMedication(m)}>Delete</button>
             </div>
           </div>
         ))}
@@ -134,5 +145,5 @@ const s = {
   coverage: { fontSize: 12, color: '#16A34A', marginTop: 8 },
   actions: { display: 'flex', gap: 10, marginTop: 14 },
   refillBtn: { flex: 1, padding: '10px', borderRadius: 8, border: 'none', backgroundColor: '#1A1A2E', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' },
-  removeBtn: { padding: '10px 16px', borderRadius: 8, border: '1px solid #DC2626', backgroundColor: '#fff', color: '#DC2626', fontSize: 13, fontWeight: 600, cursor: 'pointer' },
+  deleteBtn: { padding: '10px 16px', borderRadius: 8, border: '1px solid #DC2626', backgroundColor: '#fff', color: '#DC2626', fontSize: 13, fontWeight: 600, cursor: 'pointer' },
 };
