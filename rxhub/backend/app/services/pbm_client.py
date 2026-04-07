@@ -428,9 +428,9 @@ class PrognosisClient:
             body["ProcedureQuantity"] = int(quantity) if str(quantity).isdigit() else 1
 
         # Dosage / Directions
-        dosage_val = payload.get("Dosage") or payload.get("dosage") or payload.get("directions") or ""
+        dosage_val = payload.get("Dosage") or payload.get("dosage") or payload.get("DosageDescription") or payload.get("directions") or ""
         if dosage_val:
-            body["Dosage"] = dosage_val
+            body["DosageDescription"] = dosage_val
 
         # EntryNo for updates only (not for new medications)
         entry_no = payload.get("entry_no") or payload.get("EntryNo")

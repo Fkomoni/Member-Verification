@@ -100,7 +100,6 @@ export default function MedicationsPage() {
 
             <div style={s.actions}>
               <button style={s.refillBtn} onClick={() => requestRefill(m)}>Request Refill</button>
-              <button style={s.removeBtn} onClick={() => removeMedication(m)}>Remove</button>
             </div>
           </div>
         ))}
