@@ -39,7 +39,9 @@ def calculate_premium(risk: RiskProfile) -> PremiumBreakdown:
         content_prem = risk.content_sum_insured * rates["content"]
 
     if risk.include_accidental_damage and risk.content_sum_insured > 0:
-        accidental_prem = risk.content_sum_insured * rates["accidental_damage"]
+        # Accidental Damage limited to 40% of content sum insured
+        ad_limit = risk.content_sum_insured * 0.40
+        accidental_prem = ad_limit * rates["accidental_damage"]
 
     if risk.include_all_risks and risk.content_sum_insured > 0:
         # All risks applies to max 10% of content sum insured

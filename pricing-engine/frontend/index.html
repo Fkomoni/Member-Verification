@@ -275,13 +275,44 @@
                         <div class="form-group">
                             <label>Location / State <span class="req">*</span></label>
                             <select id="location" required>
-                                <option value="">Select Location</option>
+                                <option value="">Select State</option>
                                 <option value="lagos">Lagos</option>
-                                <option value="abuja">Abuja</option>
-                                <option value="port_harcourt">Port Harcourt</option>
-                                <option value="ibadan">Ibadan</option>
+                                <option value="abuja">Abuja (FCT)</option>
+                                <option value="port_harcourt">Rivers (Port Harcourt)</option>
+                                <option value="ibadan">Oyo (Ibadan)</option>
                                 <option value="kaduna">Kaduna</option>
-                                <option value="other">Other</option>
+                                <option value="other">Abia</option>
+                                <option value="other">Adamawa</option>
+                                <option value="other">Akwa Ibom</option>
+                                <option value="other">Anambra</option>
+                                <option value="other">Bauchi</option>
+                                <option value="other">Bayelsa</option>
+                                <option value="other">Benue</option>
+                                <option value="other">Borno</option>
+                                <option value="other">Cross River</option>
+                                <option value="port_harcourt">Delta</option>
+                                <option value="other">Ebonyi</option>
+                                <option value="other">Edo</option>
+                                <option value="other">Ekiti</option>
+                                <option value="other">Enugu</option>
+                                <option value="other">Gombe</option>
+                                <option value="other">Imo</option>
+                                <option value="other">Jigawa</option>
+                                <option value="other">Kano</option>
+                                <option value="other">Katsina</option>
+                                <option value="other">Kebbi</option>
+                                <option value="other">Kogi</option>
+                                <option value="other">Kwara</option>
+                                <option value="lagos">Ogun</option>
+                                <option value="other">Ondo</option>
+                                <option value="other">Osun</option>
+                                <option value="other">Nasarawa</option>
+                                <option value="other">Niger</option>
+                                <option value="other">Plateau</option>
+                                <option value="other">Sokoto</option>
+                                <option value="other">Taraba</option>
+                                <option value="other">Yobe</option>
+                                <option value="other">Zamfara</option>
                             </select>
                         </div>
                         <div class="form-group">
@@ -289,8 +320,12 @@
                             <select id="roofType">
                                 <option value="">Select Roof Type</option>
                                 <option value="concrete_tiles">Concrete / Clay Tiles</option>
-                                <option value="metal_sheets">Metal Sheets (Corrugated / Standing Seam)</option>
+                                <option value="metal_sheets">Metal Sheets (Corrugated Iron / Standing Seam)</option>
+                                <option value="aluminum_longspan">Aluminum Longspan</option>
+                                <option value="zinc">Zinc Roofing</option>
                                 <option value="flat_concrete">Flat Concrete / Screed Roof</option>
+                                <option value="asbestos">Asbestos Sheets</option>
+                                <option value="thatch_wood">Thatched / Wood</option>
                             </select>
                         </div>
                         <div class="form-group">
@@ -434,7 +469,7 @@
                             <div class="cov-card-img">
                                 <img id="buildingCovImg" src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=400&h=180&fit=crop&q=90" alt="Building exterior" loading="lazy">
                                 <div class="cov-card-check"><i data-lucide="check" style="width:14px;height:14px;"></i></div>
-                                <div class="cov-card-badge" id="rateBuilding">0.10%</div>
+                                <!-- rates hidden from customers -->
                             </div>
                             <div class="cov-card-body">
                                 <div class="cov-card-icon fire-cov"><i data-lucide="building" style="width:16px;height:16px;"></i></div>
@@ -449,7 +484,7 @@
                             <div class="cov-card-img">
                                 <img src="https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?w=400&h=180&fit=crop&q=90" alt="Furnished living room" loading="lazy">
                                 <div class="cov-card-check"><i data-lucide="check" style="width:14px;height:14px;"></i></div>
-                                <div class="cov-card-badge" id="rateContent">0.20%</div>
+                                <!-- rates hidden from customers -->
                             </div>
                             <div class="cov-card-body">
                                 <div class="cov-card-icon theft-cov"><i data-lucide="sofa" style="width:16px;height:16px;"></i></div>
@@ -468,7 +503,7 @@
                             <div class="cov-card-img">
                                 <img src="https://images.unsplash.com/photo-1513506003901-1e6a229e2d15?w=400&h=160&fit=crop&q=90" alt="Spilled coffee on table" loading="lazy">
                                 <div class="cov-card-check"><i data-lucide="check" style="width:12px;height:12px;"></i></div>
-                                <div class="cov-card-badge small">0.125%</div>
+                                <!-- rate hidden -->
                             </div>
                             <div class="cov-card-body">
                                 <div class="cov-card-icon acc-cov"><i data-lucide="alert-triangle" style="width:14px;height:14px;"></i></div>
@@ -483,7 +518,7 @@
                             <div class="cov-card-img">
                                 <img src="https://images.unsplash.com/photo-1600003014755-ba31aa59c4b6?w=400&h=160&fit=crop&q=90" alt="Laptop phone and watch on desk" loading="lazy">
                                 <div class="cov-card-check"><i data-lucide="check" style="width:12px;height:12px;"></i></div>
-                                <div class="cov-card-badge small">2.0%</div>
+                                <!-- rate hidden -->
                             </div>
                             <div class="cov-card-body">
                                 <div class="cov-card-icon ar-cov"><i data-lucide="shield-check" style="width:14px;height:14px;"></i></div>
@@ -498,7 +533,7 @@
                             <div class="cov-card-img">
                                 <img src="https://images.unsplash.com/photo-1622253692010-333f2da6031d?w=400&h=160&fit=crop&q=90" alt="Black doctor with stethoscope" loading="lazy">
                                 <div class="cov-card-check"><i data-lucide="check" style="width:12px;height:12px;"></i></div>
-                                <div class="cov-card-badge small">0.185%</div>
+                                <!-- rate hidden -->
                             </div>
                             <div class="cov-card-body">
                                 <div class="cov-card-icon pa-cov"><i data-lucide="heart-pulse" style="width:14px;height:14px;"></i></div>
@@ -513,7 +548,7 @@
                             <div class="cov-card-img">
                                 <img src="https://images.unsplash.com/photo-1618773928121-c32242e63f39?w=400&h=160&fit=crop&q=90" alt="Hotel accommodation" loading="lazy">
                                 <div class="cov-card-check"><i data-lucide="check" style="width:12px;height:12px;"></i></div>
-                                <div class="cov-card-badge small">0.20%</div>
+                                <!-- rate hidden -->
                             </div>
                             <div class="cov-card-body">
                                 <div class="cov-card-icon alt-cov"><i data-lucide="bed" style="width:14px;height:14px;"></i></div>
