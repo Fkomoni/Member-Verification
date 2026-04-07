@@ -325,6 +325,35 @@ def generate_policy_pdf(data: dict) -> bytes:
     elements.append(pay_table)
     elements.append(Spacer(1, 8*mm))
 
+    # --- LIMITS OF LIABILITY ---
+    elements.append(Paragraph("LIMITS OF LIABILITY", styles['SectionHead']))
+
+    limits_data = [
+        ['SECTION', 'LIMIT'],
+        ['Section I — Building', 'Sum Insured on each item'],
+        ['Section II — Content', '3% per article; Jewellery exclusive'],
+        ['Accidental Damage', '40% of Content Sum Insured'],
+        ['All Risks Extension', '10% of Content Sum Insured'],
+        ['Section III — Alt. Accommodation', '10% Building SI + 10% Content SI'],
+        ['Section IV — Public Liability', 'N250,000 per event'],
+        ['Section V — Death Compensation', 'N25,000 or half Total Sum'],
+    ]
+
+    limits_table = Table(limits_data, colWidths=[70*mm, 90*mm])
+    limits_table.setStyle(TableStyle([
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, -1), 9),
+        ('TEXTCOLOR', (0, 0), (-1, 0), WHITE),
+        ('BACKGROUND', (0, 0), (-1, 0), ORANGE),
+        ('TOPPADDING', (0, 0), (-1, -1), 5),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 5),
+        ('LINEBELOW', (0, 1), (-1, -2), 0.5, HexColor('#EEEEEE')),
+        ('FONTNAME', (0, 1), (0, -1), 'Helvetica-Bold'),
+        ('TEXTCOLOR', (0, 1), (0, -1), DARK),
+    ]))
+    elements.append(limits_table)
+    elements.append(Spacer(1, 6*mm))
+
     # --- INSURED PERILS ---
     elements.append(Paragraph("INSURED PERILS", styles['SectionHead']))
     perils = "Fire • Lightning • Explosion • Theft • Riot & Strike • Malicious Damage • Aircraft Impact • Burst Pipes • Impact Damage • Earthquake/Volcano • Hurricane/Cyclone • Flood • Storm"

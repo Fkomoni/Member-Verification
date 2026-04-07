@@ -117,6 +117,41 @@ function toggleChip(checkbox) {
 
 function toggleCoverage(checkbox) {
     checkbox.closest('.cov-card').classList.toggle('selected', checkbox.checked);
+    // Show/hide inventory when All Risks is toggled
+    if (checkbox.id === 'incAllRisks') {
+        document.getElementById('inventorySection').style.display = checkbox.checked ? '' : 'none';
+        if (window.lucide) lucide.createIcons();
+    }
+}
+
+function addInventoryRow() {
+    const tbody = document.getElementById('inventoryBody');
+    const row = document.createElement('tr');
+    row.innerHTML = `<td><input type="text" class="inv-input" placeholder="Item description"></td>
+        <td><input type="text" class="inv-input inv-value" placeholder="Value" oninput="formatCurrency(this)"></td>
+        <td><input type="text" class="inv-input" placeholder="Optional"></td>
+        <td><button type="button" class="inv-remove" onclick="removeInventoryRow(this)">&times;</button></td>`;
+    tbody.appendChild(row);
+}
+
+function removeInventoryRow(btn) {
+    const tbody = document.getElementById('inventoryBody');
+    if (tbody.rows.length > 1) {
+        btn.closest('tr').remove();
+    }
+}
+
+function getInventoryItems() {
+    const rows = document.querySelectorAll('#inventoryBody tr');
+    const items = [];
+    rows.forEach(row => {
+        const inputs = row.querySelectorAll('.inv-input');
+        const desc = inputs[0]?.value.trim();
+        const val = inputs[1]?.value.trim();
+        const serial = inputs[2]?.value.trim();
+        if (desc && val) items.push({ description: desc, value: val, serial_no: serial });
+    });
+    return items;
 }
 
 // ============= GENERATE QUOTE =============
@@ -299,6 +334,22 @@ function displayResults(data, buildingSI, contentSI, location, coverType, durati
 
     // Total
     document.getElementById('grossNet').textContent = formatNGN(data.gross_premium);
+
+    // Section limits
+    const limitsRows = [
+        ['Building (Section I)', 'Sum Insured on each item'],
+        ['Content (Section II)', '3% per article; Jewellery exclusion applies'],
+        ['Accidental Damage', '40% of Content Sum Insured'],
+        ['All Risks Extension', '10% of Content Sum Insured'],
+        ['Alt. Accommodation (Section III)', '10% Building SI + 10% Content SI'],
+        ['Public Liability (Section IV)', '\u20A6250,000 per event'],
+        ['Death Compensation (Section V)', '\u20A625,000 or half Total Sum'],
+    ];
+    let limitsHtml = '';
+    for (const [section, limit] of limitsRows) {
+        limitsHtml += `<tr><td>${section}</td><td>${limit}</td></tr>`;
+    }
+    document.getElementById('limitsBody').innerHTML = limitsHtml;
 
     showPage('page-results');
 }

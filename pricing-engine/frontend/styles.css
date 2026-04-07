@@ -385,6 +385,19 @@ a { text-decoration: none; color: inherit; }
 .cov-card.mini .cov-card-name { font-size: 12px; }
 .cov-card-desc { font-size: 11px; color: var(--gray-500); display: block; }
 
+/* Inventory table */
+.inventory-section { margin-top: 12px; }
+.inventory-table-wrap { background: var(--white); border: 1px solid var(--gray-200); border-radius: var(--r-sm); padding: 12px; }
+.inventory-table { width: 100%; border-collapse: collapse; }
+.inventory-table th { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--orange); padding: 8px 6px; text-align: left; border-bottom: 2px solid var(--orange); }
+.inventory-table td { padding: 6px; }
+.inv-input { width: 100%; padding: 8px 10px; border: 1px solid var(--gray-300); border-radius: var(--r-sm); font-family: var(--font); font-size: 13px; outline: none; }
+.inv-input:focus { border-color: var(--orange); }
+.inv-remove { background: none; border: none; color: var(--gray-400); font-size: 20px; cursor: pointer; padding: 4px 8px; }
+.inv-remove:hover { color: var(--orange); }
+.inv-add-btn { display: flex; align-items: center; gap: 6px; margin-top: 8px; padding: 8px 16px; background: var(--orange-light); color: var(--orange); border: 1px dashed var(--orange); border-radius: var(--r-sm); font-family: var(--font); font-size: 13px; font-weight: 700; cursor: pointer; transition: var(--ease); }
+.inv-add-btn:hover { background: var(--orange); color: var(--white); }
+
 /* Cover type cards */
 .cover-type-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 6px; }
 .ct-card {

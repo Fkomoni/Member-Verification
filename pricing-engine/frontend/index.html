@@ -513,6 +513,34 @@
                                 </div>
                             </div>
                         </label>
+                        <!-- All Risk Inventory (shown when All Risks is selected) -->
+                        <div class="inventory-section" id="inventorySection" style="display:none;grid-column:1/-1;">
+                            <label class="field-label">All Risk Inventory <span style="font-weight:400;color:#757575;font-size:10px;text-transform:none;">— list items to be covered under All Risks</span></label>
+                            <div class="inventory-table-wrap">
+                                <table class="inventory-table" id="inventoryTable">
+                                    <thead>
+                                        <tr>
+                                            <th>Item Description</th>
+                                            <th>Value (NGN)</th>
+                                            <th>Serial No.</th>
+                                            <th></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="inventoryBody">
+                                        <tr>
+                                            <td><input type="text" class="inv-input" placeholder="e.g. iPhone 15 Pro Max"></td>
+                                            <td><input type="text" class="inv-input inv-value" placeholder="1,200,000" oninput="formatCurrency(this)"></td>
+                                            <td><input type="text" class="inv-input" placeholder="Optional"></td>
+                                            <td><button type="button" class="inv-remove" onclick="removeInventoryRow(this)">&times;</button></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                                <button type="button" class="inv-add-btn" onclick="addInventoryRow()">
+                                    <i data-lucide="plus" style="width:14px;height:14px;"></i> Add Item
+                                </button>
+                            </div>
+                        </div>
+
                         <label class="cov-card mini" id="cov-allrisks">
                             <input type="checkbox" id="incAllRisks" onchange="toggleCoverage(this)">
                             <div class="cov-card-img">
@@ -802,6 +830,14 @@
                         <span>Total Premium</span>
                         <span class="net-val" id="grossNet"></span>
                     </div>
+                </div>
+
+                <!-- Section Limits -->
+                <div class="detail-breakdown">
+                    <h4>Limits of Liability</h4>
+                    <table class="breakdown-table" id="limitsTable">
+                        <tbody id="limitsBody"></tbody>
+                    </table>
                 </div>
 
                 <!-- Proceed to Payment Section -->
