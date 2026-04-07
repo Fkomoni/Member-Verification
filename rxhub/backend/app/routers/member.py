@@ -207,20 +207,22 @@ async def search_medications(
 
     results = await prognosis_client.search_medications(q, db=db)
 
-    # Normalize the response — try common field names
+    # Map Prognosis fields: tariff_desc, tariff_code, cost
     meds = []
-    for r in results[:20]:  # Limit to 20 results
-        name = (r.get("ProcedureName") or r.get("procedureName") or
+    for r in results[:20]:
+        name = (r.get("tariff_desc") or r.get("TariffDesc") or
+                r.get("ProcedureName") or r.get("procedureName") or
                 r.get("Name") or r.get("name") or
                 r.get("DrugName") or r.get("drugName") or "")
-        proc_id = (r.get("ProcedureId") or r.get("procedureId") or
-                   r.get("Id") or r.get("id") or
+        proc_id = (r.get("tariff_code") or r.get("TariffCode") or
+                   r.get("ProcedureId") or r.get("procedureId") or
                    r.get("Code") or r.get("code") or "")
+        cost = r.get("cost") or r.get("Cost") or ""
         if name:
             meds.append({
                 "procedure_id": str(proc_id),
                 "procedure_name": str(name),
-                "raw": r,  # Include raw data for debugging
+                "cost": str(cost) if cost else None,
             })
 
     return meds
