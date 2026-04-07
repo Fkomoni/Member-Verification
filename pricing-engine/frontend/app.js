@@ -260,9 +260,9 @@ function displayResults(data, buildingSI, contentSI, location, coverType, durati
         include_alt_accommodation: document.getElementById('incAltAcc').checked,
         roof_type: document.getElementById('roofType').value,
         building_age_years: parseInt(document.getElementById('buildingAge').value) || 0,
-        has_security: hasSecurity,
-        has_fire_extinguisher: hasFireExtinguisher,
-        security_items: securityItems,
+        has_security: (function(){ return document.getElementById('hasCCTV')?.checked || document.getElementById('hasElectricFence')?.checked || document.getElementById('hasFireAlarm')?.checked || document.getElementById('hasFireExtinguisher')?.checked || document.getElementById('hasSecurityGuard')?.checked || document.getElementById('hasBurglarProof')?.checked || false; })(),
+        has_fire_extinguisher: document.getElementById('hasFireExtinguisher')?.checked || false,
+        security_items: (function(){ var items=[]; if(document.getElementById('hasCCTV')?.checked)items.push('cctv'); if(document.getElementById('hasElectricFence')?.checked)items.push('electric_fence'); if(document.getElementById('hasFireAlarm')?.checked)items.push('fire_alarm'); if(document.getElementById('hasFireExtinguisher')?.checked)items.push('fire_extinguisher'); if(document.getElementById('hasSecurityGuard')?.checked)items.push('security_guard'); if(document.getElementById('hasBurglarProof')?.checked)items.push('burglar_proof'); return items; })(),
         claims_history_count: parseInt(document.getElementById('claimsHistory').value),
         policy_duration_months: duration,
     };

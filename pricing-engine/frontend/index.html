@@ -136,40 +136,6 @@
                     </div>
                 </div>
 
-                <!-- Stats bar -->
-                <div class="stats-bar">
-                    <div class="stat-item">
-                        <i data-lucide="shield-check" style="width:20px;height:20px;color:#F58220;"></i>
-                        <div>
-                            <strong>N845M+</strong>
-                            <span>Premium Portfolio</span>
-                        </div>
-                    </div>
-                    <div class="stat-divider"></div>
-                    <div class="stat-item">
-                        <i data-lucide="users" style="width:20px;height:20px;color:#F58220;"></i>
-                        <div>
-                            <strong>1,410</strong>
-                            <span>Active Policies</span>
-                        </div>
-                    </div>
-                    <div class="stat-divider"></div>
-                    <div class="stat-item">
-                        <i data-lucide="clock" style="width:20px;height:20px;color:#F58220;"></i>
-                        <div>
-                            <strong>Instant</strong>
-                            <span>Quote Generation</span>
-                        </div>
-                    </div>
-                    <div class="stat-divider"></div>
-                    <div class="stat-item">
-                        <i data-lucide="flame" style="width:20px;height:20px;color:#E65100;"></i>
-                        <div>
-                            <strong>Fire</strong>
-                            <span>Theft &amp; Flood Cover</span>
-                        </div>
-                    </div>
-                </div>
             </div>
         </section>
     </div>
@@ -464,8 +430,8 @@
 
                     <label class="field-label">Core Coverages</label>
                     <div class="coverage-cards-grid">
-                        <label class="cov-card selected" id="cov-building">
-                            <input type="checkbox" id="incBuilding" checked onchange="toggleCoverage(this)">
+                        <label class="cov-card" id="cov-building">
+                            <input type="checkbox" id="incBuilding" onchange="toggleCoverage(this)">
                             <div class="cov-card-img">
                                 <img id="buildingCovImg" src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=400&h=180&fit=crop&q=90" alt="Building exterior" loading="lazy">
                                 <div class="cov-card-check"><i data-lucide="check" style="width:14px;height:14px;"></i></div>
@@ -479,8 +445,8 @@
                                 </div>
                             </div>
                         </label>
-                        <label class="cov-card selected" id="cov-content">
-                            <input type="checkbox" id="incContent" checked onchange="toggleCoverage(this)">
+                        <label class="cov-card" id="cov-content">
+                            <input type="checkbox" id="incContent" onchange="toggleCoverage(this)">
                             <div class="cov-card-img">
                                 <img src="https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?w=400&h=180&fit=crop&q=90" alt="Furnished living room" loading="lazy">
                                 <div class="cov-card-check"><i data-lucide="check" style="width:14px;height:14px;"></i></div>
@@ -918,7 +884,7 @@
             <div class="footer-col">
                 <h4>Developer</h4>
                 <a href="/docs" target="_blank">API Documentation</a>
-                <a href="/api/rates" target="_blank">Rate Card (JSON)</a>
+                <!-- Rate card hidden from customers -->
             </div>
             <div class="footer-col">
                 <h4>Company</h4>
