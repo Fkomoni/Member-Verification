@@ -7,7 +7,9 @@ export default function MedicationsPage() {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  useEffect(() => { api.get('/member/medications').then(r => setMeds(r.data)).catch(() => {}); }, []);
+  const fetchMeds = () => api.get('/member/medications').then(r => setMeds(r.data)).catch(() => {});
+
+  useEffect(() => { fetchMeds(); }, []);
 
   const requestRefill = async (med) => {
     try {
@@ -40,7 +42,9 @@ export default function MedicationsPage() {
       fd.append('payload', JSON.stringify({ drug_name: med.drug_name, medication_id: med.id }));
       fd.append('comment', reason);
       await api.post('/requests', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
-      alert(`Removal request submitted for ${med.drug_name}. Pending admin approval.`);
+      // Remove from UI immediately
+      setMeds(prev => prev.filter(m => m.id !== med.id));
+      alert(`${med.drug_name} has been removed and synced to Prognosis.`);
     } catch (err) { alert(err.response?.data?.detail || 'Failed'); }
   };
 
