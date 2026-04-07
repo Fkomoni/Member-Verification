@@ -304,6 +304,34 @@ class PrognosisClient:
                 return str(val).strip()
         return ""
 
+    async def search_medications(self, search_term: str, db: Session = None) -> list:
+        """
+        GET /ListValues/GetProceduresByFilter_pbm?filtertype=0&providerid=8520&searchbyname={term}
+        Search for medications by name from the Prognosis drug database.
+        Returns list of matching drugs with ProcedureId and ProcedureName.
+        """
+        url = (
+            f"{self.base_url}/ListValues/GetProceduresByFilter_pbm"
+            f"?filtertype=0&providerid=8520&searchbyname={search_term}"
+        )
+        data = await self._request("GET", url, db=db)
+
+        if "error" in data:
+            return []
+
+        # Unwrap Prognosis response
+        result = data.get("result") or data.get("Result") or data
+        if not isinstance(result, list):
+            result = [result] if result else []
+
+        # Log field names from first result for mapping
+        if result:
+            logger.info(f"Medication search results for '{search_term}': {len(result)} found")
+            if len(result) > 0:
+                logger.info(f"Search result fields: {list(result[0].keys())}")
+
+        return result
+
     async def update_member_profile(self, enrollee_id: str, payload: dict, db: Session = None) -> dict:
         """
         POST /Member/UpdatePharmacyMemberInfo

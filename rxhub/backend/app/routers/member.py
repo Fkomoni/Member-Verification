@@ -12,6 +12,7 @@ from app.models.notification import Notification
 from app.schemas.member import MemberProfile, MemberDashboard
 from app.schemas.medication import MedicationOut
 from app.services.refill_intelligence import get_refill_intelligence, calculate_days_remaining
+from app.services.pbm_client import prognosis_client
 
 router = APIRouter(prefix="/member", tags=["Member"])
 
@@ -176,3 +177,38 @@ async def mark_notification_read(
         notification.is_read = True
         db.commit()
     return {"status": "ok"}
+
+
+@router.get("/search-medications")
+async def search_medications(
+    q: str = "",
+    member: Member = Depends(get_current_member),
+    db: Session = Depends(get_db),
+):
+    """
+    Search Prognosis drug database by name.
+    Returns list of matching medications with ProcedureId and ProcedureName.
+    User starts typing and results populate.
+    """
+    if len(q) < 2:
+        return []
+
+    results = await prognosis_client.search_medications(q, db=db)
+
+    # Normalize the response — try common field names
+    meds = []
+    for r in results[:20]:  # Limit to 20 results
+        name = (r.get("ProcedureName") or r.get("procedureName") or
+                r.get("Name") or r.get("name") or
+                r.get("DrugName") or r.get("drugName") or "")
+        proc_id = (r.get("ProcedureId") or r.get("procedureId") or
+                   r.get("Id") or r.get("id") or
+                   r.get("Code") or r.get("code") or "")
+        if name:
+            meds.append({
+                "procedure_id": str(proc_id),
+                "procedure_name": str(name),
+                "raw": r,  # Include raw data for debugging
+            })
+
+    return meds
