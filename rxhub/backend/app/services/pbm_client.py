@@ -308,29 +308,53 @@ class PrognosisClient:
         """
         GET /ListValues/GetProceduresByFilter_pbm?filtertype=0&providerid=8520&searchbyname={term}
         Search for medications by name from the Prognosis drug database.
-        Returns list of matching drugs with ProcedureId and ProcedureName.
         """
-        url = (
-            f"{self.base_url}/ListValues/GetProceduresByFilter_pbm"
-            f"?filtertype=0&providerid=8520&searchbyname={search_term}"
-        )
-        data = await self._request("GET", url, db=db)
+        url = f"{self.base_url}/ListValues/GetProceduresByFilter_pbm"
 
-        if "error" in data:
+        # Use params dict for proper URL encoding
+        token = await self._authenticate()
+        headers = {
+            "Authorization": f"Bearer {token}",
+            "Content-Type": "application/json",
+        }
+
+        try:
+            async with httpx.AsyncClient(timeout=self.timeout, verify=False) as client:
+                response = await client.get(url, headers=headers, params={
+                    "filtertype": "0",
+                    "providerid": "8520",
+                    "searchbyname": search_term,
+                })
+
+                logger.info(f"Medication search '{search_term}': HTTP {response.status_code}")
+
+                if not response.is_success:
+                    logger.error(f"Medication search failed: {response.status_code} {response.text[:200]}")
+                    return []
+
+                data = response.json() if response.content else {}
+
+                # Unwrap Prognosis response
+                result = data.get("result") or data.get("Result") or data
+                if not isinstance(result, list):
+                    # Maybe the result IS the list directly
+                    if isinstance(data, list):
+                        result = data
+                    else:
+                        result = [result] if result and not isinstance(result, (str, int, bool)) else []
+
+                logger.info(f"Medication search '{search_term}': {len(result)} results")
+                if result:
+                    logger.info(f"Search result sample keys: {list(result[0].keys())[:10]}")
+                    # Log first result for debugging
+                    for k, v in list(result[0].items())[:8]:
+                        logger.info(f"  Search field: {k} = {str(v)[:60]}")
+
+                return result
+
+        except Exception as e:
+            logger.error(f"Medication search error: {e}")
             return []
-
-        # Unwrap Prognosis response
-        result = data.get("result") or data.get("Result") or data
-        if not isinstance(result, list):
-            result = [result] if result else []
-
-        # Log field names from first result for mapping
-        if result:
-            logger.info(f"Medication search results for '{search_term}': {len(result)} found")
-            if len(result) > 0:
-                logger.info(f"Search result fields: {list(result[0].keys())}")
-
-        return result
 
     async def update_member_profile(self, enrollee_id: str, payload: dict, db: Session = None) -> dict:
         """
