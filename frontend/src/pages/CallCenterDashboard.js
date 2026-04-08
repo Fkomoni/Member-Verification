@@ -94,6 +94,8 @@ export default function CallCenterDashboard() {
         visit_type_id: selectedVisitType.servtype_id,
         visit_type_name: selectedVisitType.visittype,
         approved_amount: parseFloat(approvedAmount) || 0,
+        cif_number: member.cif_number || "",
+        scheme_id: member.scheme_id || "",
         notes,
       });
       setGeneratedCode(data);

@@ -149,6 +149,8 @@ def generate_authorization_code(
     visit_type_id = body.get("visit_type_id")
     visit_type_name = body.get("visit_type_name", "")
     approved_amount = body.get("approved_amount", 0.0)
+    cif_number = body.get("cif_number", "")
+    scheme_id = body.get("scheme_id", "")
     notes = body.get("notes", "")
 
     if not enrollee_id or not visit_type_id:
@@ -166,6 +168,8 @@ def generate_authorization_code(
         visit_type_id=int(visit_type_id),
         visit_type_name=visit_type_name,
         approved_amount=float(approved_amount),
+        cif_number=cif_number,
+        scheme_id=scheme_id,
         notes=notes,
         status="ACTIVE",
         agent_id=agent.agent_id,
@@ -274,11 +278,11 @@ def get_active_codes_for_enrollee(
 
 
 @router.post("/reimbursement/submit")
-def submit_reimbursement(
+async def submit_reimbursement(
     body: dict,
     db: Session = Depends(get_db),
 ):
-    """Public: submit a reimbursement claim against a PA code."""
+    """Public: submit a reimbursement claim against a PA code, then send to Prognosis."""
     code = body.get("code", "").strip().upper()
     claim_amount = float(body.get("claim_amount", 0))
 
@@ -297,18 +301,14 @@ def submit_reimbursement(
             detail=f"Claim amount (NGN {claim_amount:,.2f}) exceeds approved amount (NGN {auth_code.approved_amount:,.2f})",
         )
 
-    # Mark code as USED
-    auth_code.status = "USED"
-    db.commit()
-
-    # Build claims batch payload (ready for your Prognosis claims API)
-    claims_batch_payload = {
-        "cifnumber": str(auth_code.visit_type_id),  # Will be mapped by your API
-        "schemeid": "",  # Set from enrollee data when API is integrated
+    # Build claims batch payload for Prognosis AddClaim API
+    claims_payload = {
+        "cifnumber": auth_code.cif_number or "",
+        "schemeid": auth_code.scheme_id or "",
         "dateofservice": body.get("visit_date", ""),
         "placeofservice": body.get("provider_name", ""),
         "claim_amount": str(claim_amount),
-        "claimcurrencyid": "37",  # NGN
+        "claimcurrencyid": "37",
         "claimReferenceInvoiceReceiptNumber": auth_code.code,
         "NumberOfClaims": "1",
         "claimRemarks": body.get("remarks", ""),
@@ -320,8 +320,12 @@ def submit_reimbursement(
         "AccountNumber": body.get("account_number", ""),
     }
 
-    # TODO: Call your claims batch API here
-    # response = await prognosis_client.create_claims_batch(claims_batch_payload)
+    # Submit to Prognosis AddClaim API
+    claims_result = await prognosis_client.create_claim(claims_payload)
+
+    # Mark code as USED regardless of API result
+    auth_code.status = "USED"
+    db.commit()
 
     return {
         "success": True,
@@ -334,7 +338,7 @@ def submit_reimbursement(
         "provider_name": body.get("provider_name", ""),
         "visit_date": body.get("visit_date", ""),
         "reason_for_visit": body.get("reason_for_visit", ""),
-        "claims_batch_payload": claims_batch_payload,
+        "prognosis_claim": claims_result,
     }
 
 

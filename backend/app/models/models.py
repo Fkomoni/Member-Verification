@@ -176,6 +176,8 @@ class AuthorizationCode(Base):
     visit_type_id: Mapped[int] = mapped_column(Integer, nullable=False)
     visit_type_name: Mapped[str] = mapped_column(String(100), nullable=False)
     approved_amount: Mapped[float] = mapped_column(Float, default=0.0)
+    cif_number: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    scheme_id: Mapped[str | None] = mapped_column(String(50), nullable=True)
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
     status: Mapped[str] = mapped_column(String(20), default="ACTIVE")  # ACTIVE, USED, EXPIRED, CANCELLED
     agent_id: Mapped[uuid.UUID] = mapped_column(

@@ -298,6 +298,54 @@ async def get_service_types(cif: str, scheme_id: str) -> dict:
         return {"success": False, "reason": f"Cannot reach Prognosis API: {e}", "service_types": []}
 
 
+async def create_claim(payload: dict) -> dict:
+    """
+    Submit a reimbursement claim to Prognosis.
+
+    POST /api/EnrolleeClaims/AddClaim
+    """
+    if not settings.PROGNOSIS_BASE_URL:
+        return {"success": False, "reason": "Prognosis API not configured", "data": None}
+
+    token = await _get_prognosis_token()
+    if not token:
+        return {"success": False, "reason": "Failed to authenticate with Prognosis API", "data": None}
+
+    url = f"{settings.PROGNOSIS_BASE_URL}/api/EnrolleeClaims/AddClaim"
+    headers = {"Authorization": f"Bearer {token}"}
+
+    try:
+        async with httpx.AsyncClient(timeout=_TIMEOUT, verify=False) as client:
+            resp = await client.post(url, json=payload, headers=headers)
+
+        log.info("Prognosis AddClaim status=%d body=%s", resp.status_code, resp.text[:500])
+
+        if resp.status_code in (200, 201):
+            data = resp.json()
+            return {"success": True, "reason": None, "data": data}
+        elif resp.status_code == 401:
+            global _prognosis_token_expiry
+            _prognosis_token_expiry = 0
+            token = await _get_prognosis_token()
+            if token:
+                headers = {"Authorization": f"Bearer {token}"}
+                async with httpx.AsyncClient(timeout=_TIMEOUT, verify=False) as client:
+                    resp = await client.post(url, json=payload, headers=headers)
+                if resp.status_code in (200, 201):
+                    return {"success": True, "reason": None, "data": resp.json()}
+            return {"success": False, "reason": "Prognosis authentication expired", "data": None}
+        else:
+            log.warning("Prognosis AddClaim returned %d: %s", resp.status_code, resp.text[:500])
+            return {
+                "success": False,
+                "reason": f"Prognosis returned status {resp.status_code}: {resp.text[:200]}",
+                "data": None,
+            }
+    except httpx.RequestError as e:
+        log.error("Prognosis AddClaim request failed: %s", e)
+        return {"success": False, "reason": f"Cannot reach Prognosis API: {e}", "data": None}
+
+
 async def submit_claim_verification(
     verification_token: str, provider_id: str, timestamp: str
 ) -> dict | None:
