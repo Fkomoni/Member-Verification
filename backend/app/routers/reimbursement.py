@@ -33,7 +33,6 @@ router = APIRouter(prefix="/reimbursement", tags=["reimbursement"])
 
 class ValidateMemberRequest(BaseModel):
     enrollee_id: str = Field(..., min_length=1, max_length=50)
-    phone: str = Field(..., min_length=1, max_length=20)
 
 
 class ValidateMemberResponse(BaseModel):
@@ -80,19 +79,21 @@ def validate_member(
     Step 1: Validate member identity (enrollee ID + phone).
     Public endpoint — no auth required.
     """
-    is_valid, message, member_data = mock_member_service.validate_member_phone(
-        db, enrollee_id=body.enrollee_id, phone=body.phone
+    member_data = mock_member_service.lookup_member(
+        db, enrollee_id=body.enrollee_id
     )
+    is_valid = member_data is not None
+    message = "Member found." if is_valid else "Member not found. Please check your Enrollee ID."
 
     # Audit
     audit_service.log_action(
         db,
         entity_type="member_validation",
         entity_id=body.enrollee_id,
-        action="member_identity_check",
+        action="member_lookup",
         actor_type="member",
         actor_id=body.enrollee_id,
-        details={"phone_provided": body.phone[:4] + "****", "valid": is_valid},
+        details={"valid": is_valid},
         ip_address=request.client.host if request.client else None,
     )
 

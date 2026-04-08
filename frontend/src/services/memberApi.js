@@ -8,8 +8,8 @@ const API_BASE = process.env.REACT_APP_API_URL || "http://localhost:8000/api/v1"
 const memberApi = axios.create({ baseURL: API_BASE });
 
 // ── Member Validation ────────────────────────────
-export const validateMember = (enrollee_id, phone) =>
-  memberApi.post("/reimbursement/validate-member", { enrollee_id, phone });
+export const validateMember = (enrollee_id) =>
+  memberApi.post("/reimbursement/validate-member", { enrollee_id });
 
 // ── Authorization Code ───────────────────────────
 export const validateAuthCode = (code, enrollee_id) =>

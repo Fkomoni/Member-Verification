@@ -6,7 +6,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import settings
-from app.routers import agent_auth, auth, authorization, biometrics, claims, members, reimbursement, visits
+from app.routers import agent_auth, auth, authorization, biometrics, claims, claims_portal, members, reimbursement, visits
 
 app = FastAPI(
     title=settings.APP_NAME,
@@ -37,6 +37,7 @@ app.include_router(claims.router, prefix=PREFIX)
 app.include_router(agent_auth.router, prefix=PREFIX)
 app.include_router(authorization.router, prefix=PREFIX)
 app.include_router(reimbursement.router, prefix=PREFIX)
+app.include_router(claims_portal.router, prefix=PREFIX)
 
 
 @app.get("/health")

@@ -5,6 +5,9 @@ import s from "./memberportal.module.css";
 const EMPTY_LINE = { service_name: "", quantity: 1, unit_price: "" };
 
 export default function ReimbursementForm({ memberData, codeData, onSubmitted, onBack }) {
+  // -- Contact
+  const [memberPhone, setMemberPhone] = useState("");
+
   // -- Form state
   const [reimbursementReason, setReimbursementReason] = useState("");
   const [hospitalName, setHospitalName] = useState("");
@@ -102,6 +105,7 @@ export default function ReimbursementForm({ memberData, codeData, onSubmitted, o
     setError("");
 
     // Validation
+    if (!memberPhone.trim()) return setError("Phone number is required");
     if (!reimbursementReason.trim()) return setError("Reimbursement reason is required");
     if (!hospitalName.trim()) return setError("Hospital name is required");
     if (!visitDate) return setError("Visit date is required");
@@ -123,7 +127,7 @@ export default function ReimbursementForm({ memberData, codeData, onSubmitted, o
       const formPayload = {
         authorization_code: codeData.code,
         enrollee_id: memberData.enrollee_id,
-        member_phone: memberData.phone,
+        member_phone: memberPhone.trim(),
         hospital_name: hospitalName.trim(),
         visit_date: visitDate,
         reason_for_visit: reasonForVisit.trim(),
@@ -191,6 +195,24 @@ export default function ReimbursementForm({ memberData, codeData, onSubmitted, o
       {error && <div className={s.error}>{error}</div>}
 
       <form onSubmit={handleSubmit}>
+        {/* ── Contact ─────────────────────────── */}
+        <h4 className={s.sectionTitle}>Contact Information</h4>
+        <p className={s.sectionSubtitle}>Provide your phone number so we can reach you</p>
+
+        <label className={`${s.label} ${s.labelRequired}`}>
+          Phone Number
+          <input
+            type="tel"
+            value={memberPhone}
+            onChange={(e) => setMemberPhone(e.target.value)}
+            className={s.input}
+            placeholder="e.g. 08012345678"
+            required
+          />
+        </label>
+
+        <hr className={s.sectionDivider} />
+
         {/* ── Claim Details ──────────────────────── */}
         <h4 className={s.sectionTitle}>Claim Details</h4>
         <p className={s.sectionSubtitle}>Provide the details of your healthcare visit</p>

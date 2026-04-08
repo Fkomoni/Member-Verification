@@ -7,15 +7,17 @@ import DashboardPage from "./pages/DashboardPage";
 import CallCenterLoginPage from "./pages/CallCenterLoginPage";
 import CallCenterDashboardPage from "./pages/CallCenterDashboardPage";
 import MemberPortalPage from "./pages/MemberPortalPage";
+import ClaimsLoginPage from "./pages/ClaimsLoginPage";
+import ClaimsPortalPage from "./pages/ClaimsPortalPage";
 
 function PrivateRoute({ children }) {
   const { provider } = useAuth();
   return provider ? children : <Navigate to="/login" replace />;
 }
 
-function AgentPrivateRoute({ children }) {
+function AgentPrivateRoute({ children, redirectTo }) {
   const { agent } = useAgentAuth();
-  return agent ? children : <Navigate to="/call-center/login" replace />;
+  return agent ? children : <Navigate to={redirectTo || "/call-center/login"} replace />;
 }
 
 export default function App() {
@@ -45,6 +47,17 @@ export default function App() {
 
       {/* Member Portal (public) */}
       <Route path="/reimburse" element={<MemberPortalPage />} />
+
+      {/* Claims Portal */}
+      <Route path="/claims/login" element={<ClaimsLoginPage />} />
+      <Route
+        path="/claims/dashboard"
+        element={
+          <AgentPrivateRoute redirectTo="/claims/login">
+            <ClaimsPortalPage />
+          </AgentPrivateRoute>
+        }
+      />
 
       {/* Default redirect */}
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
