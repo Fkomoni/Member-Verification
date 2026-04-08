@@ -1,0 +1,145 @@
+.page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--lw-light-grey, #F4F5F7);
+}
+
+/* -- Header ---------------------------------------- */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 2rem;
+  background: #fff;
+  border-bottom: 3px solid #F15A24;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+}
+
+.headerLeft {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.headerLogo {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.headerBrand {
+  font-size: 1rem;
+  font-weight: 800;
+  color: #263626;
+  letter-spacing: 0.04em;
+}
+
+.headerBrandHealth {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #F15A24;
+}
+
+.headerDivider {
+  width: 1px;
+  height: 24px;
+  background: #ddd;
+}
+
+.headerPortal {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #666;
+}
+
+.headerRight {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+}
+
+.agentInfo {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.agentName {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #263626;
+}
+
+.agentRole {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #F15A24;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.logoutBtn {
+  background: transparent;
+  color: #F15A24;
+  border: 1.5px solid #F15A24;
+  padding: 0.35rem 1rem;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.logoutBtn:hover {
+  background: #F15A24;
+  color: #fff;
+}
+
+/* -- Main ------------------------------------------ */
+.main {
+  flex: 1;
+  padding: 1.5rem 2rem;
+  max-width: 960px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.welcomeBar {
+  margin-bottom: 1.5rem;
+}
+
+.welcomeTitle {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: #263626;
+  margin-bottom: 0.2rem;
+}
+
+.welcomeSubtitle {
+  font-size: 0.88rem;
+  color: #777;
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* -- Responsive ------------------------------------ */
+@media (max-width: 768px) {
+  .header {
+    padding: 0.75rem 1rem;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  .main {
+    padding: 1rem;
+  }
+  .welcomeTitle {
+    font-size: 1.15rem;
+  }
+  .agentInfo {
+    display: none;
+  }
+}
