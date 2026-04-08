@@ -238,20 +238,33 @@ async def search_diagnoses(
     if len(q) < 2:
         return []
 
+    _logger.info(f"Diagnosis search request: q='{q}'")
     results = await prognosis_client.search_diagnoses(q, db=db)
+    _logger.info(f"Diagnosis search got {len(results)} results for '{q}'")
+
+    # If results have items, log first one to discover field names
+    if results:
+        first = results[0]
+        _logger.info(f"First diagnosis result keys: {list(first.keys())}")
+        for k, v in first.items():
+            _logger.info(f"  {k} = {str(v)[:60]}")
 
     diagnoses = []
     for r in results[:20]:
-        name = (r.get("diagnosisName") or r.get("DiagnosisName") or
-                r.get("name") or r.get("Name") or
-                r.get("tariff_desc") or r.get("Description") or "")
-        code = (r.get("diagnosisId") or r.get("DiagnosisId") or
-                r.get("id") or r.get("Id") or
-                r.get("code") or r.get("Code") or
-                r.get("tariff_code") or "")
+        # Try every possible field name combination
+        name = ""
+        code = ""
+        for k, v in r.items():
+            v_str = str(v).strip() if v else ""
+            k_lower = k.lower()
+            if not name and v_str and any(x in k_lower for x in ["name", "desc", "diagnosis", "title"]):
+                name = v_str
+            if not code and v_str and any(x in k_lower for x in ["id", "code"]):
+                code = v_str
         if name:
-            diagnoses.append({"diagnosis_name": str(name), "diagnosis_id": str(code)})
+            diagnoses.append({"diagnosis_name": name, "diagnosis_id": code})
 
+    _logger.info(f"Returning {len(diagnoses)} diagnoses for '{q}'")
     return diagnoses
 
 

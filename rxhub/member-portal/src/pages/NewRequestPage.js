@@ -51,7 +51,7 @@ export default function NewRequestPage() {
         const { data } = await api.get('/member/search-diagnoses', { params: { q: diagSearchTerm } });
         setDiagResults(data);
         setShowDiagDropdown(data.length > 0);
-      } catch { setDiagResults([]); }
+      } catch (err) { console.error('Diagnosis search error:', err); setDiagResults([]); }
       finally { setDiagSearching(false); }
     }, 300);
     return () => { if (diagTimeout.current) clearTimeout(diagTimeout.current); };
