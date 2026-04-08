@@ -106,7 +106,7 @@ def health_check():
 
 @app.get("/api/v1/debug/db")
 def debug_db():
-    """Check database connectivity and table status — remove in production."""
+    """Check database connectivity and table status."""
     from app.core.database import SessionLocal
     from app.models.models import Agent
 
@@ -125,3 +125,60 @@ def debug_db():
         }
     except Exception as e:
         return {"db_connected": False, "error": str(e)}
+
+
+@app.post("/api/v1/debug/init")
+def debug_init():
+    """Force-create all tables and seed agents. Call once after deploy."""
+    from sqlalchemy import text
+
+    from app.core.database import Base, SessionLocal, engine
+    from app.core.security import hash_password
+    from app.models import models  # noqa: ensure all models loaded
+    from app.models.models import Agent
+
+    results = []
+
+    # Create enum types first (ignore if they already exist)
+    db = SessionLocal()
+    enum_sqls = [
+        "DO $$ BEGIN CREATE TYPE agent_role_enum AS ENUM ('call_center', 'claims_officer', 'admin'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;",
+        "DO $$ BEGIN CREATE TYPE auth_code_status_enum AS ENUM ('active', 'used', 'expired'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;",
+        "DO $$ BEGIN CREATE TYPE claim_status_enum AS ENUM ('submitted', 'under_review', 'pending_info', 'approved', 'rejected', 'payment_processing', 'paid'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;",
+    ]
+    for sql in enum_sqls:
+        try:
+            db.execute(text(sql))
+            db.commit()
+        except Exception as e:
+            db.rollback()
+            results.append(f"Enum: {e}")
+
+    db.close()
+
+    # Create all tables
+    try:
+        Base.metadata.create_all(bind=engine)
+        results.append("Tables created successfully")
+    except Exception as e:
+        results.append(f"Table creation error: {e}")
+        return {"success": False, "results": results}
+
+    # Seed agents
+    db = SessionLocal()
+    try:
+        agent_count = db.query(Agent).count()
+        if agent_count == 0:
+            db.add(Agent(name="Call Center Agent", email="agent@leadwayhealth.com", hashed_password=hash_password("agent123"), role="call_center"))
+            db.add(Agent(name="Claims Officer", email="claims@leadwayhealth.com", hashed_password=hash_password("claims123"), role="claims_officer"))
+            db.add(Agent(name="Admin User", email="admin@leadwayhealth.com", hashed_password=hash_password("admin123"), role="admin"))
+            db.commit()
+            results.append("3 agents seeded")
+        else:
+            results.append(f"{agent_count} agents already exist")
+    except Exception as e:
+        results.append(f"Seed error: {e}")
+    finally:
+        db.close()
+
+    return {"success": True, "results": results}
