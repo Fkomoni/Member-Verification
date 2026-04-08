@@ -98,6 +98,29 @@ async def sync_medications_from_pbm(member_id: str, db: Session) -> bool:
             db.commit()
             logger.info(f"Updated member {member_id}: diagnosis={delivery_info.get('diagnosis')}, scheme={delivery_info.get('scheme')}, employer={delivery_info.get('company')}")
 
+    # Get list of medications member has deleted (from audit logs) so we don't re-add them
+    deleted_meds = set()
+    deleted_requests = (
+        db.query(Request)
+        .filter(
+            Request.member_id == member_id,
+            Request.request_type == "MEDICATION_CHANGE",
+            Request.action == "REMOVE",
+            Request.status == "APPROVED",
+        )
+        .all()
+    )
+    for req in deleted_requests:
+        entry = req.payload.get("entry_no", "") if req.payload else ""
+        drug = req.payload.get("drug_name", "") if req.payload else ""
+        if entry:
+            deleted_meds.add(str(entry))
+        if drug:
+            deleted_meds.add(drug.upper())
+
+    if deleted_meds:
+        logger.info(f"Skipping {len(deleted_meds)} previously deleted medications for {member_id}")
+
     # Clear old medications and replace with fresh PBM data
     if medications:
         db.query(Medication).filter(Medication.member_id == member_id).delete()
@@ -111,15 +134,19 @@ async def sync_medications_from_pbm(member_id: str, db: Session) -> bool:
             "DrugID", "drugId", "drug_id", "pbm_drug_id", "ID", "id",
         )
         if not pbm_drug_id:
-            # Use drug name + enrollee as fallback ID
             pbm_drug_id = _find(med_data, "Medications", "DrugName", "Drug_Name", "drugName", "Name") or f"med-{len(medications)}"
 
-        # Map all medication fields
+        # Map drug name early so we can check deletions
         drug_name = _find(med_data,
             "Medications", "DrugName", "Drug_Name", "drugName", "drug_name",
             "MedicationName", "Medication_Name", "Name", "name",
             "ItemName", "Item_Name", "ProductName",
         ) or "Unknown Medication"
+
+        # Skip if member previously deleted this medication
+        if str(pbm_drug_id) in deleted_meds or drug_name.upper() in deleted_meds:
+            logger.info(f"Skipping deleted medication: {drug_name} (ID: {pbm_drug_id})")
+            continue
 
         generic_name = _find(med_data,
             "GenericName", "Generic_Name", "genericName", "generic_name",
