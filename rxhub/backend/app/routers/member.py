@@ -301,15 +301,24 @@ async def delete_medication_with_reason(
     entry_no = med.pbm_drug_id
     drug_name = med.drug_name
 
+    _logger.info(f"DELETE medication: drug={drug_name}, pbm_drug_id={entry_no}, medication_id={medication_id}")
+    _logger.info(f"  Member: {member.member_id}, Comment: {comment}")
+
     # Push deletion to Prognosis
     try:
-        if entry_no and entry_no.isdigit():
+        if entry_no and str(entry_no).strip().isdigit():
             result = await prognosis_client.delete_member_medication(int(entry_no), comment, db=db)
-            _logger.info(f"Pushed delete to Prognosis: EntryNo={entry_no}, result={result}")
+            _logger.info(f"  Prognosis delete result: {result}")
         else:
-            _logger.warning(f"No valid EntryNo for medication {medication_id}, skipping Prognosis delete")
+            _logger.warning(f"  pbm_drug_id '{entry_no}' is not a valid EntryNo — trying as-is")
+            # Try sending it anyway in case Prognosis accepts non-numeric IDs
+            try:
+                result = await prognosis_client.delete_member_medication(entry_no, comment, db=db)
+                _logger.info(f"  Prognosis delete result (non-numeric): {result}")
+            except Exception as e2:
+                _logger.error(f"  Also failed with non-numeric: {e2}")
     except Exception as e:
-        _logger.error(f"Failed to push delete to Prognosis: {e}")
+        _logger.error(f"  Failed to push delete to Prognosis: {e}")
 
     # Delete locally
     db.delete(med)

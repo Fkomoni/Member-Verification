@@ -403,12 +403,16 @@ class PrognosisClient:
             "Comment": comment,
         }
 
-        logger.info(f"Deleting medication EntryNo={entry_no} from Prognosis: {comment}")
+        logger.info(f"Deleting medication from Prognosis:")
+        logger.info(f"  URL: {url}")
+        logger.info(f"  Payload: {body}")
         result = await self._request("POST", url, db=db, json=body)
+        logger.info(f"  Response: {result}")
 
         if "error" in result:
-            logger.error(f"Prognosis medication delete failed: {result}")
+            logger.error(f"Prognosis medication delete FAILED: {result}")
         else:
+            logger.info(f"Prognosis medication delete SUCCESS: EntryNo={entry_no}")
             logger.info(f"Prognosis medication delete successful: EntryNo={entry_no}")
 
         return result
@@ -446,13 +450,16 @@ class PrognosisClient:
         if payload.get("alternative_phone") or payload.get("AlternativePhone"):
             body["AlternativePhone"] = payload.get("alternative_phone") or payload.get("AlternativePhone", "")
 
-        logger.info(f"Pushing profile update to Prognosis for {enrollee_id}: {list(body.keys())}")
+        logger.info(f"Pushing profile update to Prognosis for {enrollee_id}:")
+        logger.info(f"  URL: {url}")
+        logger.info(f"  Payload: {body}")
         result = await self._request("POST", url, db=db, json=body)
+        logger.info(f"  Response: {result}")
 
         if "error" in result:
-            logger.error(f"Prognosis profile update failed: {result}")
+            logger.error(f"Prognosis profile update FAILED: {result}")
         else:
-            logger.info(f"Prognosis profile update successful for {enrollee_id}")
+            logger.info(f"Prognosis profile update SUCCESS for {enrollee_id}")
 
         return result
 
