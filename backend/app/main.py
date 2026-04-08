@@ -64,24 +64,17 @@ app.include_router(claims_portal.router, prefix=PREFIX)
 @app.on_event("startup")
 def on_startup():
     """Auto-create tables, seed agents, and expire stale codes on boot."""
-    from app.core.database import Base, SessionLocal, engine
-    from app.core.security import hash_password
-    from app.models.models import Agent
-    from app.services.authorization_service import expire_stale_codes
+    from app.core.database import SessionLocal
 
-    # 1. Create only reimbursement tables (skip old biometric tables)
-    try:
-        from app.models import models  # noqa: ensure all models are imported
-        reimbursement_tables = ["agents", "authorization_codes", "reimbursement_claims", "claim_service_lines", "claim_audit_logs"]
-        tables = [t for n, t in Base.metadata.tables.items() if n in reimbursement_tables]
-        Base.metadata.create_all(bind=engine, tables=tables)
-        log.info("Startup: reimbursement tables ensured")
-    except Exception as e:
-        log.error("Startup: failed to create tables: %s", e)
+    log.info("Startup: use GET /api/v1/debug/init to create tables if first deploy")
 
     db = SessionLocal()
     try:
-        # 2. Auto-seed default agents if none exist
+        # Try to seed agents and expire codes (will fail gracefully if tables don't exist yet)
+        from app.core.security import hash_password
+        from app.models.models import Agent
+        from app.services.authorization_service import expire_stale_codes
+
         agent_count = db.query(Agent).count()
         if agent_count == 0:
             log.info("Startup: no agents found — seeding defaults")
@@ -131,64 +124,131 @@ def debug_db():
 
 @app.get("/api/v1/debug/init")
 def debug_init():
-    """Force-create all tables and seed agents. Call once after deploy."""
+    """Create reimbursement tables via raw SQL and seed agents."""
     from sqlalchemy import text
 
-    from app.core.database import Base, SessionLocal, engine
+    from app.core.database import SessionLocal
     from app.core.security import hash_password
-    from app.models import models  # noqa: ensure all models loaded
-    from app.models.models import Agent
 
     results = []
-
-    # Create enum types first (ignore if they already exist)
     db = SessionLocal()
-    enum_sqls = [
+
+    # All DDL in one go — raw SQL, no ORM dependency resolution
+    ddl_statements = [
+        # Enums
         "DO $$ BEGIN CREATE TYPE agent_role_enum AS ENUM ('call_center', 'claims_officer', 'admin'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;",
         "DO $$ BEGIN CREATE TYPE auth_code_status_enum AS ENUM ('active', 'used', 'expired'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;",
         "DO $$ BEGIN CREATE TYPE claim_status_enum AS ENUM ('submitted', 'under_review', 'pending_info', 'approved', 'rejected', 'payment_processing', 'paid'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;",
+        # Agents
+        """CREATE TABLE IF NOT EXISTS agents (
+            agent_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            name VARCHAR(200) NOT NULL,
+            email VARCHAR(200) NOT NULL UNIQUE,
+            hashed_password TEXT NOT NULL,
+            role agent_role_enum NOT NULL DEFAULT 'call_center',
+            is_active BOOLEAN DEFAULT TRUE,
+            created_at TIMESTAMPTZ DEFAULT NOW()
+        );""",
+        # Authorization codes
+        """CREATE TABLE IF NOT EXISTS authorization_codes (
+            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            code VARCHAR(20) NOT NULL UNIQUE,
+            enrollee_id VARCHAR(50) NOT NULL,
+            member_name VARCHAR(200) NOT NULL DEFAULT '',
+            approved_amount NUMERIC(12,2) NOT NULL,
+            visit_type VARCHAR(100) NOT NULL,
+            notes TEXT,
+            agent_id UUID NOT NULL REFERENCES agents(agent_id),
+            agent_name VARCHAR(200) NOT NULL,
+            status auth_code_status_enum DEFAULT 'active',
+            linked_claim_id UUID,
+            created_at TIMESTAMPTZ DEFAULT NOW(),
+            expires_at TIMESTAMPTZ NOT NULL
+        );""",
+        # Reimbursement claims
+        """CREATE TABLE IF NOT EXISTS reimbursement_claims (
+            claim_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            claim_ref VARCHAR(30) NOT NULL UNIQUE,
+            authorization_code_id UUID NOT NULL REFERENCES authorization_codes(id),
+            enrollee_id VARCHAR(50) NOT NULL,
+            member_name VARCHAR(200) NOT NULL,
+            member_phone VARCHAR(20) NOT NULL,
+            hospital_name VARCHAR(300) NOT NULL,
+            visit_date DATE NOT NULL,
+            reason_for_visit TEXT NOT NULL,
+            reimbursement_reason TEXT NOT NULL,
+            claim_amount NUMERIC(12,2) NOT NULL,
+            medications TEXT,
+            lab_investigations TEXT,
+            comments TEXT,
+            bank_name VARCHAR(200) NOT NULL,
+            account_number VARCHAR(20) NOT NULL,
+            account_name VARCHAR(200) NOT NULL,
+            status claim_status_enum DEFAULT 'submitted',
+            approved_amount NUMERIC(12,2),
+            reviewer_id UUID REFERENCES agents(agent_id),
+            reviewer_notes TEXT,
+            created_at TIMESTAMPTZ DEFAULT NOW(),
+            updated_at TIMESTAMPTZ DEFAULT NOW()
+        );""",
+        # Add FK from auth codes to claims (after claims table exists)
+        """DO $$ BEGIN
+            ALTER TABLE authorization_codes ADD CONSTRAINT fk_auth_linked_claim
+            FOREIGN KEY (linked_claim_id) REFERENCES reimbursement_claims(claim_id);
+        EXCEPTION WHEN duplicate_object THEN NULL; END $$;""",
+        # Service lines
+        """CREATE TABLE IF NOT EXISTS claim_service_lines (
+            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            claim_id UUID NOT NULL REFERENCES reimbursement_claims(claim_id) ON DELETE CASCADE,
+            service_name VARCHAR(200) NOT NULL,
+            quantity INTEGER NOT NULL DEFAULT 1,
+            unit_price NUMERIC(12,2) NOT NULL,
+            total NUMERIC(12,2) NOT NULL
+        );""",
+        # Audit logs
+        """CREATE TABLE IF NOT EXISTS claim_audit_logs (
+            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            entity_type VARCHAR(50) NOT NULL,
+            entity_id UUID NOT NULL,
+            action VARCHAR(100) NOT NULL,
+            actor_type VARCHAR(20) NOT NULL,
+            actor_id VARCHAR(100) NOT NULL,
+            details JSONB,
+            ip_address VARCHAR(45),
+            created_at TIMESTAMPTZ DEFAULT NOW()
+        );""",
+        # Indexes
+        "CREATE INDEX IF NOT EXISTS idx_auth_codes_code ON authorization_codes(code);",
+        "CREATE INDEX IF NOT EXISTS idx_auth_codes_enrollee ON authorization_codes(enrollee_id);",
+        "CREATE INDEX IF NOT EXISTS idx_auth_codes_status ON authorization_codes(status);",
+        "CREATE INDEX IF NOT EXISTS idx_claims_ref ON reimbursement_claims(claim_ref);",
+        "CREATE INDEX IF NOT EXISTS idx_claims_enrollee ON reimbursement_claims(enrollee_id);",
+        "CREATE INDEX IF NOT EXISTS idx_claims_status ON reimbursement_claims(status);",
+        "CREATE INDEX IF NOT EXISTS idx_audit_entity ON claim_audit_logs(entity_type, entity_id);",
     ]
-    for sql in enum_sqls:
+
+    for sql in ddl_statements:
         try:
             db.execute(text(sql))
             db.commit()
         except Exception as e:
             db.rollback()
-            results.append(f"Enum: {e}")
+            results.append(f"DDL error: {str(e)[:100]}")
 
-    db.close()
-
-    # Create ONLY reimbursement system tables (skip old biometric tables)
-    reimbursement_tables = [
-        "agents",
-        "authorization_codes",
-        "reimbursement_claims",
-        "claim_service_lines",
-        "claim_audit_logs",
-    ]
-    try:
-        tables_to_create = [
-            table for name, table in Base.metadata.tables.items()
-            if name in reimbursement_tables
-        ]
-        Base.metadata.create_all(bind=engine, tables=tables_to_create)
-        results.append(f"Tables created: {[t.name for t in tables_to_create]}")
-    except Exception as e:
-        results.append(f"Table creation error: {e}")
-        return {"success": False, "results": results}
+    results.append("Tables created")
 
     # Seed agents
-    db = SessionLocal()
     try:
-        agent_count = db.query(Agent).count()
-        if agent_count == 0:
+        count = db.execute(text("SELECT count(*) FROM agents")).scalar()
+        if count == 0:
+            from app.models.models import Agent
             db.add(Agent(name="Call Center Agent", email="agent@leadwayhealth.com", hashed_password=hash_password("agent123"), role="call_center"))
             db.add(Agent(name="Claims Officer", email="claims@leadwayhealth.com", hashed_password=hash_password("claims123"), role="claims_officer"))
             db.add(Agent(name="Admin User", email="admin@leadwayhealth.com", hashed_password=hash_password("admin123"), role="admin"))
             db.commit()
             results.append("3 agents seeded")
         else:
-            results.append(f"{agent_count} agents already exist")
+            results.append(f"{count} agents already exist")
     except Exception as e:
         results.append(f"Seed error: {e}")
     finally:
