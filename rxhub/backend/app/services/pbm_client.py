@@ -352,6 +352,10 @@ class PrognosisClient:
 
                 return result
 
+        except Exception as e:
+            logger.error(f"Medication search error: {e}")
+            return []
+
     async def search_diagnoses(self, search_term: str = "", db: Session = None) -> list:
         """
         GET /ListValues/GetPharmacyDiagnosisList
@@ -413,13 +417,8 @@ class PrognosisClient:
             logger.error(f"Prognosis medication delete FAILED: {result}")
         else:
             logger.info(f"Prognosis medication delete SUCCESS: EntryNo={entry_no}")
-            logger.info(f"Prognosis medication delete successful: EntryNo={entry_no}")
 
         return result
-
-        except Exception as e:
-            logger.error(f"Medication search error: {e}")
-            return []
 
     async def update_member_profile(self, enrollee_id: str, payload: dict, db: Session = None) -> dict:
         """
