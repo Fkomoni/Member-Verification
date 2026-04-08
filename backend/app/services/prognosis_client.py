@@ -153,6 +153,23 @@ async def validate_enrollee_eligibility(cifno: str, provider_id: str) -> dict:
         }
 
 
+def _extract_enrollee(data: dict | list) -> dict | None:
+    """
+    Extract the enrollee record from the Prognosis response.
+    Response format: {"status": 200, "result": [{...}], "profilepic": "...", ...}
+    """
+    if isinstance(data, dict):
+        result = data.get("result")
+        if isinstance(result, list) and result:
+            return result[0]
+        # Maybe the data itself is the enrollee record
+        if "Member_EnrolleeID" in data or "Member_FirstName" in data:
+            return data
+    elif isinstance(data, list) and data:
+        return data[0]
+    return None
+
+
 async def get_enrollee_biodata(enrollee_id: str) -> dict:
     """
     Fetch enrollee bio-data from Prognosis by enrollee ID.
@@ -180,8 +197,13 @@ async def get_enrollee_biodata(enrollee_id: str) -> dict:
 
         if resp.status_code == 200:
             data = resp.json()
-            log.info("Prognosis biodata for enrolleeid=%s: %s", enrollee_id, data)
-            return {"success": True, "reason": None, "data": data}
+            # Response structure: {"status": 200, "result": [...], "profilepic": "...", ...}
+            # Extract the enrollee record from result[0]
+            enrollee = _extract_enrollee(data)
+            if enrollee is None:
+                return {"success": False, "reason": "Enrollee not found in Prognosis response", "data": None}
+            log.info("Prognosis biodata keys for %s: %s", enrollee_id, list(enrollee.keys()))
+            return {"success": True, "reason": None, "data": enrollee}
         elif resp.status_code == 401:
             # Token expired — clear cache and retry once
             global _prognosis_token_expiry
@@ -193,7 +215,10 @@ async def get_enrollee_biodata(enrollee_id: str) -> dict:
                     resp = await client.get(url, params=params, headers=headers)
                 if resp.status_code == 200:
                     data = resp.json()
-                    return {"success": True, "reason": None, "data": data}
+                    enrollee = _extract_enrollee(data)
+                    if enrollee is None:
+                        return {"success": False, "reason": "Enrollee not found in Prognosis response", "data": None}
+                    return {"success": True, "reason": None, "data": enrollee}
             return {"success": False, "reason": "Prognosis authentication expired", "data": None}
         elif resp.status_code == 404:
             return {"success": False, "reason": "Enrollee not found in Prognosis", "data": None}

@@ -42,6 +42,13 @@ class EligibilityResponse(BaseModel):
     cif_number: str | None = None
     provider_name: str | None = None
     policy_no: str | None = None
+    member_status: str | None = None
+    member_type: str | None = None
+    plan_category: str | None = None
+    address: str | None = None
+    expiry_date: str | None = None
+    effective_date: str | None = None
+    family_no: str | None = None
     member_id: uuid.UUID | None = None  # local DB member ID (if exists)
     biometric_registered: bool = False
 
