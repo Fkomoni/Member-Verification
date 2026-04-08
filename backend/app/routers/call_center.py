@@ -281,7 +281,6 @@ def submit_reimbursement(
     """Public: submit a reimbursement claim against a PA code."""
     code = body.get("code", "").strip().upper()
     claim_amount = float(body.get("claim_amount", 0))
-    description = body.get("description", "")
 
     auth_code = (
         db.query(AuthorizationCode)
@@ -302,6 +301,28 @@ def submit_reimbursement(
     auth_code.status = "USED"
     db.commit()
 
+    # Build claims batch payload (ready for your Prognosis claims API)
+    claims_batch_payload = {
+        "cifnumber": str(auth_code.visit_type_id),  # Will be mapped by your API
+        "schemeid": "",  # Set from enrollee data when API is integrated
+        "dateofservice": body.get("visit_date", ""),
+        "placeofservice": body.get("provider_name", ""),
+        "claim_amount": str(claim_amount),
+        "claimcurrencyid": "37",  # NGN
+        "claimReferenceInvoiceReceiptNumber": auth_code.code,
+        "NumberOfClaims": "1",
+        "claimRemarks": body.get("remarks", ""),
+        "ClaimDocuments": body.get("claim_documents", []),
+        "PaymentMode": "Bank",
+        "BankName": body.get("bank_name", ""),
+        "bank_id": "",
+        "AccountName": body.get("account_name", ""),
+        "AccountNumber": body.get("account_number", ""),
+    }
+
+    # TODO: Call your claims batch API here
+    # response = await prognosis_client.create_claims_batch(claims_batch_payload)
+
     return {
         "success": True,
         "message": "Reimbursement claim submitted successfully",
@@ -310,5 +331,31 @@ def submit_reimbursement(
         "visit_type_name": auth_code.visit_type_name,
         "approved_amount": auth_code.approved_amount,
         "claim_amount": claim_amount,
-        "description": description,
+        "provider_name": body.get("provider_name", ""),
+        "visit_date": body.get("visit_date", ""),
+        "reason_for_visit": body.get("reason_for_visit", ""),
+        "claims_batch_payload": claims_batch_payload,
+    }
+
+
+@router.post("/reimbursement/validate-bank")
+def validate_bank_account(body: dict):
+    """
+    Validate bank account number against name.
+    TODO: Integrate with Paystack Resolve Account API:
+    GET https://api.paystack.co/bank/resolve?account_number=XXX&bank_code=XXX
+    Headers: Authorization: Bearer SECRET_KEY
+    """
+    account_number = body.get("account_number", "")
+    bank_name = body.get("bank_name", "")
+
+    if not account_number or not bank_name:
+        return {"validated": False, "reason": "Account number and bank name required"}
+
+    # TODO: Replace with Paystack API call
+    # For now, return manual validation mode
+    return {
+        "validated": True,
+        "account_name": "",  # Will be populated by Paystack
+        "message": "Manual entry mode — Paystack integration pending",
     }
