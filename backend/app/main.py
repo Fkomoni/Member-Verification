@@ -6,7 +6,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import settings
-from app.routers import auth, biometrics, claims, members, visits
+from app.routers import auth, biometrics, call_center, claims, members, visits
 
 app = FastAPI(
     title=settings.APP_NAME,
@@ -34,6 +34,7 @@ app.include_router(members.router, prefix=PREFIX)
 app.include_router(biometrics.router, prefix=PREFIX)
 app.include_router(visits.router, prefix=PREFIX)
 app.include_router(claims.router, prefix=PREFIX)
+app.include_router(call_center.router, prefix=PREFIX)
 
 
 @app.get("/health")
