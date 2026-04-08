@@ -35,13 +35,10 @@ app = FastAPI(
 # Security headers on every response
 app.add_middleware(SecurityHeadersMiddleware)
 
-# CORS – tighten origins in production
+# CORS – allow Render + localhost
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",
-        "https://member-verification-portal.onrender.com",
-    ],
+    allow_origins=["*"],  # permissive for now — tighten after confirmed working
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -105,3 +102,26 @@ def on_startup():
 @app.get("/health")
 def health_check():
     return {"status": "ok", "version": settings.APP_VERSION}
+
+
+@app.get("/api/v1/debug/db")
+def debug_db():
+    """Check database connectivity and table status — remove in production."""
+    from app.core.database import SessionLocal
+    from app.models.models import Agent
+
+    try:
+        db = SessionLocal()
+        agent_count = db.query(Agent).count()
+        agents = [
+            {"email": a.email, "role": a.role, "active": a.is_active}
+            for a in db.query(Agent).all()
+        ]
+        db.close()
+        return {
+            "db_connected": True,
+            "agents_count": agent_count,
+            "agents": agents,
+        }
+    except Exception as e:
+        return {"db_connected": False, "error": str(e)}

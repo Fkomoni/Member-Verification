@@ -152,6 +152,35 @@
   color: #bbb;
 }
 
+.passwordWrap {
+  position: relative;
+  margin-top: 0.35rem;
+}
+
+.passwordWrap .input {
+  margin-top: 0;
+  padding-right: 2.75rem;
+}
+
+.eyeBtn {
+  position: absolute;
+  right: 0.6rem;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  padding: 0.25rem;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  opacity: 0.6;
+  transition: opacity 0.2s;
+}
+
+.eyeBtn:hover {
+  opacity: 1;
+}
+
 .button {
   width: 100%;
   padding: 0.8rem;

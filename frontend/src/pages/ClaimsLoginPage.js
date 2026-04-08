@@ -8,6 +8,7 @@ export default function ClaimsLoginPage() {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -23,7 +24,13 @@ export default function ClaimsLoginPage() {
       }
       navigate("/claims/dashboard");
     } catch (err) {
-      setError(err.response?.data?.detail || "Login failed");
+      if (err.response) {
+        setError(err.response.data?.detail || `Server error (${err.response.status})`);
+      } else if (err.request) {
+        setError("Cannot reach the server. Please check your connection or try again later.");
+      } else {
+        setError(err.message || "Login failed");
+      }
     } finally {
       setLoading(false);
     }
@@ -34,7 +41,7 @@ export default function ClaimsLoginPage() {
       <div className={styles.leftPanel}>
         <div className={styles.brandContent}>
           <div className={styles.logoBlock}>
-            <img src="/leadway-logo.png" alt="Leadway Health HMO" style={{ height: 52, width: "auto", filter: "brightness(0) invert(1)" }} />
+            <img src="/leadway-logo.png" alt="Leadway Health HMO" className={styles.logoImg} />
           </div>
           <h1 className={styles.brandTitle}>Claims Portal</h1>
           <p className={styles.brandTagline}>
@@ -60,7 +67,34 @@ export default function ClaimsLoginPage() {
 
           <label className={styles.label}>
             Password
-            <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required className={styles.input} placeholder="Enter password" />
+            <div className={styles.passwordWrap}>
+              <input
+                type={showPassword ? "text" : "password"}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                className={styles.input}
+                placeholder="Enter password"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className={styles.eyeBtn}
+                tabIndex={-1}
+              >
+                {showPassword ? (
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#888" strokeWidth="2">
+                    <path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24" />
+                    <line x1="1" y1="1" x2="23" y2="23" />
+                  </svg>
+                ) : (
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#888" strokeWidth="2">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                    <circle cx="12" cy="12" r="3" />
+                  </svg>
+                )}
+              </button>
+            </div>
           </label>
 
           <button type="submit" disabled={loading} className={styles.button}>
