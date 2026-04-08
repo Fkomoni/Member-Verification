@@ -120,7 +120,7 @@ export default function ReimbursementForm({ memberData, codeData, onSubmitted, o
 
     setLoading(true);
     try {
-      const { data } = await submitReimbursement({
+      const formPayload = {
         authorization_code: codeData.code,
         enrollee_id: memberData.enrollee_id,
         member_phone: memberData.phone,
@@ -140,7 +140,9 @@ export default function ReimbursementForm({ memberData, codeData, onSubmitted, o
           quantity: parseInt(l.quantity),
           unit_price: parseFloat(l.unit_price),
         })),
-      });
+      };
+
+      const { data } = await submitReimbursement(formPayload, receipts, medicalReport);
 
       if (data.success) {
         onSubmitted({

@@ -4,10 +4,11 @@ Reimbursement endpoints — public-facing Member Portal.
 No JWT auth required. The authorization code is the credential.
 """
 
+import json
 import logging
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile, status
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
@@ -17,6 +18,7 @@ from app.services import (
     audit_service,
     authorization_service,
     claim_service,
+    email_service,
     mock_bank_service,
     mock_member_service,
 )
@@ -127,21 +129,33 @@ def validate_bank(body: ValidateBankRequest):
 
 
 @router.post("/submit", response_model=SubmitClaimResponse)
-def submit_reimbursement(
-    body: SubmitReimbursementRequest,
+async def submit_reimbursement(
     request: Request,
+    data: str = Form(...),
+    receipts: list[UploadFile] = File(default=[]),
+    medical_reports: list[UploadFile] = File(default=[]),
     db: Session = Depends(get_db),
 ):
     """
-    Submit a reimbursement claim.
+    Submit a reimbursement claim with document attachments.
 
-    Validates:
-    1. Authorization code is valid and matches the enrollee
-    2. Claim amount does not exceed approved amount (flags if it does)
-    3. All required fields are present
+    Accepts multipart form data:
+    - data: JSON string of SubmitReimbursementRequest fields
+    - receipts: Receipt/invoice files (mandatory)
+    - medical_reports: Medical report files (mandatory for secondary care)
 
-    Creates the claim, marks the auth code as used, and audits everything.
+    Files are read into memory, attached to the claims email, then DISCARDED.
+    No file persistence anywhere.
     """
+    # Parse JSON form data
+    try:
+        body = SubmitReimbursementRequest(**json.loads(data))
+    except (json.JSONDecodeError, Exception) as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid form data: {e}",
+        )
+
     # 1. Validate authorization code
     is_valid, message, auth_code = authorization_service.validate_authorization_code(
         db, code=body.authorization_code, enrollee_id=body.enrollee_id
@@ -194,7 +208,52 @@ def submit_reimbursement(
         service_lines=service_lines,
     )
 
-    # 5. Audit trail
+    # 5. Read files into memory (then discard after email)
+    attachments: list[tuple[str, bytes, str]] = []
+    all_files = [("receipt", f) for f in receipts] + [("report", f) for f in medical_reports]
+
+    for label, upload_file in all_files:
+        if upload_file.filename:
+            file_bytes = await upload_file.read()
+            content_type = upload_file.content_type or "application/octet-stream"
+            attachments.append((upload_file.filename, file_bytes, content_type))
+            log.info(
+                "File received: %s (%s, %d bytes) — will attach to email",
+                upload_file.filename,
+                content_type,
+                len(file_bytes),
+            )
+
+    # 6. Send email with all claim data + attachments
+    email_data = {
+        "claim_ref": claim.claim_ref,
+        "member_name": member_name,
+        "enrollee_id": body.enrollee_id,
+        "member_phone": body.member_phone,
+        "authorization_code": auth_code.code,
+        "approved_amount": float(auth_code.approved_amount),
+        "agent_name": auth_code.agent_name,
+        "claim_amount": float(body.claim_amount),
+        "hospital_name": body.hospital_name,
+        "visit_date": str(body.visit_date),
+        "reason_for_visit": body.reason_for_visit,
+        "reimbursement_reason": body.reimbursement_reason,
+        "medications": body.medications,
+        "lab_investigations": body.lab_investigations,
+        "comments": body.comments,
+        "bank_name": body.bank_name,
+        "account_number": body.account_number,
+        "account_name": body.account_name,
+        "service_lines": service_lines,
+        "amount_flag": amount_flag,
+    }
+
+    email_sent = email_service.send_claim_email(
+        claim_data=email_data,
+        attachments=attachments,
+    )
+
+    # 7. Audit trail
     audit_service.log_action(
         db,
         entity_type="claim",
@@ -210,6 +269,8 @@ def submit_reimbursement(
             "amount_flag": amount_flag,
             "hospital": body.hospital_name,
             "service_lines_count": len(service_lines),
+            "attachments_count": len(attachments),
+            "email_sent": email_sent,
         },
         ip_address=request.client.host if request.client else None,
     )
@@ -225,12 +286,7 @@ def submit_reimbursement(
         ip_address=request.client.host if request.client else None,
     )
 
-    # 6. PLACEHOLDER: Send email with documents (Phase 5)
-    log.info(
-        "PLACEHOLDER: Email with claim %s documents would be sent to claims team",
-        claim.claim_ref,
-    )
-
+    # Files are now out of scope — garbage collected, never stored
     return SubmitClaimResponse(
         success=True,
         message=f"Claim submitted successfully. Reference: {claim.claim_ref}"

@@ -21,8 +21,22 @@ export const getBankList = () => memberApi.get("/reimbursement/banks");
 export const validateBank = (bank_name, account_number) =>
   memberApi.post("/reimbursement/validate-bank", { bank_name, account_number });
 
-// ── Claim Submission ─────────────────────────────
-export const submitReimbursement = (data) =>
-  memberApi.post("/reimbursement/submit", data);
+// ── Claim Submission (multipart with files) ──────
+export const submitReimbursement = (formData, receiptFiles, reportFiles) => {
+  const fd = new FormData();
+  fd.append("data", JSON.stringify(formData));
+
+  (receiptFiles || []).forEach((file) => {
+    fd.append("receipts", file);
+  });
+
+  (reportFiles || []).forEach((file) => {
+    fd.append("medical_reports", file);
+  });
+
+  return memberApi.post("/reimbursement/submit", fd, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+};
 
 export default memberApi;
