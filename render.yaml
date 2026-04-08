@@ -19,16 +19,35 @@ services:
         generateValue: true
       - key: BIOMETRIC_ENCRYPTION_KEY
         sync: false  # set manually in Render dashboard
+      # Prognosis API
       - key: PROGNOSIS_BASE_URL
         value: https://prognosis-api.leadwayhealth.com
       - key: PROGNOSIS_USERNAME
         sync: false  # set manually
       - key: PROGNOSIS_PASSWORD
         sync: false  # set manually
+      # Scanner (disabled on server)
       - key: FUTRONIC_SDK_AVAILABLE
-        value: "false"  # scanner runs on workstation, not server
+        value: "false"
       - key: REQUIRE_LFD
         value: "true"
+      # Authorization codes
+      - key: AUTH_CODE_EXPIRY_HOURS
+        value: "72"
+      # Claims email
+      - key: CLAIMS_EMAIL
+        sync: false  # set manually
+      - key: SMTP_HOST
+        sync: false  # set manually
+      - key: SMTP_PORT
+        value: "587"
+      - key: SMTP_USERNAME
+        sync: false  # set manually
+      - key: SMTP_PASSWORD
+        sync: false  # set manually
+      - key: SMTP_FROM_EMAIL
+        value: noreply@leadwayhealth.com
+      # Python
       - key: PYTHON_VERSION
         value: "3.11.9"
       - key: PYTHONPATH

@@ -270,3 +270,75 @@ async def get_claims_by_member(cifno: str) -> dict:
             "reason": f"Cannot reach Prognosis API: {e}",
             "claims": [],
         }
+
+
+async def get_enrollee_biodata(enrollee_id: str) -> dict:
+    """
+    Get enrollee bio-data from Prognosis.
+
+    GET /api/EnrolleeProfile/GetEnrolleeBioDataByEnrolleeID?enrolleeid={enrollee_id}
+    """
+    if not settings.PROGNOSIS_BASE_URL:
+        return {"success": False, "reason": "Prognosis API not configured", "data": None}
+
+    token = await _get_prognosis_token()
+    if not token:
+        return {"success": False, "reason": "Failed to authenticate with Prognosis", "data": None}
+
+    url = (
+        f"{settings.PROGNOSIS_BASE_URL}/api/EnrolleeProfile"
+        f"/GetEnrolleeBioDataByEnrolleeID"
+    )
+    params = {"enrolleeid": enrollee_id}
+    headers = {"Authorization": f"Bearer {token}"}
+
+    try:
+        async with httpx.AsyncClient(timeout=_TIMEOUT, verify=False) as client:
+            resp = await client.get(url, params=params, headers=headers)
+
+        if resp.status_code == 200:
+            data = resp.json()
+            log.info("Prognosis enrollee biodata for %s: found", enrollee_id)
+            # Handle both single object and list responses
+            if isinstance(data, list):
+                if len(data) == 0:
+                    return {"success": False, "reason": "Enrollee not found", "data": None}
+                data = data[0]
+            if not data:
+                return {"success": False, "reason": "Enrollee not found", "data": None}
+            return {"success": True, "reason": None, "data": data}
+        elif resp.status_code == 401:
+            # Token expired — retry once
+            global _prognosis_token_expiry
+            _prognosis_token_expiry = 0
+            token = await _get_prognosis_token()
+            if token:
+                headers = {"Authorization": f"Bearer {token}"}
+                async with httpx.AsyncClient(timeout=_TIMEOUT, verify=False) as client:
+                    resp = await client.get(url, params=params, headers=headers)
+                if resp.status_code == 200:
+                    data = resp.json()
+                    if isinstance(data, list):
+                        data = data[0] if data else None
+                    if data:
+                        return {"success": True, "reason": None, "data": data}
+            return {"success": False, "reason": "Prognosis authentication expired", "data": None}
+        elif resp.status_code == 404:
+            return {"success": False, "reason": "Enrollee not found", "data": None}
+        else:
+            log.warning(
+                "Prognosis enrollee biodata %d for %s: %s",
+                resp.status_code, enrollee_id, resp.text[:300],
+            )
+            return {
+                "success": False,
+                "reason": f"Prognosis returned status {resp.status_code}",
+                "data": None,
+            }
+    except httpx.RequestError as e:
+        log.error("Prognosis enrollee biodata request failed: %s", e)
+        return {
+            "success": False,
+            "reason": f"Cannot reach Prognosis API: {e}",
+            "data": None,
+        }

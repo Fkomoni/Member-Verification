@@ -1,43 +1,18 @@
 """
-Mock Member Service — member lookup with DB-first, mock-fallback strategy.
+Member Service — looks up enrollees via the Prognosis API.
 
-PLACEHOLDER: Replace mock data with real Prognosis API calls when available.
+Primary: GET /api/EnrolleeProfile/GetEnrolleeBioDataByEnrolleeID?enrolleeid={id}
+Fallback: Local database cache (auto-created on first successful API lookup).
 """
 
 import logging
-import uuid
-from datetime import datetime, timezone
 
 from sqlalchemy.orm import Session
 
 from app.models.models import Member
+from app.services.prognosis_client import get_enrollee_biodata
 
 log = logging.getLogger(__name__)
-
-# ── Mock member data (for development without Prognosis API) ────────
-_MOCK_MEMBERS: dict[str, dict] = {
-    "LWH-001234": {
-        "name": "Adebayo Ogunlesi",
-        "dob": "1985-03-15",
-        "gender": "Male",
-        "phone": "08012345678",
-        "plan": "Gold",
-    },
-    "LWH-005678": {
-        "name": "Chioma Eze",
-        "dob": "1990-07-22",
-        "gender": "Female",
-        "phone": "08098765432",
-        "plan": "Silver",
-    },
-    "LWH-009012": {
-        "name": "Fatima Abdullahi",
-        "dob": "1978-11-08",
-        "gender": "Female",
-        "phone": "07033344455",
-        "plan": "Platinum",
-    },
-}
 
 
 def lookup_member(
@@ -47,74 +22,119 @@ def lookup_member(
     Look up a member by enrollee ID.
 
     Strategy:
-    1. Check local DB first
-    2. Fall back to mock data (PLACEHOLDER for Prognosis API)
+    1. Call Prognosis API (real enrollee data)
+    2. If API fails/unavailable, check local DB cache
+    3. Auto-cache successful API responses to local DB
 
     Returns dict with member info or None if not found.
     """
-    # 1. Check local database
+    eid = enrollee_id.strip()
+
+    # 1. Call Prognosis API
+    api_result = _lookup_via_prognosis(db, eid)
+    if api_result:
+        return api_result
+
+    # 2. Fallback: check local DB cache
     member = (
         db.query(Member)
-        .filter(Member.enrollee_id == enrollee_id.strip())
+        .filter(Member.enrollee_id == eid)
         .first()
     )
     if member:
-        log.info("Member found in DB: %s", enrollee_id)
+        log.info("Member found in local DB cache: %s", eid)
         return {
             "member_id": str(member.member_id),
             "enrollee_id": member.enrollee_id,
             "name": member.name,
             "dob": member.dob.isoformat() if member.dob else None,
             "gender": member.gender,
-            "phone": None,  # Not stored in existing schema
+            "phone": None,
             "plan": None,
-            "source": "database",
+            "source": "database_cache",
         }
 
-    # 2. Mock fallback (PLACEHOLDER — replace with Prognosis API)
-    mock = _MOCK_MEMBERS.get(enrollee_id.strip().upper())
-    if mock:
-        log.info("Member found in mock data: %s", enrollee_id)
-        # Auto-create in local DB for consistency
-        new_member = Member(
-            enrollee_id=enrollee_id.strip().upper(),
-            name=mock["name"],
-            gender=mock.get("gender"),
-        )
-        db.add(new_member)
-        db.commit()
-        db.refresh(new_member)
-
-        return {
-            "member_id": str(new_member.member_id),
-            "enrollee_id": new_member.enrollee_id,
-            "name": mock["name"],
-            "dob": mock.get("dob"),
-            "gender": mock.get("gender"),
-            "phone": mock.get("phone"),
-            "plan": mock.get("plan"),
-            "source": "mock",
-        }
-
-    log.warning("Member not found: %s", enrollee_id)
+    log.warning("Member not found anywhere: %s", eid)
     return None
 
 
-def validate_member_phone(
-    db: Session, *, enrollee_id: str, phone: str
-) -> tuple[bool, str, dict | None]:
+def _lookup_via_prognosis(db: Session, enrollee_id: str) -> dict | None:
     """
-    Validate a member exists and the phone matches.
-
-    PLACEHOLDER: Phone validation is mocked — always passes if member exists.
-    Replace with real validation when Prognosis API provides phone data.
-
-    Returns (is_valid, message, member_data_or_None).
+    Look up member via the Prognosis GetEnrolleeBioDataByEnrolleeID endpoint.
+    Returns parsed member dict or None if not found / API unavailable.
     """
-    member_data = lookup_member(db, enrollee_id=enrollee_id)
-    if not member_data:
-        return False, "Member not found. Please check your Enrollee ID.", None
+    import asyncio
 
-    # PLACEHOLDER: Accept any phone for now (real API will validate)
-    # In production, compare phone against Prognosis member record
-    return True, "Member verified successfully.", member_data
+    try:
+        # Run the async function synchronously
+        loop = asyncio.new_event_loop()
+        result = loop.run_until_complete(get_enrollee_biodata(enrollee_id))
+        loop.close()
+    except Exception as e:
+        log.warning("Prognosis API call failed for %s: %s", enrollee_id, e)
+        return None
+
+    if not result or not result.get("success"):
+        return None
+
+    data = result["data"]
+
+    # Extract fields from the Prognosis API response
+    # The API may return different field names — handle common variations
+    name_parts = []
+    for field in ["Surname", "surname", "LastName", "lastName"]:
+        if data.get(field):
+            name_parts.append(str(data[field]).strip())
+            break
+    for field in ["FirstName", "firstName", "Firstname", "firstname"]:
+        if data.get(field):
+            name_parts.append(str(data[field]).strip())
+            break
+    for field in ["OtherNames", "otherNames", "MiddleName", "middleName"]:
+        if data.get(field):
+            name_parts.append(str(data[field]).strip())
+            break
+
+    full_name = " ".join(name_parts) if name_parts else data.get("Name") or data.get("name") or "Unknown"
+
+    gender = data.get("Gender") or data.get("gender") or data.get("Sex") or data.get("sex")
+    dob = data.get("DateOfBirth") or data.get("dateOfBirth") or data.get("DOB") or data.get("dob")
+    phone = data.get("PhoneNumber") or data.get("phoneNumber") or data.get("Phone") or data.get("phone")
+    plan = data.get("PlanName") or data.get("planName") or data.get("Plan") or data.get("plan")
+    company = data.get("CompanyName") or data.get("companyName")
+
+    eid = data.get("EnrolleeID") or data.get("enrolleeID") or data.get("EnrolleeId") or enrollee_id
+
+    # Auto-cache to local DB
+    member = (
+        db.query(Member)
+        .filter(Member.enrollee_id == str(eid))
+        .first()
+    )
+    if not member:
+        member = Member(
+            enrollee_id=str(eid),
+            name=full_name,
+            gender=gender,
+        )
+        db.add(member)
+        db.commit()
+        db.refresh(member)
+        log.info("Cached new member from Prognosis: %s (%s)", eid, full_name)
+    else:
+        # Update name if changed
+        if member.name != full_name:
+            member.name = full_name
+            db.commit()
+
+    return {
+        "member_id": str(member.member_id),
+        "enrollee_id": str(eid),
+        "name": full_name,
+        "dob": dob,
+        "gender": gender,
+        "phone": phone,
+        "plan": plan,
+        "company": company,
+        "source": "prognosis_api",
+    }
