@@ -128,7 +128,6 @@ def debug_init():
     from sqlalchemy import text
 
     from app.core.database import SessionLocal
-    from app.core.security import hash_password
 
     results = []
     db = SessionLocal()
@@ -237,14 +236,16 @@ def debug_init():
 
     results.append("Tables created")
 
-    # Seed agents
+    # Seed agents using raw SQL with pre-hashed passwords
     try:
         count = db.execute(text("SELECT count(*) FROM agents")).scalar()
         if count == 0:
-            from app.models.models import Agent
-            db.add(Agent(name="Call Center Agent", email="agent@leadwayhealth.com", hashed_password=hash_password("agent123"), role="call_center"))
-            db.add(Agent(name="Claims Officer", email="claims@leadwayhealth.com", hashed_password=hash_password("claims123"), role="claims_officer"))
-            db.add(Agent(name="Admin User", email="admin@leadwayhealth.com", hashed_password=hash_password("admin123"), role="admin"))
+            db.execute(text("""
+                INSERT INTO agents (name, email, hashed_password, role) VALUES
+                ('Call Center Agent', 'agent@leadwayhealth.com', '$2b$12$dnJw6gVpUDlicLCZutlikeKX7DN9HmHOYUMOM57ytnB1FKkpTkpea', 'call_center'),
+                ('Claims Officer', 'claims@leadwayhealth.com', '$2b$12$Mj/NnyDwS97ExWNw9vyJ2uQUnUPI4twJIzAqCrr8wbKzZa8xEXvkC', 'claims_officer'),
+                ('Admin User', 'admin@leadwayhealth.com', '$2b$12$nHLO4Xm1G7vpxYtwCDfbAur2Cmsxf.byKUkU6JzjyglQS/RuNlpPW', 'admin');
+            """))
             db.commit()
             results.append("3 agents seeded")
         else:
