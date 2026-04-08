@@ -369,11 +369,21 @@ class PrognosisClient:
         try:
             async with httpx.AsyncClient(timeout=self.timeout, verify=False) as client:
                 response = await client.get(url, headers=headers)
+
+                logger.info(f"Diagnosis API: HTTP {response.status_code}")
+
                 if not response.is_success:
-                    logger.error(f"Diagnosis search failed: {response.status_code}")
+                    logger.error(f"Diagnosis search failed: {response.status_code} {response.text[:200]}")
                     return []
 
                 data = response.json() if response.content else {}
+
+                # Log raw response structure
+                if isinstance(data, dict):
+                    logger.info(f"Diagnosis response keys: {list(data.keys())}")
+                elif isinstance(data, list):
+                    logger.info(f"Diagnosis response: list of {len(data)} items")
+
                 result = data.get("result") or data.get("Result") or data
                 if not isinstance(result, list):
                     if isinstance(data, list):
@@ -381,14 +391,28 @@ class PrognosisClient:
                     else:
                         result = []
 
-                # Filter by search term if provided
+                # Log first item to see field names
+                if result:
+                    logger.info(f"Diagnosis total: {len(result)} items, first item keys: {list(result[0].keys())}")
+                    for k, v in list(result[0].items())[:5]:
+                        logger.info(f"  Diag field: {k} = {str(v)[:60]}")
+
+                # Filter by search term — try all possible field names
                 if search_term and result:
                     term_lower = search_term.lower()
-                    result = [r for r in result if term_lower in str(r.get("diagnosisName", r.get("DiagnosisName", r.get("name", "")))).lower()]
+                    filtered = []
+                    for r in result:
+                        # Check all string values in the record
+                        match = False
+                        for v in r.values():
+                            if isinstance(v, str) and term_lower in v.lower():
+                                match = True
+                                break
+                        if match:
+                            filtered.append(r)
+                    result = filtered
 
-                logger.info(f"Diagnosis search '{search_term}': {len(result)} results")
-                if result and len(result) > 0:
-                    logger.info(f"Diagnosis fields: {list(result[0].keys())}")
+                logger.info(f"Diagnosis search '{search_term}': {len(result)} matches")
 
                 return result[:20]
 

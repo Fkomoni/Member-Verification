@@ -323,7 +323,7 @@ async def delete_medication_with_reason(
     # Delete locally
     db.delete(med)
 
-    # Audit log
+    # Audit log — flush Request first so req.id is populated
     req = Request(
         member_id=member.member_id,
         request_type="MEDICATION_CHANGE",
@@ -333,6 +333,7 @@ async def delete_medication_with_reason(
         status="APPROVED",
     )
     db.add(req)
+    db.flush()  # Get req.id before creating log
 
     log = RequestLog(
         request_id=req.id,

@@ -117,14 +117,20 @@ export default function NewRequestPage() {
     if (medAction === 'ADD' && !medComment) return alert('Comment required for new medication requests');
     setLoading(true);
     try {
+      // Use autocomplete selection or fallback to typed text
+      const finalDiagName = diagnosisName || diagSearchTerm || '';
+      const finalDiagId = diagnosisId || '';
+
+      if (medAction === 'ADD' && !finalDiagName) return alert('Please enter or select a diagnosis');
+
       const payload = {
         drug_name: drugName,
         ProcedureName: drugName,
         ProcedureId: procedureId,
         ProcedureQuantity: parseInt(quantity) || 1,
         Dosage: dosage,
-        DiagnosisName: diagnosisName,
-        DiagnosisId: diagnosisId,
+        DiagnosisName: finalDiagName,
+        DiagnosisId: finalDiagId,
       };
 
       const fd = new FormData();
