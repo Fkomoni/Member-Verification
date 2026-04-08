@@ -63,4 +63,8 @@ export const validateClaim = (verificationToken, timestamp, providerId) =>
 export const getClaimsStatus = (enrolleeId) =>
   api.post("/claims-status", { enrollee_id: enrolleeId });
 
+// ── Debug ────────────────────────────────────────
+export const debugBiodata = (enrolleeId) =>
+  api.post("/debug-biodata", { enrollee_id: enrolleeId });
+
 export default api;

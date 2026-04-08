@@ -4,7 +4,12 @@ POST /verify-member – Look up member via Prognosis GetEnrolleeBioDataByEnrolle
 
 POST /service-types – Fetch available visit/service types for an enrollee
                       via Prognosis GetSeviceType.
+
+POST /debug-biodata – Return raw Prognosis API response for debugging field names.
 """
+
+import logging
+from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
@@ -20,7 +25,35 @@ from app.schemas.schemas import (
 )
 from app.services import prognosis_client
 
+log = logging.getLogger(__name__)
 router = APIRouter(tags=["members"])
+
+
+def _get_field(data: dict, *keys: str) -> Any:
+    """
+    Case-insensitive field lookup.  Tries each key literally first,
+    then falls back to a case-insensitive scan of the dict.
+    """
+    # Fast path: exact match
+    for k in keys:
+        if k in data:
+            return data[k]
+    # Slow path: case-insensitive
+    lower_map = {dk.lower(): dk for dk in data}
+    for k in keys:
+        actual = lower_map.get(k.lower())
+        if actual is not None and data[actual] is not None:
+            return data[actual]
+    return None
+
+
+def _normalize_response(raw: Any) -> dict:
+    """If the API returns a list, unwrap the first element."""
+    if isinstance(raw, list):
+        return raw[0] if raw else {}
+    if isinstance(raw, dict):
+        return raw
+    return {}
 
 
 @router.post("/verify-member", response_model=EligibilityResponse)
@@ -39,124 +72,87 @@ async def verify_member(
             or f"Enrollee '{body.enrollee_id}' not found in Prognosis",
         )
 
-    prognosis_data = biodata_result["data"]
+    raw_data = biodata_result["data"]
+    d = _normalize_response(raw_data)
 
-    # 2. Extract fields from Prognosis response (adapt to actual API field names)
-    # Common field patterns from Prognosis HMO APIs:
+    # Log all keys for debugging
+    log.info("Prognosis biodata keys for %s: %s", body.enrollee_id, list(d.keys()))
+
+    # 2. Extract fields — case-insensitive, covers common naming conventions
     enrollee_id = (
-        prognosis_data.get("ENROLLEE_ID")
-        or prognosis_data.get("EnrolleeID")
-        or prognosis_data.get("enrolleeId")
-        or prognosis_data.get("enrollee_id")
+        _get_field(d, "ENROLLEE_ID", "EnrolleeID", "EnrolleeId", "enrolleeId",
+                   "enrollee_id", "Enrollee_ID", "MEMBERID", "MemberId", "memberId")
         or body.enrollee_id
     )
-    first_name = (
-        prognosis_data.get("FIRST_NAME")
-        or prognosis_data.get("FirstName")
-        or prognosis_data.get("firstName")
-        or prognosis_data.get("first_name")
-        or ""
-    )
-    last_name = (
-        prognosis_data.get("LAST_NAME")
-        or prognosis_data.get("LastName")
-        or prognosis_data.get("lastName")
-        or prognosis_data.get("last_name")
-        or prognosis_data.get("SURNAME")
-        or prognosis_data.get("Surname")
-        or ""
-    )
-    other_names = (
-        prognosis_data.get("OTHER_NAMES")
-        or prognosis_data.get("OtherNames")
-        or prognosis_data.get("otherNames")
-        or prognosis_data.get("MIDDLE_NAME")
-        or prognosis_data.get("MiddleName")
-        or ""
-    )
-    # Build full name
-    name_parts = [p for p in [first_name, other_names, last_name] if p]
-    name = " ".join(name_parts) or prognosis_data.get("NAME") or prognosis_data.get("Name") or "Unknown"
 
-    gender = (
-        prognosis_data.get("GENDER")
-        or prognosis_data.get("Gender")
-        or prognosis_data.get("SEX")
-        or prognosis_data.get("Sex")
-        or None
+    # Name — try full name first, then combine parts
+    full_name = _get_field(
+        d, "FULL_NAME", "FullName", "fullName", "Fullname", "FULLNAME",
+        "NAME", "Name", "name", "MEMBER_NAME", "MemberName", "memberName",
     )
-    dob = (
-        prognosis_data.get("DATE_OF_BIRTH")
-        or prognosis_data.get("DateOfBirth")
-        or prognosis_data.get("DOB")
-        or prognosis_data.get("Dob")
-        or prognosis_data.get("dob")
-        or None
+    first_name = _get_field(
+        d, "FIRST_NAME", "FirstName", "firstName", "first_name", "Firstname",
+        "FORENAME", "Forename",
+    ) or ""
+    last_name = _get_field(
+        d, "LAST_NAME", "LastName", "lastName", "last_name", "Lastname",
+        "SURNAME", "Surname", "surname", "FAMILY_NAME", "FamilyName",
+    ) or ""
+    other_names = _get_field(
+        d, "OTHER_NAMES", "OtherNames", "otherNames", "other_names",
+        "Othernames", "OTHERNAMES",
+        "MIDDLE_NAME", "MiddleName", "middleName",
+    ) or ""
+
+    if full_name:
+        name = str(full_name)
+    else:
+        name_parts = [p for p in [first_name, other_names, last_name] if p]
+        name = " ".join(name_parts) if name_parts else "Unknown"
+
+    gender = _get_field(
+        d, "GENDER", "Gender", "gender", "SEX", "Sex", "sex",
     )
-    phone = (
-        prognosis_data.get("PHONE_NUMBER")
-        or prognosis_data.get("PhoneNumber")
-        or prognosis_data.get("MOBILE_NO")
-        or prognosis_data.get("MobileNo")
-        or prognosis_data.get("Phone")
-        or None
+    dob = _get_field(
+        d, "DATE_OF_BIRTH", "DateOfBirth", "dateOfBirth", "DOB", "Dob", "dob",
+        "BIRTH_DATE", "BirthDate", "birthDate",
     )
-    email = (
-        prognosis_data.get("EMAIL")
-        or prognosis_data.get("Email")
-        or prognosis_data.get("EMAIL_ADDRESS")
-        or prognosis_data.get("EmailAddress")
-        or None
+    phone = _get_field(
+        d, "PHONE_NUMBER", "PhoneNumber", "phoneNumber", "PHONE", "Phone", "phone",
+        "MOBILE_NO", "MobileNo", "mobileNo", "MOBILE", "Mobile", "mobile",
+        "GSM", "Gsm", "gsm", "TELEPHONE", "Telephone",
     )
-    company = (
-        prognosis_data.get("COMPANY_NAME")
-        or prognosis_data.get("CompanyName")
-        or prognosis_data.get("COMPANY")
-        or prognosis_data.get("Company")
-        or None
+    email = _get_field(
+        d, "EMAIL", "Email", "email", "EMAIL_ADDRESS", "EmailAddress",
+        "emailAddress", "E_MAIL", "E_mail",
     )
-    plan = (
-        prognosis_data.get("PLAN_NAME")
-        or prognosis_data.get("PlanName")
-        or prognosis_data.get("PLAN")
-        or prognosis_data.get("Plan")
-        or prognosis_data.get("PLAN_TYPE")
-        or prognosis_data.get("PlanType")
-        or None
+    company = _get_field(
+        d, "COMPANY_NAME", "CompanyName", "companyName", "COMPANY", "Company",
+        "company", "EMPLOYER", "Employer", "employer",
+        "ORGANIZATION", "Organization",
     )
-    scheme_name = (
-        prognosis_data.get("SCHEME_NAME")
-        or prognosis_data.get("SchemeName")
-        or prognosis_data.get("SCHEME")
-        or prognosis_data.get("Scheme")
-        or None
+    plan = _get_field(
+        d, "PLAN_NAME", "PlanName", "planName", "PLAN", "Plan", "plan",
+        "PLAN_TYPE", "PlanType", "planType",
+        "BENEFIT_PLAN", "BenefitPlan",
     )
-    scheme_id = (
-        prognosis_data.get("SCHEME_ID")
-        or prognosis_data.get("SchemeId")
-        or prognosis_data.get("schemeId")
-        or prognosis_data.get("scheme_id")
-        or None
+    scheme_name = _get_field(
+        d, "SCHEME_NAME", "SchemeName", "schemeName", "SCHEME", "Scheme", "scheme",
     )
-    cif_number = (
-        prognosis_data.get("CIF_NUMBER")
-        or prognosis_data.get("CifNumber")
-        or prognosis_data.get("CIF")
-        or prognosis_data.get("Cif")
-        or prognosis_data.get("cif_number")
-        or None
+    scheme_id = _get_field(
+        d, "SCHEME_ID", "SchemeId", "schemeId", "scheme_id", "SCHEMEID", "Schemeid",
     )
-    provider_name_field = (
-        prognosis_data.get("PROVIDER_NAME")
-        or prognosis_data.get("ProviderName")
-        or None
+    cif_number = _get_field(
+        d, "CIF_NUMBER", "CifNumber", "cifNumber", "CIF", "Cif", "cif",
+        "cif_number", "CIFNUMBER", "CIFNumber",
     )
-    policy_no = (
-        prognosis_data.get("POLICY_NO")
-        or prognosis_data.get("PolicyNo")
-        or prognosis_data.get("POLICY_NUMBER")
-        or prognosis_data.get("PolicyNumber")
-        or None
+    provider_name_field = _get_field(
+        d, "PROVIDER_NAME", "ProviderName", "providerName",
+        "PROVIDER", "Provider",
+    )
+    policy_no = _get_field(
+        d, "POLICY_NO", "PolicyNo", "policyNo", "POLICY_NUMBER", "PolicyNumber",
+        "policyNumber", "POLICYNO", "POLICY", "Policy",
     )
 
     # 3. Check if member exists in local DB (for biometric status)
@@ -164,26 +160,30 @@ async def verify_member(
     biometric_registered = member.biometric_registered if member else False
     local_member_id = member.member_id if member else None
 
-    # 4. Determine verification status
+    # 4. Build response
+    response_kwargs = dict(
+        enrollee_id=str(enrollee_id) if enrollee_id else body.enrollee_id,
+        name=name,
+        dob=str(dob) if dob else None,
+        gender=str(gender) if gender else None,
+        phone=str(phone) if phone else None,
+        email=str(email) if email else None,
+        company=str(company) if company else None,
+        plan=str(plan) if plan else None,
+        scheme_name=str(scheme_name) if scheme_name else None,
+        scheme_id=str(scheme_id) if scheme_id else None,
+        cif_number=str(cif_number) if cif_number else None,
+        provider_name=str(provider_name_field) if provider_name_field else None,
+        policy_no=str(policy_no) if policy_no else None,
+        member_id=local_member_id,
+        biometric_registered=biometric_registered,
+        prognosis_eligible=True,
+        prognosis_data=d,
+    )
+
     if not biometric_registered:
         return EligibilityResponse(
-            enrollee_id=enrollee_id,
-            name=name,
-            dob=str(dob) if dob else None,
-            gender=gender,
-            phone=phone,
-            email=email,
-            company=company,
-            plan=plan,
-            scheme_name=scheme_name,
-            scheme_id=str(scheme_id) if scheme_id else None,
-            cif_number=str(cif_number) if cif_number else None,
-            provider_name=provider_name_field,
-            policy_no=policy_no,
-            member_id=local_member_id,
-            biometric_registered=False,
-            prognosis_eligible=True,
-            prognosis_data=prognosis_data,
+            **response_kwargs,
             verification_status="UNVERIFIED",
             verification_reason=(
                 "Enrollee found in Prognosis but has NO biometric on file. "
@@ -191,25 +191,8 @@ async def verify_member(
             ),
         )
 
-    # Prognosis found AND biometric registered — still needs live scan
     return EligibilityResponse(
-        enrollee_id=enrollee_id,
-        name=name,
-        dob=str(dob) if dob else None,
-        gender=gender,
-        phone=phone,
-        email=email,
-        company=company,
-        plan=plan,
-        scheme_name=scheme_name,
-        scheme_id=str(scheme_id) if scheme_id else None,
-        cif_number=str(cif_number) if cif_number else None,
-        provider_name=provider_name_field,
-        policy_no=policy_no,
-        member_id=local_member_id,
-        biometric_registered=True,
-        prognosis_eligible=True,
-        prognosis_data=prognosis_data,
+        **response_kwargs,
         verification_status="UNVERIFIED",
         verification_reason=(
             "Enrollee found in Prognosis and has biometric on file. "
@@ -234,3 +217,25 @@ async def get_service_types(
         reason=result.get("reason"),
         service_types=result.get("service_types", []),
     )
+
+
+@router.post("/debug-biodata")
+async def debug_biodata(
+    body: MemberLookup,
+    provider: Provider = Depends(get_current_provider),
+):
+    """
+    Debug endpoint: returns the raw Prognosis API response so you can see
+    the actual field names. Remove in production.
+    """
+    biodata_result = await prognosis_client.get_enrollee_biodata(body.enrollee_id)
+    raw = biodata_result.get("data")
+    normalized = _normalize_response(raw) if raw else {}
+    return {
+        "enrollee_id": body.enrollee_id,
+        "success": biodata_result["success"],
+        "reason": biodata_result.get("reason"),
+        "raw_response": raw,
+        "normalized_keys": list(normalized.keys()) if normalized else [],
+        "normalized_data": normalized,
+    }
