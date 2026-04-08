@@ -5,10 +5,14 @@ import api from '../services/api';
 export default function MedicationsPage() {
   const [meds, setMeds] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [editingMed, setEditingMed] = useState(null);
+  const [editDosage, setEditDosage] = useState('');
+  const [editQty, setEditQty] = useState('');
+  const [editComment, setEditComment] = useState('');
+  const [editSaving, setEditSaving] = useState(false);
   const navigate = useNavigate();
 
   const fetchMeds = () => api.get('/member/medications').then(r => setMeds(r.data)).catch(() => {});
-
   useEffect(() => { fetchMeds(); }, []);
 
   const deleteMedication = async (med) => {
@@ -42,20 +46,42 @@ export default function MedicationsPage() {
     alert(`Refill requested for ${success} of ${activeMeds.length} medications`);
   };
 
-  const removeMedication = async (med) => {
-    const reason = prompt(`Why do you want to remove ${med.drug_name}?`);
-    if (!reason) return;
+  const startEdit = (med) => {
+    setEditingMed(med.id);
+    setEditDosage(med.dosage !== 'N/A' ? med.dosage : '');
+    setEditQty('');
+    setEditComment('');
+  };
+
+  const cancelEdit = () => {
+    setEditingMed(null);
+    setEditDosage('');
+    setEditQty('');
+    setEditComment('');
+  };
+
+  const saveEdit = async (med) => {
+    if (!editDosage && !editQty) return alert('Please enter the updated dosage or quantity');
+    setEditSaving(true);
     try {
       const fd = new FormData();
       fd.append('request_type', 'MEDICATION_CHANGE');
-      fd.append('action', 'REMOVE');
-      fd.append('payload', JSON.stringify({ drug_name: med.drug_name, medication_id: med.id }));
-      fd.append('comment', reason);
+      fd.append('action', 'MODIFY');
+      fd.append('payload', JSON.stringify({
+        drug_name: med.drug_name,
+        ProcedureName: med.drug_name,
+        ProcedureId: med.pbm_drug_id || '',
+        EntryNo: med.pbm_drug_id || '',
+        ProcedureQuantity: parseInt(editQty) || 1,
+        DosageDescription: editDosage,
+        Comment: editComment,
+      }));
+      fd.append('comment', editComment || `Updated dosage for ${med.drug_name}`);
       await api.post('/requests', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
-      // Remove from UI immediately
-      setMeds(prev => prev.filter(m => m.id !== med.id));
-      alert(`${med.drug_name} has been removed and synced to Prognosis.`);
-    } catch (err) { alert(err.response?.data?.detail || 'Failed'); }
+      alert(`${med.drug_name} update has been submitted.`);
+      cancelEdit();
+    } catch (err) { alert(err.response?.data?.detail || 'Failed to update'); }
+    finally { setEditSaving(false); }
   };
 
   return (
@@ -63,7 +89,7 @@ export default function MedicationsPage() {
       <div style={s.header}>
         <div>
           <h1 style={s.heading}>My Medications</h1>
-          <p style={s.sub}>Your current medication list. All changes go through approval.</p>
+          <p style={s.sub}>Your current medication list.</p>
         </div>
         <div style={s.headerActions}>
           <button style={s.addBtn} onClick={() => navigate('/new-request')}>+ Add Medication</button>
@@ -91,7 +117,6 @@ export default function MedicationsPage() {
               <Detail label="Refills Used" value={`${m.refill_count} / ${m.max_refills}`} />
             </div>
 
-            {/* Next Refill Date */}
             <div style={s.refillDate}>
               <span style={s.refillLabel}>Next Refill Date:</span>
               <span style={s.refillValue}>
@@ -100,18 +125,37 @@ export default function MedicationsPage() {
                   : 'Not scheduled'}
               </span>
               {m.days_until_runout != null && m.days_until_runout <= 7 && (
-                <span style={s.urgentTag}>
-                  {m.days_until_runout <= 0 ? 'OVERDUE' : `${m.days_until_runout}d left`}
-                </span>
+                <span style={s.urgentTag}>{m.days_until_runout <= 0 ? 'OVERDUE' : `${m.days_until_runout}d left`}</span>
               )}
             </div>
 
-            {/* Coverage managed by admin */}
-
-            <div style={s.actions}>
-              <button style={s.refillBtn} onClick={() => requestRefill(m)}>Request Refill</button>
-              <button style={s.deleteBtn} onClick={() => deleteMedication(m)}>Delete</button>
-            </div>
+            {/* Edit form (inline) */}
+            {editingMed === m.id ? (
+              <div style={s.editForm}>
+                <div style={s.editTitle}>Edit {m.drug_name}</div>
+                <label style={s.editLabel}>New Dosage / Directions</label>
+                <input style={s.editInput} value={editDosage} onChange={e => setEditDosage(e.target.value)}
+                  placeholder="e.g. Two tabs twice daily" />
+                <label style={s.editLabel}>Quantity</label>
+                <input style={s.editInput} type="number" value={editQty} onChange={e => setEditQty(e.target.value)}
+                  placeholder="e.g. 3" min="1" />
+                <label style={s.editLabel}>Reason for change</label>
+                <input style={s.editInput} value={editComment} onChange={e => setEditComment(e.target.value)}
+                  placeholder="e.g. Doctor increased dosage" />
+                <div style={s.editBtns}>
+                  <button style={s.editSaveBtn} onClick={() => saveEdit(m)} disabled={editSaving}>
+                    {editSaving ? 'Saving...' : 'Save Changes'}
+                  </button>
+                  <button style={s.editCancelBtn} onClick={cancelEdit}>Cancel</button>
+                </div>
+              </div>
+            ) : (
+              <div style={s.actions}>
+                <button style={s.refillBtn} onClick={() => requestRefill(m)}>Request Refill</button>
+                <button style={s.editBtn} onClick={() => startEdit(m)}>Edit</button>
+                <button style={s.deleteBtn} onClick={() => deleteMedication(m)}>Delete</button>
+              </div>
+            )}
           </div>
         ))}
         {meds.length === 0 && <p style={{ color: '#999' }}>No medications found</p>}
@@ -142,8 +186,17 @@ const s = {
   refillLabel: { fontSize: 12, color: '#666', fontWeight: 600 },
   refillValue: { fontSize: 14, fontWeight: 700, color: '#1A1A2E' },
   urgentTag: { padding: '2px 8px', borderRadius: 4, backgroundColor: '#FEE2E2', color: '#DC2626', fontSize: 11, fontWeight: 700 },
-  coverage: { fontSize: 12, color: '#16A34A', marginTop: 8 },
-  actions: { display: 'flex', gap: 10, marginTop: 14 },
+  actions: { display: 'flex', gap: 8, marginTop: 14 },
   refillBtn: { flex: 1, padding: '10px', borderRadius: 8, border: 'none', backgroundColor: '#1A1A2E', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' },
+  editBtn: { padding: '10px 16px', borderRadius: 8, border: '1px solid #2563EB', backgroundColor: '#fff', color: '#2563EB', fontSize: 13, fontWeight: 600, cursor: 'pointer' },
   deleteBtn: { padding: '10px 16px', borderRadius: 8, border: '1px solid #DC2626', backgroundColor: '#fff', color: '#DC2626', fontSize: 13, fontWeight: 600, cursor: 'pointer' },
+
+  // Edit form
+  editForm: { marginTop: 14, padding: 16, backgroundColor: '#F8F8FA', borderRadius: 10, border: '1px solid #ddd' },
+  editTitle: { fontSize: 14, fontWeight: 700, color: '#1A1A2E', marginBottom: 10 },
+  editLabel: { fontSize: 12, fontWeight: 600, color: '#444', marginTop: 8, display: 'block' },
+  editInput: { width: '100%', padding: '8px 12px', borderRadius: 6, border: '1px solid #ddd', fontSize: 13, marginTop: 4, boxSizing: 'border-box' },
+  editBtns: { display: 'flex', gap: 8, marginTop: 12 },
+  editSaveBtn: { flex: 1, padding: '10px', borderRadius: 8, border: 'none', backgroundColor: '#2563EB', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' },
+  editCancelBtn: { padding: '10px 16px', borderRadius: 8, border: '1px solid #ddd', backgroundColor: '#fff', color: '#666', fontSize: 13, fontWeight: 600, cursor: 'pointer' },
 };
