@@ -174,6 +174,7 @@ class AuthorizationCode(Base):
     """
     Core authorization code engine.
     Codes are unique, member-bound, single-use, time-limited, and auditable.
+    Uses enrollee_id (string) as the member reference — no FK to members table.
     """
 
     __tablename__ = "authorization_codes"
@@ -184,12 +185,10 @@ class AuthorizationCode(Base):
     code: Mapped[str] = mapped_column(
         String(20), unique=True, index=True, nullable=False
     )
-    member_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("members.member_id"), nullable=False
-    )
     enrollee_id: Mapped[str] = mapped_column(
         String(50), nullable=False, index=True
     )
+    member_name: Mapped[str] = mapped_column(String(200), nullable=False, default="")
     approved_amount: Mapped[float] = mapped_column(
         Numeric(12, 2), nullable=False
     )
@@ -217,7 +216,6 @@ class AuthorizationCode(Base):
     )
 
     agent: Mapped["Agent"] = relationship(back_populates="authorization_codes")
-    member: Mapped["Member"] = relationship()
     linked_claim: Mapped["ReimbursementClaim | None"] = relationship(
         foreign_keys=[linked_claim_id],
         primaryjoin="AuthorizationCode.linked_claim_id == ReimbursementClaim.claim_id",
@@ -240,10 +238,7 @@ class ReimbursementClaim(Base):
         ForeignKey("authorization_codes.id"),
         nullable=False,
     )
-    member_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("members.member_id"), nullable=False
-    )
-    enrollee_id: Mapped[str] = mapped_column(String(50), nullable=False)
+    enrollee_id: Mapped[str] = mapped_column(String(50), nullable=False, index=True)
     member_name: Mapped[str] = mapped_column(String(200), nullable=False)
     member_phone: Mapped[str] = mapped_column(String(20), nullable=False)
     hospital_name: Mapped[str] = mapped_column(String(300), nullable=False)
@@ -291,7 +286,6 @@ class ReimbursementClaim(Base):
         foreign_keys=[authorization_code_id],
         primaryjoin="ReimbursementClaim.authorization_code_id == AuthorizationCode.id",
     )
-    member: Mapped["Member"] = relationship()
     service_lines: Mapped[list["ClaimServiceLine"]] = relationship(
         back_populates="claim", cascade="all, delete-orphan"
     )

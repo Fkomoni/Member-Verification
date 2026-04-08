@@ -50,7 +50,6 @@ def create_claim(
     claim = ReimbursementClaim(
         claim_ref=claim_ref,
         authorization_code_id=auth_code.id,
-        member_id=auth_code.member_id,
         enrollee_id=auth_code.enrollee_id,
         member_name=member_name,
         member_phone=member_phone,

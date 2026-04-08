@@ -12,7 +12,7 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
-from app.models.models import AuthorizationCode, Member
+from app.models.models import AuthorizationCode
 
 # Safe alphabet: A-Z + 2-9, excluding 0/O, 1/I/L
 _SAFE_ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789"
@@ -42,7 +42,8 @@ def generate_unique_code(db: Session) -> str:
 def create_authorization_code(
     db: Session,
     *,
-    member: Member,
+    enrollee_id: str,
+    member_name: str,
     approved_amount: float,
     visit_type: str,
     notes: str | None,
@@ -57,8 +58,8 @@ def create_authorization_code(
 
     auth_code = AuthorizationCode(
         code=code,
-        member_id=member.member_id,
-        enrollee_id=member.enrollee_id,
+        enrollee_id=enrollee_id,
+        member_name=member_name,
         approved_amount=approved_amount,
         visit_type=visit_type,
         notes=notes,

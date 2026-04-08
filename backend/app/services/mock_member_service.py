@@ -2,14 +2,13 @@
 Member Service — looks up enrollees via the Prognosis API.
 
 Primary: GET /api/EnrolleeProfile/GetEnrolleeBioDataByEnrolleeID?enrolleeid={id}
-Fallback: Local database cache (auto-created on first successful API lookup).
+No local DB caching — uses Prognosis as the single source of truth.
 """
 
 import logging
 
 from sqlalchemy.orm import Session
 
-from app.models.models import Member
 from app.services.prognosis_client import get_enrollee_biodata
 
 log = logging.getLogger(__name__)
@@ -19,54 +18,23 @@ def lookup_member(
     db: Session, *, enrollee_id: str
 ) -> dict | None:
     """
-    Look up a member by enrollee ID.
-
-    Strategy:
-    1. Call Prognosis API (real enrollee data)
-    2. If API fails/unavailable, check local DB cache
-    3. Auto-cache successful API responses to local DB
-
+    Look up a member by enrollee ID via Prognosis API.
     Returns dict with member info or None if not found.
     """
     eid = enrollee_id.strip()
+    result = _lookup_via_prognosis(eid)
+    if result:
+        return result
 
-    # 1. Call Prognosis API
-    api_result = _lookup_via_prognosis(db, eid)
-    if api_result:
-        return api_result
-
-    # 2. Fallback: check local DB cache
-    member = (
-        db.query(Member)
-        .filter(Member.enrollee_id == eid)
-        .first()
-    )
-    if member:
-        log.info("Member found in local DB cache: %s", eid)
-        return {
-            "member_id": str(member.member_id),
-            "enrollee_id": member.enrollee_id,
-            "name": member.name,
-            "dob": member.dob.isoformat() if member.dob else None,
-            "gender": member.gender,
-            "phone": None,
-            "plan": None,
-            "source": "database_cache",
-        }
-
-    log.warning("Member not found anywhere: %s", eid)
+    log.warning("Member not found: %s", eid)
     return None
 
 
-def _lookup_via_prognosis(db: Session, enrollee_id: str) -> dict | None:
-    """
-    Look up member via the Prognosis GetEnrolleeBioDataByEnrolleeID endpoint.
-    Returns parsed member dict or None if not found / API unavailable.
-    """
+def _lookup_via_prognosis(enrollee_id: str) -> dict | None:
+    """Call Prognosis GetEnrolleeBioDataByEnrolleeID endpoint."""
     import asyncio
 
     try:
-        # Run the async function synchronously
         loop = asyncio.new_event_loop()
         result = loop.run_until_complete(get_enrollee_biodata(enrollee_id))
         loop.close()
@@ -79,8 +47,7 @@ def _lookup_via_prognosis(db: Session, enrollee_id: str) -> dict | None:
 
     data = result["data"]
 
-    # Extract fields from the Prognosis API response
-    # The API may return different field names — handle common variations
+    # Extract name fields
     name_parts = []
     for field in ["Surname", "surname", "LastName", "lastName"]:
         if data.get(field):
@@ -105,30 +72,7 @@ def _lookup_via_prognosis(db: Session, enrollee_id: str) -> dict | None:
 
     eid = data.get("EnrolleeID") or data.get("enrolleeID") or data.get("EnrolleeId") or enrollee_id
 
-    # Auto-cache to local DB
-    member = (
-        db.query(Member)
-        .filter(Member.enrollee_id == str(eid))
-        .first()
-    )
-    if not member:
-        member = Member(
-            enrollee_id=str(eid),
-            name=full_name,
-            gender=gender,
-        )
-        db.add(member)
-        db.commit()
-        db.refresh(member)
-        log.info("Cached new member from Prognosis: %s (%s)", eid, full_name)
-    else:
-        # Update name if changed
-        if member.name != full_name:
-            member.name = full_name
-            db.commit()
-
     return {
-        "member_id": str(member.member_id),
         "enrollee_id": str(eid),
         "name": full_name,
         "dob": dob,

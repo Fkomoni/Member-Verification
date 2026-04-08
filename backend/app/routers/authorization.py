@@ -32,7 +32,7 @@ def generate_authorization_code(
     Generate a new authorization code for a member.
     Only call-center agents and admins can generate codes.
     """
-    # 1. Look up member
+    # 1. Look up member via Prognosis API
     member_data = mock_member_service.lookup_member(
         db, enrollee_id=body.enrollee_id
     )
@@ -42,31 +42,11 @@ def generate_authorization_code(
             detail=f"Member with enrollee ID '{body.enrollee_id}' not found",
         )
 
-    # 2. Get the Member ORM object for FK reference
-    from app.models.models import Member
-
-    member = (
-        db.query(Member)
-        .filter(Member.enrollee_id == body.enrollee_id.strip().upper())
-        .first()
-    )
-    if not member:
-        # The mock service should have auto-created it
-        member = (
-            db.query(Member)
-            .filter(Member.enrollee_id == body.enrollee_id.strip())
-            .first()
-        )
-    if not member:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Member record not found after lookup",
-        )
-
-    # 3. Generate authorization code
+    # 2. Generate authorization code
     auth_code = authorization_service.create_authorization_code(
         db,
-        member=member,
+        enrollee_id=body.enrollee_id.strip(),
+        member_name=member_data.get("name", "Unknown"),
         approved_amount=float(body.approved_amount),
         visit_type=body.visit_type,
         notes=body.notes,
@@ -94,9 +74,8 @@ def generate_authorization_code(
     return AuthCodeResponse(
         id=auth_code.id,
         code=auth_code.code,
-        member_id=auth_code.member_id,
         enrollee_id=auth_code.enrollee_id,
-        member_name=member.name,
+        member_name=auth_code.member_name,
         approved_amount=auth_code.approved_amount,
         visit_type=auth_code.visit_type,
         notes=auth_code.notes,
@@ -181,9 +160,8 @@ def list_my_codes(
             AuthCodeResponse(
                 id=c.id,
                 code=c.code,
-                member_id=c.member_id,
                 enrollee_id=c.enrollee_id,
-                member_name=c.member.name if c.member else None,
+                member_name=c.member_name,
                 approved_amount=c.approved_amount,
                 visit_type=c.visit_type,
                 notes=c.notes,
@@ -221,9 +199,8 @@ def get_code_detail(
     return AuthCodeResponse(
         id=auth_code.id,
         code=auth_code.code,
-        member_id=auth_code.member_id,
         enrollee_id=auth_code.enrollee_id,
-        member_name=auth_code.member.name if auth_code.member else None,
+        member_name=auth_code.member_name,
         approved_amount=auth_code.approved_amount,
         visit_type=auth_code.visit_type,
         notes=auth_code.notes,

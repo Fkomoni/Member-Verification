@@ -172,7 +172,6 @@ class CreateAuthCodeRequest(BaseModel):
 class AuthCodeResponse(BaseModel):
     id: uuid.UUID
     code: str
-    member_id: uuid.UUID
     enrollee_id: str
     member_name: str | None = None
     approved_amount: Decimal
