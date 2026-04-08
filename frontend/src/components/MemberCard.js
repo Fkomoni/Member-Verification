@@ -28,18 +28,18 @@ export default function MemberCard({ member }) {
         <Detail label="Gender" value={member.gender || "N/A"} />
         <Detail
           label="Date of Birth"
-          value={member.dob ? new Date(member.dob).toLocaleDateString() : "N/A"}
+          value={member.dob || "N/A"}
         />
-        <Detail label="NIN" value={member.nin || "Not captured"} />
+        <Detail label="Phone" value={member.phone || "N/A"} />
+        <Detail label="Email" value={member.email || "N/A"} />
+        <Detail label="Company" value={member.company || "N/A"} />
+        <Detail label="Plan" value={member.plan || "N/A"} />
+        <Detail label="Scheme" value={member.scheme_name || "N/A"} />
+        <Detail label="Policy No" value={member.policy_no || "N/A"} />
         <Detail
           label="Biometric"
           value={member.biometric_registered ? "Registered" : "Not registered"}
           highlight={!member.biometric_registered}
-        />
-        <Detail
-          label="Prognosis"
-          value={member.prognosis_eligible ? "Eligible" : "Not eligible"}
-          highlight={!member.prognosis_eligible}
         />
       </div>
     </div>

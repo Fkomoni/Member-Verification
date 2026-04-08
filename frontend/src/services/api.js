@@ -40,6 +40,10 @@ export const validateFingerprint = (memberId, templateB64, lfdPassed, imageQuali
     image_quality: imageQuality ?? 0,
   });
 
+// ── Service / Visit Types ────────────────────────
+export const getServiceTypes = (cifNumber, schemeId) =>
+  api.post("/service-types", { cif_number: cifNumber, scheme_id: schemeId });
+
 // ── Visits / Claims ──────────────────────────────
 export const logVisit = (memberId, providerId, verificationToken) =>
   api.post("/log-visit", {

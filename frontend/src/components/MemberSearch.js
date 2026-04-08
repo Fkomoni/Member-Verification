@@ -33,7 +33,7 @@ export default function MemberSearch({ onFound }) {
       <form onSubmit={handleSearch} className={styles.row}>
         <input
           type="text"
-          placeholder="Enrollee CIF Number (e.g. 1738)"
+          placeholder="Enrollee ID (e.g. 21000645/0)"
           value={enrolleeId}
           onChange={(e) => setEnrolleeId(e.target.value)}
           required

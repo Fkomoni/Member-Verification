@@ -3,6 +3,7 @@ import { useAuth } from "../context/AuthContext";
 import ScannerStatus from "../components/ScannerStatus";
 import MemberSearch from "../components/MemberSearch";
 import MemberCard from "../components/MemberCard";
+import VisitTypeSelector from "../components/VisitTypeSelector";
 import BiometricCapture from "../components/BiometricCapture";
 import FingerprintValidation from "../components/FingerprintValidation";
 import VerificationResult from "../components/VerificationResult";
@@ -11,10 +12,12 @@ import styles from "./DashboardPage.module.css";
 export default function DashboardPage() {
   const { provider, logout } = useAuth();
   const [member, setMember] = useState(null);
+  const [visitType, setVisitType] = useState(null);
   const [result, setResult] = useState(null);
 
   const resetFlow = () => {
     setMember(null);
+    setVisitType(null);
     setResult(null);
   };
 
@@ -53,12 +56,15 @@ export default function DashboardPage() {
       <main className={styles.main}>
         <ScannerStatus />
 
+        {/* Step 1: Search for member */}
         {!member && <MemberSearch onFound={setMember} />}
 
+        {/* Steps 2-4: Member found, go through verification flow */}
         {member && !result && (
           <div className={styles.flowContainer}>
             <MemberCard member={member} />
 
+            {/* If ineligible, show result immediately */}
             {member.verification_status === "INELIGIBLE" ? (
               <VerificationResult
                 result={{
@@ -68,7 +74,11 @@ export default function DashboardPage() {
                 }}
                 onReset={resetFlow}
               />
+            ) : !visitType ? (
+              /* Step 2: Select visit type */
+              <VisitTypeSelector member={member} onSelect={setVisitType} />
             ) : !member.biometric_registered ? (
+              /* Step 3a: Biometric capture (no fingerprint on file) */
               <BiometricCapture
                 member={member}
                 onComplete={(res) => {
@@ -76,10 +86,12 @@ export default function DashboardPage() {
                   setResult({
                     status: "enrolled",
                     message: res.message,
+                    visitType,
                   });
                 }}
               />
             ) : (
+              /* Step 3b: Fingerprint validation (has biometric on file) */
               <FingerprintValidation
                 member={member}
                 onResult={(res) =>
@@ -89,6 +101,7 @@ export default function DashboardPage() {
                     verificationToken: res.verification_token,
                     verificationReason: res.verification_reason,
                     prognosisData: res.prognosis_data,
+                    visitType,
                   })
                 }
               />
@@ -96,6 +109,7 @@ export default function DashboardPage() {
           </div>
         )}
 
+        {/* Step 5: Show final result */}
         {result && <VerificationResult result={result} onReset={resetFlow} />}
       </main>
     </div>

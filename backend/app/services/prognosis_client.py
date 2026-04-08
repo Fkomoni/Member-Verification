@@ -153,6 +153,120 @@ async def validate_enrollee_eligibility(cifno: str, provider_id: str) -> dict:
         }
 
 
+async def get_enrollee_biodata(enrollee_id: str) -> dict:
+    """
+    Fetch enrollee bio-data from Prognosis by enrollee ID.
+
+    GET /api/EnrolleeProfile/GetEnrolleeBioDataByEnrolleeID?enrolleeid={enrollee_id}
+    """
+    if not settings.PROGNOSIS_BASE_URL:
+        log.warning("PROGNOSIS_BASE_URL not configured — skipping biodata lookup")
+        return {"success": False, "reason": "Prognosis API not configured", "data": None}
+
+    token = await _get_prognosis_token()
+    if not token:
+        return {"success": False, "reason": "Failed to authenticate with Prognosis API", "data": None}
+
+    url = (
+        f"{settings.PROGNOSIS_BASE_URL}/api/EnrolleeProfile"
+        f"/GetEnrolleeBioDataByEnrolleeID"
+    )
+    params = {"enrolleeid": enrollee_id}
+    headers = {"Authorization": f"Bearer {token}"}
+
+    try:
+        async with httpx.AsyncClient(timeout=_TIMEOUT, verify=False) as client:
+            resp = await client.get(url, params=params, headers=headers)
+
+        if resp.status_code == 200:
+            data = resp.json()
+            log.info("Prognosis biodata for enrolleeid=%s: %s", enrollee_id, data)
+            return {"success": True, "reason": None, "data": data}
+        elif resp.status_code == 401:
+            # Token expired — clear cache and retry once
+            global _prognosis_token_expiry
+            _prognosis_token_expiry = 0
+            token = await _get_prognosis_token()
+            if token:
+                headers = {"Authorization": f"Bearer {token}"}
+                async with httpx.AsyncClient(timeout=_TIMEOUT, verify=False) as client:
+                    resp = await client.get(url, params=params, headers=headers)
+                if resp.status_code == 200:
+                    data = resp.json()
+                    return {"success": True, "reason": None, "data": data}
+            return {"success": False, "reason": "Prognosis authentication expired", "data": None}
+        elif resp.status_code == 404:
+            return {"success": False, "reason": "Enrollee not found in Prognosis", "data": None}
+        else:
+            log.warning(
+                "Prognosis biodata returned %d for enrolleeid=%s: %s",
+                resp.status_code, enrollee_id, resp.text[:300],
+            )
+            return {
+                "success": False,
+                "reason": f"Prognosis returned status {resp.status_code}",
+                "data": None,
+            }
+    except httpx.RequestError as e:
+        log.error("Prognosis biodata request failed: %s", e)
+        return {"success": False, "reason": f"Cannot reach Prognosis API: {e}", "data": None}
+
+
+async def get_service_types(cif: str, scheme_id: str) -> dict:
+    """
+    Fetch available visit/service types for an enrollee.
+
+    GET /api/ListValues/GetSeviceType?cif={cif}&Schemeid={scheme_id}
+    """
+    if not settings.PROGNOSIS_BASE_URL:
+        log.warning("PROGNOSIS_BASE_URL not configured — skipping service types")
+        return {"success": False, "reason": "Prognosis API not configured", "service_types": []}
+
+    token = await _get_prognosis_token()
+    if not token:
+        return {"success": False, "reason": "Failed to authenticate with Prognosis API", "service_types": []}
+
+    url = f"{settings.PROGNOSIS_BASE_URL}/api/ListValues/GetSeviceType"
+    params = {"cif": cif, "Schemeid": scheme_id}
+    headers = {"Authorization": f"Bearer {token}"}
+
+    try:
+        async with httpx.AsyncClient(timeout=_TIMEOUT, verify=False) as client:
+            resp = await client.get(url, params=params, headers=headers)
+
+        if resp.status_code == 200:
+            data = resp.json()
+            log.info("Prognosis service types for cif=%s scheme=%s: %s", cif, scheme_id, data)
+            service_types = data if isinstance(data, list) else [data] if data else []
+            return {"success": True, "reason": None, "service_types": service_types}
+        elif resp.status_code == 401:
+            global _prognosis_token_expiry
+            _prognosis_token_expiry = 0
+            token = await _get_prognosis_token()
+            if token:
+                headers = {"Authorization": f"Bearer {token}"}
+                async with httpx.AsyncClient(timeout=_TIMEOUT, verify=False) as client:
+                    resp = await client.get(url, params=params, headers=headers)
+                if resp.status_code == 200:
+                    data = resp.json()
+                    service_types = data if isinstance(data, list) else [data] if data else []
+                    return {"success": True, "reason": None, "service_types": service_types}
+            return {"success": False, "reason": "Prognosis authentication expired", "service_types": []}
+        else:
+            log.warning(
+                "Prognosis service types returned %d for cif=%s: %s",
+                resp.status_code, cif, resp.text[:300],
+            )
+            return {
+                "success": False,
+                "reason": f"Prognosis returned status {resp.status_code}",
+                "service_types": [],
+            }
+    except httpx.RequestError as e:
+        log.error("Prognosis service types request failed: %s", e)
+        return {"success": False, "reason": f"Cannot reach Prognosis API: {e}", "service_types": []}
+
+
 async def submit_claim_verification(
     verification_token: str, provider_id: str, timestamp: str
 ) -> dict | None:

@@ -26,20 +26,27 @@ class MemberLookup(BaseModel):
 
 class EligibilityResponse(BaseModel):
     """
-    Combined response: Prognosis eligibility + local biometric status.
-    Even if Prognosis says eligible, if biometric is not verified,
-    the member is returned as UNVERIFIED.
+    Combined response: Prognosis enrollee bio-data + local biometric status.
+    The enrollee details come directly from Prognosis GetEnrolleeBioDataByEnrolleeID.
     """
-    member_id: uuid.UUID
     enrollee_id: str
     name: str
-    dob: datetime | None = None
+    dob: str | None = None
     gender: str | None = None
-    nin: str | None = None
-    biometric_registered: bool
+    phone: str | None = None
+    email: str | None = None
+    company: str | None = None
+    plan: str | None = None
+    scheme_name: str | None = None
+    scheme_id: str | None = None
+    cif_number: str | None = None
+    provider_name: str | None = None
+    policy_no: str | None = None
+    member_id: uuid.UUID | None = None  # local DB member ID (if exists)
+    biometric_registered: bool = False
 
     # Prognosis eligibility fields
-    prognosis_eligible: bool
+    prognosis_eligible: bool = True
     prognosis_data: Any = None  # raw Prognosis API response
 
     # Final verification status
@@ -136,3 +143,15 @@ class ClaimsStatusResponse(BaseModel):
     reason: str | None = None
     claims: list[Any] = []
     total_claims: int = 0
+
+
+# ── Visit / Service Types ───────────────────────────
+class ServiceTypesRequest(BaseModel):
+    cif_number: str
+    scheme_id: str
+
+
+class ServiceTypesResponse(BaseModel):
+    success: bool
+    reason: str | None = None
+    service_types: list[Any] = []
