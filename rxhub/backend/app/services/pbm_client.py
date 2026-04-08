@@ -428,7 +428,7 @@ class PrognosisClient:
         url = f"{self.base_url}/PharmacyDelivery/DeletedByMember"
         body = {
             "EntryNo": entry_no,
-            "Comment": comment,
+            "comment": comment,
         }
 
         logger.info(f"Deleting medication from Prognosis:")

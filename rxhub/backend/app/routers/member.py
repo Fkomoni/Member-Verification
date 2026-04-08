@@ -359,4 +359,4 @@ async def delete_medication_with_reason(
     db.add(log)
     db.commit()
 
-    return {"message": f"{drug_name} deleted successfully", "synced_to_prognosis": True}
+    return {"message": f"{drug_name} has been deleted from your medication list."}
