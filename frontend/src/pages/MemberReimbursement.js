@@ -368,13 +368,14 @@ export default function MemberReimbursement() {
                     <label className={sharedStyles.label} style={{ flex: 1, minWidth: 180 }}>
                       Bank Name *
                       <select value={bankCode} onChange={(e) => {
-                        const selected = banks.find(b => b.code === e.target.value);
+                        const allBanks = banks.length > 0 ? banks : BANKS;
+                        const selected = allBanks.find(b => b.code === e.target.value);
                         setBankCode(e.target.value);
                         setBankName(selected ? selected.name : "");
                         setBankValidated(false); setAccountName(""); setBankError("");
                       }} required className={sharedStyles.input} style={{ marginTop: "0.25rem" }}>
                         <option value="">Select bank...</option>
-                        {(banks.length > 0 ? banks : BANKS.map(b => ({ name: b, code: b }))).map((b) => (
+                        {(banks.length > 0 ? banks : BANKS).map((b) => (
                           <option key={b.code} value={b.code}>{b.name}</option>
                         ))}
                       </select>
@@ -441,14 +442,32 @@ function BackBtn({ onClick }) {
 }
 
 const BANKS = [
-  "ACCESS BANK PLC", "CITIBANK NIGERIA LIMITED", "ECOBANK NIGERIA PLC",
-  "FIDELITY BANK PLC", "FIRST BANK OF NIGERIA LIMITED", "FIRST CITY MONUMENT BANK PLC",
-  "GLOBUS BANK LIMITED", "GUARANTY TRUST BANK PLC", "HERITAGE BANK PLC",
-  "JAIZ BANK PLC", "KEYSTONE BANK LIMITED", "KUDA MICROFINANCE BANK",
-  "LOTUS BANK LIMITED", "OPAY", "PALMPAY",
-  "POLARIS BANK LIMITED", "PROVIDUS BANK LIMITED", "STANBIC IBTC BANK PLC",
-  "STANDARD CHARTERED BANK", "STERLING BANK PLC", "SUNTRUST BANK NIGERIA LIMITED",
-  "TAJ BANK LIMITED", "TITAN TRUST BANK LIMITED", "UNION BANK OF NIGERIA PLC",
-  "UNITED BANK FOR AFRICA PLC", "UNITY BANK PLC", "VFD MICROFINANCE BANK",
-  "WEMA BANK PLC", "ZENITH BANK PLC",
+  { name: "ACCESS BANK PLC", code: "044" },
+  { name: "CITIBANK NIGERIA LIMITED", code: "023" },
+  { name: "ECOBANK NIGERIA PLC", code: "050" },
+  { name: "FIDELITY BANK PLC", code: "070" },
+  { name: "FIRST BANK OF NIGERIA LIMITED", code: "011" },
+  { name: "FIRST CITY MONUMENT BANK PLC", code: "214" },
+  { name: "GLOBUS BANK LIMITED", code: "00103" },
+  { name: "GUARANTY TRUST BANK PLC", code: "058" },
+  { name: "HERITAGE BANK PLC", code: "030" },
+  { name: "JAIZ BANK PLC", code: "301" },
+  { name: "KEYSTONE BANK LIMITED", code: "082" },
+  { name: "KUDA MICROFINANCE BANK", code: "50211" },
+  { name: "LOTUS BANK LIMITED", code: "303" },
+  { name: "OPAY", code: "999992" },
+  { name: "PALMPAY", code: "999991" },
+  { name: "POLARIS BANK LIMITED", code: "076" },
+  { name: "PROVIDUS BANK LIMITED", code: "101" },
+  { name: "STANBIC IBTC BANK PLC", code: "221" },
+  { name: "STANDARD CHARTERED BANK", code: "068" },
+  { name: "STERLING BANK PLC", code: "232" },
+  { name: "TAJ BANK LIMITED", code: "302" },
+  { name: "TITAN TRUST BANK LIMITED", code: "102" },
+  { name: "UNION BANK OF NIGERIA PLC", code: "032" },
+  { name: "UNITED BANK FOR AFRICA PLC", code: "033" },
+  { name: "UNITY BANK PLC", code: "215" },
+  { name: "VFD MICROFINANCE BANK", code: "566" },
+  { name: "WEMA BANK PLC", code: "035" },
+  { name: "ZENITH BANK PLC", code: "057" },
 ];
