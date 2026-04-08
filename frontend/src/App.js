@@ -6,6 +6,8 @@ import DashboardPage from "./pages/DashboardPage";
 import CallCenterLogin from "./pages/CallCenterLogin";
 import CallCenterDashboard from "./pages/CallCenterDashboard";
 import MemberReimbursement from "./pages/MemberReimbursement";
+import ClaimsLogin from "./pages/ClaimsLogin";
+import ClaimsDashboard from "./pages/ClaimsDashboard";
 
 function PrivateRoute({ children }) {
   const { provider } = useAuth();
@@ -32,6 +34,10 @@ export default function App() {
 
       {/* Member reimbursement (public, no login required) */}
       <Route path="/reimbursement" element={<MemberReimbursement />} />
+
+      {/* Claims team routes */}
+      <Route path="/claims/login" element={<ClaimsLogin />} />
+      <Route path="/claims/dashboard" element={<ClaimsDashboard />} />
 
       {/* Default: redirect to call center */}
       <Route path="*" element={<Navigate to="/call-center/dashboard" replace />} />

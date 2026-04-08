@@ -18,7 +18,7 @@ from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.core.security import create_access_token, decode_access_token, verify_password
-from app.models.models import Agent, AuthorizationCode
+from app.models.models import Agent, AuthorizationCode, ReimbursementClaim
 from app.services import prognosis_client
 
 router = APIRouter(tags=["call-center"])
@@ -324,13 +324,39 @@ async def submit_reimbursement(
     # Submit to Prognosis AddClaim API
     claims_result = await prognosis_client.create_claim(claims_payload)
 
-    # Mark code as USED regardless of API result
+    # Mark code as USED
     auth_code.status = "USED"
+
+    # Save claim to database
+    import json
+    claim = ReimbursementClaim(
+        pa_code=auth_code.code,
+        enrollee_id=auth_code.enrollee_id,
+        enrollee_name=auth_code.enrollee_name,
+        cif_number=auth_code.cif_number,
+        scheme_id=auth_code.scheme_id,
+        visit_type_name=auth_code.visit_type_name,
+        approved_amount=auth_code.approved_amount,
+        claim_amount=claim_amount,
+        provider_name=body.get("provider_name", ""),
+        visit_date=body.get("visit_date", ""),
+        reimbursement_reason=body.get("reimbursement_reason", ""),
+        reason_for_visit=body.get("reason_for_visit", ""),
+        remarks=body.get("remarks", ""),
+        bank_name=body.get("bank_name", ""),
+        account_number=body.get("account_number", ""),
+        account_name=body.get("account_name", ""),
+        documents_count=len(body.get("claim_documents", [])),
+        claim_status="PENDING",
+        prognosis_response=json.dumps(claims_result) if claims_result else None,
+    )
+    db.add(claim)
     db.commit()
 
     return {
         "success": True,
         "message": "Reimbursement claim submitted successfully",
+        "claim_id": str(claim.claim_id),
         "code": auth_code.code,
         "enrollee_name": auth_code.enrollee_name,
         "visit_type_name": auth_code.visit_type_name,
@@ -339,7 +365,6 @@ async def submit_reimbursement(
         "provider_name": body.get("provider_name", ""),
         "visit_date": body.get("visit_date", ""),
         "reason_for_visit": body.get("reason_for_visit", ""),
-        "prognosis_claim": claims_result,
     }
 
 
@@ -402,3 +427,143 @@ async def validate_bank_account(body: dict):
             return {"validated": False, "reason": error_msg, "account_name": ""}
     except Exception as e:
         return {"validated": False, "reason": str(e), "account_name": ""}
+
+
+# ── Claims Team endpoints ────────────────────────────────────
+
+@router.post("/claims/login")
+def claims_login(body: dict, db: Session = Depends(get_db)):
+    """Claims team login — reuses Agent model with role check."""
+    email = body.get("email", "")
+    password = body.get("password", "")
+
+    agent = db.query(Agent).filter(Agent.email == email).first()
+    if not agent or not verify_password(password, agent.hashed_password):
+        raise HTTPException(status_code=401, detail="Incorrect email or password")
+    if not agent.is_active:
+        raise HTTPException(status_code=403, detail="Account disabled")
+
+    token = create_access_token(data={"sub": str(agent.agent_id), "role": "claims"})
+    return {
+        "access_token": token,
+        "token_type": "bearer",
+        "agent_id": str(agent.agent_id),
+        "agent_name": agent.name,
+        "role": "CLAIMS_OFFICER",
+    }
+
+
+def get_claims_officer(
+    token: str = Depends(agent_oauth2),
+    db: Session = Depends(get_db),
+) -> Agent:
+    if not token:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    payload = decode_access_token(token)
+    if not payload:
+        raise HTTPException(status_code=401, detail="Invalid or expired token")
+    agent_id = payload.get("sub")
+    role = payload.get("role")
+    if not agent_id or role != "claims":
+        raise HTTPException(status_code=401, detail="Invalid token or insufficient role")
+    agent = db.query(Agent).filter(Agent.agent_id == uuid.UUID(agent_id)).first()
+    if not agent or not agent.is_active:
+        raise HTTPException(status_code=401, detail="Agent not found or inactive")
+    return agent
+
+
+def _claim_to_dict(c: ReimbursementClaim) -> dict:
+    return {
+        "claim_id": str(c.claim_id),
+        "pa_code": c.pa_code,
+        "enrollee_id": c.enrollee_id,
+        "enrollee_name": c.enrollee_name,
+        "cif_number": c.cif_number,
+        "scheme_id": c.scheme_id,
+        "visit_type_name": c.visit_type_name,
+        "approved_amount": c.approved_amount,
+        "claim_amount": c.claim_amount,
+        "provider_name": c.provider_name,
+        "visit_date": c.visit_date,
+        "reimbursement_reason": c.reimbursement_reason,
+        "reason_for_visit": c.reason_for_visit,
+        "remarks": c.remarks,
+        "bank_name": c.bank_name,
+        "account_number": c.account_number,
+        "account_name": c.account_name,
+        "documents_count": c.documents_count,
+        "claim_status": c.claim_status,
+        "reviewer_notes": c.reviewer_notes,
+        "reviewed_by": c.reviewed_by,
+        "reviewed_at": c.reviewed_at.isoformat() if c.reviewed_at else None,
+        "created_at": c.created_at.isoformat(),
+    }
+
+
+@router.get("/claims/list")
+def list_claims(
+    status_filter: str = Query("ALL"),
+    skip: int = Query(0, ge=0),
+    limit: int = Query(50, ge=1, le=200),
+    db: Session = Depends(get_db),
+    officer: Agent = Depends(get_claims_officer),
+):
+    """List all reimbursement claims, optionally filtered by status."""
+    q = db.query(ReimbursementClaim)
+    if status_filter != "ALL":
+        q = q.filter(ReimbursementClaim.claim_status == status_filter)
+    claims = q.order_by(ReimbursementClaim.created_at.desc()).offset(skip).limit(limit).all()
+    total = q.count()
+    return {"total": total, "claims": [_claim_to_dict(c) for c in claims]}
+
+
+@router.get("/claims/{claim_id}")
+def get_claim_detail(
+    claim_id: str,
+    db: Session = Depends(get_db),
+    officer: Agent = Depends(get_claims_officer),
+):
+    """Get full claim details."""
+    claim = db.query(ReimbursementClaim).filter(
+        ReimbursementClaim.claim_id == uuid.UUID(claim_id)
+    ).first()
+    if not claim:
+        raise HTTPException(status_code=404, detail="Claim not found")
+    return _claim_to_dict(claim)
+
+
+@router.post("/claims/{claim_id}/review")
+def review_claim(
+    claim_id: str,
+    body: dict,
+    db: Session = Depends(get_db),
+    officer: Agent = Depends(get_claims_officer),
+):
+    """Approve or reject a claim."""
+    action = body.get("action", "").upper()  # APPROVED or REJECTED
+    reviewer_notes = body.get("reviewer_notes", "")
+
+    if action not in ("APPROVED", "REJECTED"):
+        raise HTTPException(status_code=400, detail="action must be APPROVED or REJECTED")
+
+    claim = db.query(ReimbursementClaim).filter(
+        ReimbursementClaim.claim_id == uuid.UUID(claim_id)
+    ).first()
+    if not claim:
+        raise HTTPException(status_code=404, detail="Claim not found")
+    if claim.claim_status != "PENDING":
+        raise HTTPException(status_code=400, detail=f"Claim already {claim.claim_status}")
+
+    claim.claim_status = action
+    claim.reviewer_notes = reviewer_notes
+    claim.reviewed_by = officer.name
+    claim.reviewed_at = datetime.now(timezone.utc)
+    db.commit()
+
+    return {
+        "success": True,
+        "claim_id": str(claim.claim_id),
+        "claim_status": claim.claim_status,
+        "reviewed_by": claim.reviewed_by,
+        "reviewer_notes": claim.reviewer_notes,
+    }

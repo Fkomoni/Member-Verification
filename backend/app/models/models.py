@@ -191,3 +191,41 @@ class AuthorizationCode(Base):
     )
 
     agent: Mapped["Agent"] = relationship(back_populates="authorization_codes")
+
+
+class ReimbursementClaim(Base):
+    """Submitted reimbursement claim from a member."""
+    __tablename__ = "reimbursement_claims"
+
+    claim_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    pa_code: Mapped[str] = mapped_column(String(20), nullable=False, index=True)
+    enrollee_id: Mapped[str] = mapped_column(String(50), nullable=False, index=True)
+    enrollee_name: Mapped[str] = mapped_column(String(200), nullable=False)
+    cif_number: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    scheme_id: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    visit_type_name: Mapped[str] = mapped_column(String(100), nullable=False)
+    approved_amount: Mapped[float] = mapped_column(Float, default=0.0)
+    claim_amount: Mapped[float] = mapped_column(Float, default=0.0)
+    provider_name: Mapped[str] = mapped_column(String(300), nullable=False)
+    visit_date: Mapped[str] = mapped_column(String(20), nullable=False)
+    reimbursement_reason: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    reason_for_visit: Mapped[str] = mapped_column(Text, nullable=False)
+    remarks: Mapped[str | None] = mapped_column(Text, nullable=True)
+    bank_name: Mapped[str] = mapped_column(String(200), nullable=False)
+    account_number: Mapped[str] = mapped_column(String(20), nullable=False)
+    account_name: Mapped[str] = mapped_column(String(200), nullable=False)
+    documents_count: Mapped[int] = mapped_column(Integer, default=0)
+    claim_status: Mapped[str] = mapped_column(
+        String(20), default="PENDING"
+    )  # PENDING, APPROVED, REJECTED
+    reviewer_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    reviewed_by: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    reviewed_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    prognosis_response: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
+    )
