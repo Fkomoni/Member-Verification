@@ -105,14 +105,19 @@ async def sync_medications_from_pbm(member_id: str, db: Session) -> bool:
         logger.info(f"Cleared old medications for {member_id}, syncing {len(medications)} from PBM")
 
     for med_data in medications:
-        # Find a unique ID for this medication
+        # Find EntryNo / unique ID for this medication
         pbm_drug_id = _find(med_data,
+            "EntryNo", "entryNo", "entry_no", "entryno",
             "PBMMedicationID", "PbmMedicationID", "MedicationID", "medicationId",
             "DrugID", "drugId", "drug_id", "pbm_drug_id", "ID", "id",
+            "RecordId", "recordId", "record_id",
         )
         if not pbm_drug_id:
-            # Use drug name + enrollee as fallback ID
             pbm_drug_id = _find(med_data, "Medications", "DrugName", "Drug_Name", "drugName", "Name") or f"med-{len(medications)}"
+
+        # Log the pbm_drug_id for debugging
+        drug_name_preview = _find(med_data, "Medications", "DrugName", "Drug_Name", "drugName", "Name") or "?"
+        logger.info(f"  Med: {drug_name_preview} -> pbm_drug_id={pbm_drug_id}")
 
         # Map all medication fields
         drug_name = _find(med_data,
