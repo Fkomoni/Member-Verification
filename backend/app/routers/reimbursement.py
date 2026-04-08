@@ -13,6 +13,12 @@ from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
+from app.core.rate_limiter import (
+    get_client_ip,
+    member_lookup_limiter,
+    submission_limiter,
+)
+from app.core.security import mask_account_number, mask_phone, sanitize_text
 from app.schemas.schemas import ReimbursementClaimResponse, SubmitReimbursementRequest
 from app.services import (
     audit_service,
@@ -76,9 +82,13 @@ def validate_member(
     db: Session = Depends(get_db),
 ):
     """
-    Step 1: Validate member identity (enrollee ID + phone).
+    Step 1: Validate member identity by enrollee ID.
     Public endpoint — no auth required.
+    Rate-limited: 10 attempts per IP per 15 minutes.
     """
+    client_ip = get_client_ip(request)
+    member_lookup_limiter.check_and_record(f"member:{client_ip}")
+
     member_data = mock_member_service.lookup_member(
         db, enrollee_id=body.enrollee_id
     )
@@ -147,7 +157,14 @@ async def submit_reimbursement(
 
     Files are read into memory, attached to the claims email, then DISCARDED.
     No file persistence anywhere.
+
+    Rate-limited: 3 submissions per IP per 30 minutes.
+    Duplicate guard: rejects if auth code already used.
     """
+    # Rate limit
+    client_ip = get_client_ip(request)
+    submission_limiter.check_and_record(f"submit:{client_ip}")
+
     # Parse JSON form data
     try:
         body = SubmitReimbursementRequest(**json.loads(data))
@@ -272,8 +289,11 @@ async def submit_reimbursement(
             "service_lines_count": len(service_lines),
             "attachments_count": len(attachments),
             "email_sent": email_sent,
+            "bank": body.bank_name,
+            "account_number_masked": mask_account_number(body.account_number),
+            "phone_masked": mask_phone(body.member_phone),
         },
-        ip_address=request.client.host if request.client else None,
+        ip_address=client_ip,
     )
 
     audit_service.log_action(

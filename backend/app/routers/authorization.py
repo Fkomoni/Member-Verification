@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.core.deps import get_current_agent, require_role
+from app.core.rate_limiter import code_validation_limiter, get_client_ip
 from app.models.models import Agent, AuthorizationCode
 from app.schemas.schemas import (
     AuthCodeListResponse,
@@ -117,7 +118,12 @@ def validate_authorization_code(
     Validate an authorization code against an enrollee ID.
     This is a PUBLIC endpoint — used by the Member Portal.
     No auth required (the code itself is the credential).
+    Rate-limited: 5 attempts per IP per 15 minutes.
     """
+    # Rate limit check
+    client_ip = get_client_ip(request)
+    remaining = code_validation_limiter.check_and_record(f"validate:{client_ip}")
+
     is_valid, message, auth_code = authorization_service.validate_authorization_code(
         db, code=body.code, enrollee_id=body.enrollee_id
     )
