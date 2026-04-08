@@ -66,17 +66,38 @@ app.include_router(claims_portal.router, prefix=PREFIX)
 
 @app.on_event("startup")
 def on_startup():
-    """Run cleanup tasks on application startup."""
-    from app.core.database import SessionLocal
+    """Auto-create tables, seed agents, and expire stale codes on boot."""
+    from app.core.database import Base, SessionLocal, engine
+    from app.core.security import hash_password
+    from app.models.models import Agent
     from app.services.authorization_service import expire_stale_codes
+
+    # 1. Auto-create all tables (safe — skips existing)
+    try:
+        from app.models import models  # noqa: ensure all models are imported
+        Base.metadata.create_all(bind=engine)
+        log.info("Startup: database tables ensured")
+    except Exception as e:
+        log.error("Startup: failed to create tables: %s", e)
 
     db = SessionLocal()
     try:
+        # 2. Auto-seed default agents if none exist
+        agent_count = db.query(Agent).count()
+        if agent_count == 0:
+            log.info("Startup: no agents found — seeding defaults")
+            db.add(Agent(name="Call Center Agent", email="agent@leadwayhealth.com", hashed_password=hash_password("agent123"), role="call_center"))
+            db.add(Agent(name="Claims Officer", email="claims@leadwayhealth.com", hashed_password=hash_password("claims123"), role="claims_officer"))
+            db.add(Agent(name="Admin User", email="admin@leadwayhealth.com", hashed_password=hash_password("admin123"), role="admin"))
+            db.commit()
+            log.info("Startup: 3 default agents created")
+
+        # 3. Expire stale authorization codes
         count = expire_stale_codes(db)
         if count:
             log.info("Startup: expired %d stale authorization codes", count)
     except Exception as e:
-        log.warning("Startup: failed to expire stale codes: %s", e)
+        log.warning("Startup: error during init: %s", e)
     finally:
         db.close()
 

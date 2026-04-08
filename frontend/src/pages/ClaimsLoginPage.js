@@ -34,21 +34,7 @@ export default function ClaimsLoginPage() {
       <div className={styles.leftPanel}>
         <div className={styles.brandContent}>
           <div className={styles.logoBlock}>
-            <div className={styles.logoIcon}>
-              <svg viewBox="0 0 60 60" width="48" height="48">
-                <circle cx="30" cy="30" r="28" fill="url(#clGrad)" />
-                <defs>
-                  <linearGradient id="clGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#F15A24" />
-                    <stop offset="100%" stopColor="#FFCE07" />
-                  </linearGradient>
-                </defs>
-              </svg>
-            </div>
-            <div className={styles.logoText}>
-              <span className={styles.logoLeadway}>LEADWAY</span>
-              <span className={styles.logoHealth}>Health</span>
-            </div>
+            <img src="/leadway-logo.png" alt="Leadway Health HMO" style={{ height: 52, width: "auto", filter: "brightness(0) invert(1)" }} />
           </div>
           <h1 className={styles.brandTitle}>Claims Portal</h1>
           <p className={styles.brandTagline}>

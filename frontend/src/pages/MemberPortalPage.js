@@ -47,19 +47,7 @@ export default function MemberPortalPage() {
       {/* Header */}
       <header className={styles.header}>
         <div className={styles.headerLogo}>
-          <svg viewBox="0 0 40 40" width="32" height="32">
-            <circle cx="20" cy="20" r="18" fill="url(#mpGrad)" />
-            <defs>
-              <linearGradient id="mpGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#F15A24" />
-                <stop offset="100%" stopColor="#FFCE07" />
-              </linearGradient>
-            </defs>
-          </svg>
-          <div>
-            <span className={styles.headerBrand}>LEADWAY</span>
-            <span className={styles.headerBrandHealth}> Health</span>
-          </div>
+          <img src="/leadway-logo.png" alt="Leadway Health HMO" style={{ height: 36, width: "auto" }} />
           <span className={styles.headerDivider} />
           <span className={styles.headerPortal}>Reimbursement Portal</span>
         </div>
