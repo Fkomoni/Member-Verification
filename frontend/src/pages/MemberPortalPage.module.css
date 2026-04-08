@@ -1,0 +1,78 @@
+.page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--lw-light-grey, #F4F5F7);
+}
+
+/* -- Header ---------------------------------------- */
+.header {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 0.75rem 2rem;
+  background: #fff;
+  border-bottom: 3px solid #C61531;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+}
+
+.headerLogo {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.headerBrand {
+  font-size: 1rem;
+  font-weight: 800;
+  color: #263626;
+  letter-spacing: 0.04em;
+}
+
+.headerBrandHealth {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #C61531;
+}
+
+.headerDivider {
+  width: 1px;
+  height: 24px;
+  background: #ddd;
+  margin: 0 0.35rem;
+}
+
+.headerPortal {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #666;
+}
+
+/* -- Main ------------------------------------------ */
+.main {
+  flex: 1;
+  padding: 2rem;
+  max-width: 780px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+/* -- Footer ---------------------------------------- */
+.footer {
+  text-align: center;
+  padding: 1.25rem;
+  font-size: 0.78rem;
+  color: #aaa;
+  background: #fff;
+  border-top: 1px solid #eee;
+}
+
+/* -- Responsive ------------------------------------ */
+@media (max-width: 768px) {
+  .main {
+    padding: 1rem;
+  }
+  .header {
+    padding: 0.75rem 1rem;
+  }
+}

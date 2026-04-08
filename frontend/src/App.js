@@ -6,6 +6,7 @@ import LoginPage from "./pages/LoginPage";
 import DashboardPage from "./pages/DashboardPage";
 import CallCenterLoginPage from "./pages/CallCenterLoginPage";
 import CallCenterDashboardPage from "./pages/CallCenterDashboardPage";
+import MemberPortalPage from "./pages/MemberPortalPage";
 
 function PrivateRoute({ children }) {
   const { provider } = useAuth();
@@ -41,6 +42,9 @@ export default function App() {
           </AgentPrivateRoute>
         }
       />
+
+      {/* Member Portal (public) */}
+      <Route path="/reimburse" element={<MemberPortalPage />} />
 
       {/* Default redirect */}
       <Route path="*" element={<Navigate to="/dashboard" replace />} />

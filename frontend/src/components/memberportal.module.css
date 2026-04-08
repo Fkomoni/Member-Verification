@@ -1,0 +1,635 @@
+/* ══════════════════════════════════════════════════
+   Leadway Health — Member Portal Styles
+   Public-facing, member-friendly, mobile-first
+   Accent: Crimson #C61531 (main Leadway brand)
+   ══════════════════════════════════════════════════ */
+
+/* -- Card ------------------------------------------ */
+.card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 1.75rem;
+  box-shadow: 0 1px 8px rgba(0, 0, 0, 0.06);
+  border: 1px solid #eee;
+}
+
+.cardTitle {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #263626;
+  margin-bottom: 0.2rem;
+}
+
+.cardSubtitle {
+  color: #777;
+  font-size: 0.85rem;
+  margin-bottom: 1.25rem;
+  line-height: 1.5;
+}
+
+/* -- Step Indicator -------------------------------- */
+.steps {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  margin-bottom: 2rem;
+}
+
+.step {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.stepNumber {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.82rem;
+  font-weight: 700;
+  border: 2px solid #ddd;
+  color: #aaa;
+  background: #fff;
+  transition: all 0.3s;
+}
+
+.stepActive .stepNumber {
+  border-color: #C61531;
+  background: #C61531;
+  color: #fff;
+}
+
+.stepComplete .stepNumber {
+  border-color: #0A7C3E;
+  background: #0A7C3E;
+  color: #fff;
+}
+
+.stepLabel {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #aaa;
+  transition: color 0.3s;
+}
+
+.stepActive .stepLabel {
+  color: #C61531;
+}
+
+.stepComplete .stepLabel {
+  color: #0A7C3E;
+}
+
+.stepConnector {
+  width: 48px;
+  height: 2px;
+  background: #ddd;
+  margin: 0 0.5rem;
+  transition: background 0.3s;
+}
+
+.stepConnectorActive {
+  background: #0A7C3E;
+}
+
+/* -- Form Elements --------------------------------- */
+.label {
+  display: block;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #444;
+  margin-bottom: 1.1rem;
+}
+
+.labelRequired::after {
+  content: " *";
+  color: #C61531;
+}
+
+.input,
+.select,
+.textarea {
+  display: block;
+  width: 100%;
+  margin-top: 0.3rem;
+  padding: 0.7rem 0.85rem;
+  border: 1.5px solid #ddd;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-family: inherit;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  background: #fff;
+}
+
+.input:focus,
+.select:focus,
+.textarea:focus {
+  outline: none;
+  border-color: #C61531;
+  box-shadow: 0 0 0 3px rgba(198, 21, 49, 0.1);
+}
+
+.input::placeholder,
+.textarea::placeholder {
+  color: #bbb;
+}
+
+.inputSmall {
+  padding: 0.55rem 0.75rem;
+  font-size: 0.9rem;
+}
+
+.select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1.5L6 6.5L11 1.5' stroke='%23999' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.85rem center;
+  padding-right: 2.5rem;
+}
+
+.textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+.formGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 1.25rem;
+}
+
+.formRow {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-end;
+}
+
+.fullWidth {
+  grid-column: 1 / -1;
+}
+
+/* -- Buttons --------------------------------------- */
+.primaryBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.85rem;
+  background: #C61531;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 700;
+  transition: background 0.2s;
+}
+
+.primaryBtn:hover {
+  background: #A11028;
+}
+
+.primaryBtn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.secondaryBtn {
+  padding: 0.7rem 1.5rem;
+  background: transparent;
+  color: #C61531;
+  border: 1.5px solid #C61531;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.secondaryBtn:hover {
+  background: #FFF0F0;
+}
+
+.btnRow {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+/* -- Error / Info ---------------------------------- */
+.error {
+  background: #FFF0F0;
+  color: #C61531;
+  padding: 0.65rem 0.85rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  font-size: 0.85rem;
+  border-left: 3px solid #C61531;
+}
+
+.info {
+  background: #E6F0FF;
+  color: #1A2B6D;
+  padding: 0.65rem 0.85rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  font-size: 0.85rem;
+  border-left: 3px solid #1A2B6D;
+}
+
+.successBanner {
+  background: #E8F8EE;
+  color: #0A7C3E;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  font-size: 0.88rem;
+  font-weight: 600;
+  border: 1px solid #B5E8C9;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.warningBanner {
+  background: #FFF8E6;
+  color: #8B6914;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  font-size: 0.85rem;
+  border: 1px solid #F5DFA0;
+}
+
+/* -- Member Info Bar ------------------------------- */
+.memberBar {
+  background: #F8F9FA;
+  border-radius: 8px;
+  padding: 0.85rem 1rem;
+  margin-bottom: 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  border: 1px solid #eee;
+}
+
+.memberBarItem {
+  display: flex;
+  flex-direction: column;
+}
+
+.memberBarLabel {
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: #999;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.memberBarValue {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #263626;
+}
+
+/* -- Code Display ---------------------------------- */
+.codeValidated {
+  background: #E8F8EE;
+  border: 1.5px solid #0A7C3E;
+  border-radius: 10px;
+  padding: 1rem 1.25rem;
+  margin-bottom: 1.25rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.codeValidatedLabel {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #0A7C3E;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.codeValidatedValue {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #0A7C3E;
+  font-family: "Courier New", monospace;
+  letter-spacing: 0.08em;
+}
+
+.codeValidatedAmount {
+  text-align: right;
+}
+
+.codeAmountLabel {
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: #666;
+  text-transform: uppercase;
+}
+
+.codeAmountValue {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #263626;
+}
+
+/* -- Section Divider ------------------------------- */
+.sectionDivider {
+  margin: 1.5rem 0;
+  border: none;
+  border-top: 1px solid #eee;
+}
+
+.sectionTitle {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #263626;
+  margin-bottom: 0.3rem;
+}
+
+.sectionSubtitle {
+  font-size: 0.82rem;
+  color: #888;
+  margin-bottom: 1rem;
+}
+
+/* -- Service Lines --------------------------------- */
+.serviceLines {
+  margin-bottom: 1rem;
+}
+
+.serviceLine {
+  display: grid;
+  grid-template-columns: 2fr 80px 120px 100px 36px;
+  gap: 0.5rem;
+  align-items: end;
+  margin-bottom: 0.5rem;
+}
+
+.serviceLineHeader {
+  display: grid;
+  grid-template-columns: 2fr 80px 120px 100px 36px;
+  gap: 0.5rem;
+  margin-bottom: 0.35rem;
+}
+
+.serviceLineHeaderCell {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.serviceLineTotal {
+  font-weight: 700;
+  color: #263626;
+  font-size: 0.9rem;
+  padding: 0.55rem 0.75rem;
+  background: #F4F5F7;
+  border-radius: 8px;
+  text-align: right;
+}
+
+.removeLineBtn {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #FFF0F0;
+  border: none;
+  border-radius: 6px;
+  color: #C61531;
+  transition: background 0.2s;
+}
+
+.removeLineBtn:hover {
+  background: #FDDDE1;
+}
+
+.addLineBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.45rem 0.85rem;
+  background: transparent;
+  color: #C61531;
+  border: 1.5px dashed #C61531;
+  border-radius: 6px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.addLineBtn:hover {
+  background: #FFF0F0;
+}
+
+.serviceTotalRow {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  padding: 0.75rem 0;
+  margin-top: 0.5rem;
+  border-top: 2px solid #eee;
+}
+
+.serviceTotalLabel {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #666;
+}
+
+.serviceTotalValue {
+  font-size: 1rem;
+  font-weight: 800;
+  color: #263626;
+}
+
+/* -- Document Upload ------------------------------- */
+.uploadZone {
+  border: 2px dashed #ddd;
+  border-radius: 10px;
+  padding: 1.5rem;
+  text-align: center;
+  transition: all 0.2s;
+  cursor: pointer;
+}
+
+.uploadZone:hover {
+  border-color: #C61531;
+  background: #FFFAFA;
+}
+
+.uploadZoneActive {
+  border-color: #C61531;
+  background: #FFF0F0;
+}
+
+.uploadIcon {
+  margin-bottom: 0.5rem;
+  color: #aaa;
+}
+
+.uploadText {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #666;
+}
+
+.uploadHint {
+  font-size: 0.78rem;
+  color: #aaa;
+  margin-top: 0.25rem;
+}
+
+.fileList {
+  margin-top: 0.75rem;
+}
+
+.fileItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 0.75rem;
+  background: #F8F9FA;
+  border-radius: 6px;
+  margin-bottom: 0.35rem;
+  border: 1px solid #eee;
+}
+
+.fileName {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #444;
+}
+
+.fileSize {
+  font-size: 0.75rem;
+  color: #999;
+  margin-left: 0.5rem;
+}
+
+.fileRemoveBtn {
+  background: none;
+  border: none;
+  color: #C61531;
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 0.2rem 0.5rem;
+}
+
+.fileRemoveBtn:hover {
+  text-decoration: underline;
+}
+
+/* -- Success Result -------------------------------- */
+.successCard {
+  background: #fff;
+  border-radius: 12px;
+  padding: 2.5rem;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  border: 1px solid #E8F8EE;
+  text-align: center;
+}
+
+.successIconLarge {
+  width: 64px;
+  height: 64px;
+  background: #E8F8EE;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1.25rem;
+}
+
+.successTitle {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #0A7C3E;
+  margin-bottom: 0.5rem;
+}
+
+.successMessage {
+  font-size: 0.92rem;
+  color: #555;
+  margin-bottom: 1.5rem;
+  line-height: 1.6;
+}
+
+.claimRefDisplay {
+  display: inline-block;
+  background: #F8F9FA;
+  border: 2px solid #eee;
+  border-radius: 10px;
+  padding: 0.85rem 2rem;
+  margin-bottom: 1.5rem;
+}
+
+.claimRefLabel {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.claimRefValue {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #263626;
+  font-family: "Courier New", monospace;
+  letter-spacing: 0.05em;
+}
+
+/* -- Spinner --------------------------------------- */
+.spinner {
+  width: 18px;
+  height: 18px;
+  border: 2.5px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* -- Responsive ------------------------------------ */
+@media (max-width: 640px) {
+  .formGrid {
+    grid-template-columns: 1fr;
+  }
+  .serviceLine,
+  .serviceLineHeader {
+    grid-template-columns: 1fr;
+    gap: 0.35rem;
+  }
+  .serviceLineHeader {
+    display: none;
+  }
+  .memberBar {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  .steps {
+    flex-wrap: wrap;
+  }
+  .stepLabel {
+    display: none;
+  }
+  .codeValidated {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+}
