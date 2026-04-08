@@ -241,10 +241,10 @@ def debug_init():
         count = db.execute(text("SELECT count(*) FROM agents")).scalar()
         if count == 0:
             db.execute(text("""
-                INSERT INTO agents (agent_id, name, email, hashed_password, role) VALUES
-                (gen_random_uuid(), 'Call Center Agent', 'agent@leadwayhealth.com', '$2b$12$dnJw6gVpUDlicLCZutlikeKX7DN9HmHOYUMOM57ytnB1FKkpTkpea', 'call_center'),
-                (gen_random_uuid(), 'Claims Officer', 'claims@leadwayhealth.com', '$2b$12$Mj/NnyDwS97ExWNw9vyJ2uQUnUPI4twJIzAqCrr8wbKzZa8xEXvkC', 'claims_officer'),
-                (gen_random_uuid(), 'Admin User', 'admin@leadwayhealth.com', '$2b$12$nHLO4Xm1G7vpxYtwCDfbAur2Cmsxf.byKUkU6JzjyglQS/RuNlpPW', 'admin');
+                INSERT INTO agents (agent_id, name, email, hashed_password, role, is_active, created_at) VALUES
+                (gen_random_uuid(), 'Call Center Agent', 'agent@leadwayhealth.com', '$2b$12$dnJw6gVpUDlicLCZutlikeKX7DN9HmHOYUMOM57ytnB1FKkpTkpea', 'call_center', true, NOW()),
+                (gen_random_uuid(), 'Claims Officer', 'claims@leadwayhealth.com', '$2b$12$Mj/NnyDwS97ExWNw9vyJ2uQUnUPI4twJIzAqCrr8wbKzZa8xEXvkC', 'claims_officer', true, NOW()),
+                (gen_random_uuid(), 'Admin User', 'admin@leadwayhealth.com', '$2b$12$nHLO4Xm1G7vpxYtwCDfbAur2Cmsxf.byKUkU6JzjyglQS/RuNlpPW', 'admin', true, NOW());
             """))
             db.commit()
             results.append("3 agents seeded")
