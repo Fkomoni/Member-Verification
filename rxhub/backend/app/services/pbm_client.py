@@ -503,8 +503,11 @@ class PrognosisClient:
         if comment_val:
             body["Comment"] = comment_val
 
-        logger.info(f"Pushing medication {'update' if entry_no else 'insert'} to Prognosis for {enrollee_id}: {body}")
+        logger.info(f"Pushing medication {'update' if entry_no else 'insert'} to Prognosis for {enrollee_id}")
+        logger.info(f"  Prognosis payload: {body}")
         result = await self._request("POST", url, db=db, json=body)
+
+        logger.info(f"  Prognosis response: {result}")
 
         if "error" in result:
             logger.error(f"Prognosis medication push failed: {result}")

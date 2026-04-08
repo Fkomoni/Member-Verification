@@ -232,24 +232,35 @@ async def push_approved_request_to_pbm(request_id: str, db: Session) -> bool:
     """Push an approved request to the Prognosis system."""
     req = db.query(Request).filter(Request.id == request_id).first()
     if not req:
+        logger.error(f"Request {request_id} not found for PBM push")
         return False
+
+    # Include comment in the payload data
+    data = dict(req.payload) if req.payload else {}
+    if req.comment:
+        data["Comment"] = req.comment
 
     payload = {
         "request_id": str(req.id),
         "member_id": req.member_id,
         "request_type": req.request_type,
         "action": req.action,
-        "payload": req.payload,
+        "payload": data,
     }
 
+    logger.info(f"Pushing to Prognosis: type={req.request_type}, action={req.action}, member={req.member_id}, data_keys={list(data.keys())}")
+
     result = await prognosis_client.submit_change_request(payload, db=db)
+
+    logger.info(f"Prognosis push result for {request_id}: {result}")
 
     if "error" not in result:
         req.pbm_synced = True
         req.pbm_sync_error = None
     else:
         req.pbm_synced = False
-        req.pbm_sync_error = result.get("error", "Unknown error")
+        req.pbm_sync_error = str(result.get("error", "Unknown error"))
+        logger.error(f"Prognosis push failed for {request_id}: {req.pbm_sync_error}")
 
     db.commit()
     return req.pbm_synced
