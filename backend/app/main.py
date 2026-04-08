@@ -127,7 +127,7 @@ def debug_db():
         return {"db_connected": False, "error": str(e)}
 
 
-@app.post("/api/v1/debug/init")
+@app.get("/api/v1/debug/init")
 def debug_init():
     """Force-create all tables and seed agents. Call once after deploy."""
     from sqlalchemy import text
