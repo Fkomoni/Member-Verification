@@ -34,11 +34,9 @@ export default function VisitTypeSelector({ member, onSelect }) {
   const handleContinue = () => {
     if (!selected) return;
     const selectedType = serviceTypes.find(
-      (st) =>
-        (st.ID || st.Id || st.id || st.SERVICE_TYPE_ID || st.ServiceTypeId) ===
-        selected
+      (st) => String(st.servtype_id) === selected
     );
-    onSelect(selectedType || { id: selected, name: selected });
+    onSelect(selectedType || { servtype_id: selected, visittype: selected });
   };
 
   if (loading) {
@@ -57,25 +55,6 @@ export default function VisitTypeSelector({ member, onSelect }) {
     );
   }
 
-  // Derive display name & ID from various possible field names
-  const getTypeName = (st) =>
-    st.DESCRIPTION ||
-    st.Description ||
-    st.description ||
-    st.SERVICE_TYPE ||
-    st.ServiceType ||
-    st.NAME ||
-    st.Name ||
-    st.name ||
-    st.VALUE ||
-    st.Value ||
-    "Unknown";
-
-  const getTypeId = (st) =>
-    String(
-      st.ID ?? st.Id ?? st.id ?? st.SERVICE_TYPE_ID ?? st.ServiceTypeId ?? st.CODE ?? st.Code ?? st.code ?? getTypeName(st)
-    );
-
   return (
     <div className={styles.card}>
       <h2 className={styles.cardTitle}>Select Visit Type</h2>
@@ -91,8 +70,8 @@ export default function VisitTypeSelector({ member, onSelect }) {
         <>
           <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", marginBottom: "1rem" }}>
             {serviceTypes.map((st) => {
-              const typeId = getTypeId(st);
-              const typeName = getTypeName(st);
+              const typeId = String(st.servtype_id);
+              const typeName = st.visittype || "Unknown";
               return (
                 <label
                   key={typeId}

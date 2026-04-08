@@ -262,7 +262,13 @@ async def get_service_types(cif: str, scheme_id: str) -> dict:
         if resp.status_code == 200:
             data = resp.json()
             log.info("Prognosis service types for cif=%s scheme=%s: %s", cif, scheme_id, data)
-            service_types = data if isinstance(data, list) else [data] if data else []
+            # Response: {"status": 200, "result": [{servtype_id, visittype}, ...]}
+            if isinstance(data, dict):
+                service_types = data.get("result", [])
+            elif isinstance(data, list):
+                service_types = data
+            else:
+                service_types = []
             return {"success": True, "reason": None, "service_types": service_types}
         elif resp.status_code == 401:
             global _prognosis_token_expiry
@@ -274,7 +280,7 @@ async def get_service_types(cif: str, scheme_id: str) -> dict:
                     resp = await client.get(url, params=params, headers=headers)
                 if resp.status_code == 200:
                     data = resp.json()
-                    service_types = data if isinstance(data, list) else [data] if data else []
+                    service_types = data.get("result", []) if isinstance(data, dict) else data if isinstance(data, list) else []
                     return {"success": True, "reason": None, "service_types": service_types}
             return {"success": False, "reason": "Prognosis authentication expired", "service_types": []}
         else:

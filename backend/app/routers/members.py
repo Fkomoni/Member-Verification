@@ -60,7 +60,7 @@ async def verify_member(
     company = d.get("Client_ClientName")
     plan = d.get("Member_Plan")
     scheme_name = d.get("client_schemename") or d.get("Product_schemeType")
-    scheme_id = str(d.get("Client_GroupID", ""))
+    scheme_id = str(d.get("Member_PlanID", ""))
     cif_number = str(d.get("Member_MemberUniqueID") or d.get("Member_ParentMemberUniqueID") or "")
     provider_name_field = d.get("Member_PCP")
     policy_no = d.get("Client_PolicyNumber")
