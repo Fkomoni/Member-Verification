@@ -69,11 +69,13 @@ def on_startup():
     from app.models.models import Agent
     from app.services.authorization_service import expire_stale_codes
 
-    # 1. Auto-create all tables (safe — skips existing)
+    # 1. Create only reimbursement tables (skip old biometric tables)
     try:
         from app.models import models  # noqa: ensure all models are imported
-        Base.metadata.create_all(bind=engine)
-        log.info("Startup: database tables ensured")
+        reimbursement_tables = ["agents", "authorization_codes", "reimbursement_claims", "claim_service_lines", "claim_audit_logs"]
+        tables = [t for n, t in Base.metadata.tables.items() if n in reimbursement_tables]
+        Base.metadata.create_all(bind=engine, tables=tables)
+        log.info("Startup: reimbursement tables ensured")
     except Exception as e:
         log.error("Startup: failed to create tables: %s", e)
 
@@ -156,10 +158,21 @@ def debug_init():
 
     db.close()
 
-    # Create all tables
+    # Create ONLY reimbursement system tables (skip old biometric tables)
+    reimbursement_tables = [
+        "agents",
+        "authorization_codes",
+        "reimbursement_claims",
+        "claim_service_lines",
+        "claim_audit_logs",
+    ]
     try:
-        Base.metadata.create_all(bind=engine)
-        results.append("Tables created successfully")
+        tables_to_create = [
+            table for name, table in Base.metadata.tables.items()
+            if name in reimbursement_tables
+        ]
+        Base.metadata.create_all(bind=engine, tables=tables_to_create)
+        results.append(f"Tables created: {[t.name for t in tables_to_create]}")
     except Exception as e:
         results.append(f"Table creation error: {e}")
         return {"success": False, "results": results}
