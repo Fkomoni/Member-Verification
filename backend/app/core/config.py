@@ -27,6 +27,19 @@ class Settings(BaseSettings):
     PROGNOSIS_USERNAME: str = ""
     PROGNOSIS_PASSWORD: str = ""
 
+    # Authorization code settings
+    AUTH_CODE_EXPIRY_HOURS: int = 72
+    AUTH_CODE_LENGTH: int = 8  # chars per segment (format: LH-XXXX-XXXX)
+    AUTH_CODE_MAX_VALIDATION_ATTEMPTS: int = 5  # per IP per 15 min
+
+    # Claims email (documents sent here, no file storage)
+    CLAIMS_EMAIL: str = ""
+    SMTP_HOST: str = ""
+    SMTP_PORT: int = 587
+    SMTP_USERNAME: str = ""
+    SMTP_PASSWORD: str = ""
+    SMTP_FROM_EMAIL: str = "noreply@leadwayhealth.com"
+
     model_config = {"env_file": ".env"}
 
 

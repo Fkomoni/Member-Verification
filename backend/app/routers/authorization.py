@@ -1,0 +1,230 @@
+"""
+Authorization Code endpoints — generate, validate, and list codes.
+"""
+
+from fastapi import APIRouter, Depends, HTTPException, Request, status
+from sqlalchemy.orm import Session
+
+from app.core.database import get_db
+from app.core.deps import get_current_agent, require_role
+from app.models.models import Agent, AuthorizationCode
+from app.schemas.schemas import (
+    AuthCodeListResponse,
+    AuthCodeResponse,
+    CreateAuthCodeRequest,
+    ValidateAuthCodeRequest,
+    ValidateAuthCodeResponse,
+)
+from app.services import audit_service, authorization_service, mock_member_service
+
+router = APIRouter(prefix="/authorization", tags=["authorization"])
+
+
+@router.post("/generate", response_model=AuthCodeResponse, status_code=201)
+def generate_authorization_code(
+    body: CreateAuthCodeRequest,
+    request: Request,
+    db: Session = Depends(get_db),
+    agent: Agent = Depends(require_role("call_center", "admin")),
+):
+    """
+    Generate a new authorization code for a member.
+    Only call-center agents and admins can generate codes.
+    """
+    # 1. Look up member
+    member_data = mock_member_service.lookup_member(
+        db, enrollee_id=body.enrollee_id
+    )
+    if not member_data:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Member with enrollee ID '{body.enrollee_id}' not found",
+        )
+
+    # 2. Get the Member ORM object for FK reference
+    from app.models.models import Member
+
+    member = (
+        db.query(Member)
+        .filter(Member.enrollee_id == body.enrollee_id.strip().upper())
+        .first()
+    )
+    if not member:
+        # The mock service should have auto-created it
+        member = (
+            db.query(Member)
+            .filter(Member.enrollee_id == body.enrollee_id.strip())
+            .first()
+        )
+    if not member:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Member record not found after lookup",
+        )
+
+    # 3. Generate authorization code
+    auth_code = authorization_service.create_authorization_code(
+        db,
+        member=member,
+        approved_amount=float(body.approved_amount),
+        visit_type=body.visit_type,
+        notes=body.notes,
+        agent_id=str(agent.agent_id),
+        agent_name=agent.name,
+    )
+
+    # 4. Audit trail
+    audit_service.log_action(
+        db,
+        entity_type="authorization_code",
+        entity_id=str(auth_code.id),
+        action="created",
+        actor_type="agent",
+        actor_id=str(agent.agent_id),
+        details={
+            "code": auth_code.code,
+            "enrollee_id": auth_code.enrollee_id,
+            "approved_amount": float(auth_code.approved_amount),
+            "visit_type": auth_code.visit_type,
+        },
+        ip_address=request.client.host if request.client else None,
+    )
+
+    return AuthCodeResponse(
+        id=auth_code.id,
+        code=auth_code.code,
+        member_id=auth_code.member_id,
+        enrollee_id=auth_code.enrollee_id,
+        member_name=member.name,
+        approved_amount=auth_code.approved_amount,
+        visit_type=auth_code.visit_type,
+        notes=auth_code.notes,
+        agent_id=auth_code.agent_id,
+        agent_name=auth_code.agent_name,
+        status=auth_code.status,
+        created_at=auth_code.created_at,
+        expires_at=auth_code.expires_at,
+    )
+
+
+@router.post("/validate", response_model=ValidateAuthCodeResponse)
+def validate_authorization_code(
+    body: ValidateAuthCodeRequest,
+    request: Request,
+    db: Session = Depends(get_db),
+):
+    """
+    Validate an authorization code against an enrollee ID.
+    This is a PUBLIC endpoint — used by the Member Portal.
+    No auth required (the code itself is the credential).
+    """
+    is_valid, message, auth_code = authorization_service.validate_authorization_code(
+        db, code=body.code, enrollee_id=body.enrollee_id
+    )
+
+    # Audit the validation attempt
+    audit_service.log_action(
+        db,
+        entity_type="authorization_code",
+        entity_id=str(auth_code.id) if auth_code else "unknown",
+        action="validation_attempt",
+        actor_type="member",
+        actor_id=body.enrollee_id,
+        details={
+            "code": body.code,
+            "valid": is_valid,
+            "message": message,
+        },
+        ip_address=request.client.host if request.client else None,
+    )
+
+    if not is_valid:
+        return ValidateAuthCodeResponse(valid=False, message=message)
+
+    # Fetch member name
+    member_data = mock_member_service.lookup_member(
+        db, enrollee_id=body.enrollee_id
+    )
+
+    return ValidateAuthCodeResponse(
+        valid=True,
+        message=message,
+        code=auth_code.code,
+        enrollee_id=auth_code.enrollee_id,
+        member_name=member_data["name"] if member_data else None,
+        approved_amount=auth_code.approved_amount,
+        visit_type=auth_code.visit_type,
+        expires_at=auth_code.expires_at,
+    )
+
+
+@router.get("/codes", response_model=AuthCodeListResponse)
+def list_my_codes(
+    skip: int = 0,
+    limit: int = 50,
+    db: Session = Depends(get_db),
+    agent: Agent = Depends(get_current_agent),
+):
+    """List authorization codes generated by the current agent."""
+    codes, total = authorization_service.get_codes_by_agent(
+        db, agent_id=str(agent.agent_id), skip=skip, limit=limit
+    )
+
+    return AuthCodeListResponse(
+        codes=[
+            AuthCodeResponse(
+                id=c.id,
+                code=c.code,
+                member_id=c.member_id,
+                enrollee_id=c.enrollee_id,
+                member_name=c.member.name if c.member else None,
+                approved_amount=c.approved_amount,
+                visit_type=c.visit_type,
+                notes=c.notes,
+                agent_id=c.agent_id,
+                agent_name=c.agent_name,
+                status=c.status,
+                created_at=c.created_at,
+                expires_at=c.expires_at,
+                linked_claim_id=c.linked_claim_id,
+            )
+            for c in codes
+        ],
+        total=total,
+    )
+
+
+@router.get("/codes/{code}", response_model=AuthCodeResponse)
+def get_code_detail(
+    code: str,
+    db: Session = Depends(get_db),
+    agent: Agent = Depends(get_current_agent),
+):
+    """Get details of a specific authorization code."""
+    auth_code = (
+        db.query(AuthorizationCode)
+        .filter(AuthorizationCode.code == code.upper().strip())
+        .first()
+    )
+    if not auth_code:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Authorization code not found",
+        )
+
+    return AuthCodeResponse(
+        id=auth_code.id,
+        code=auth_code.code,
+        member_id=auth_code.member_id,
+        enrollee_id=auth_code.enrollee_id,
+        member_name=auth_code.member.name if auth_code.member else None,
+        approved_amount=auth_code.approved_amount,
+        visit_type=auth_code.visit_type,
+        notes=auth_code.notes,
+        agent_id=auth_code.agent_id,
+        agent_name=auth_code.agent_name,
+        status=auth_code.status,
+        created_at=auth_code.created_at,
+        expires_at=auth_code.expires_at,
+        linked_claim_id=auth_code.linked_claim_id,
+    )
