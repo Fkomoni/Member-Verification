@@ -219,8 +219,8 @@ class AuthorizationCode(Base):
     agent: Mapped["Agent"] = relationship(back_populates="authorization_codes")
     member: Mapped["Member"] = relationship()
     linked_claim: Mapped["ReimbursementClaim | None"] = relationship(
-        back_populates="authorization_code",
         foreign_keys=[linked_claim_id],
+        primaryjoin="AuthorizationCode.linked_claim_id == ReimbursementClaim.claim_id",
     )
 
 
@@ -288,8 +288,8 @@ class ReimbursementClaim(Base):
     )
 
     authorization_code: Mapped["AuthorizationCode | None"] = relationship(
-        back_populates="linked_claim",
         foreign_keys=[authorization_code_id],
+        primaryjoin="ReimbursementClaim.authorization_code_id == AuthorizationCode.id",
     )
     member: Mapped["Member"] = relationship()
     service_lines: Mapped[list["ClaimServiceLine"]] = relationship(
