@@ -219,3 +219,96 @@ def list_authorization_codes(
         }
         for c in codes
     ]
+
+
+# ── Public member reimbursement endpoints (no auth required) ─
+
+def _code_to_dict(c: AuthorizationCode) -> dict:
+    return {
+        "code_id": str(c.code_id),
+        "code": c.code,
+        "enrollee_id": c.enrollee_id,
+        "enrollee_name": c.enrollee_name,
+        "visit_type_id": c.visit_type_id,
+        "visit_type_name": c.visit_type_name,
+        "approved_amount": c.approved_amount,
+        "notes": c.notes,
+        "status": c.status,
+        "created_at": c.created_at.isoformat(),
+        "expires_at": c.expires_at.isoformat() if c.expires_at else None,
+    }
+
+
+@router.get("/reimbursement/lookup-code")
+def lookup_pa_code(
+    code: str = Query(...),
+    db: Session = Depends(get_db),
+):
+    """Public: look up a PA code and return enrollee name + details."""
+    auth_code = (
+        db.query(AuthorizationCode)
+        .filter(AuthorizationCode.code == code.strip().upper())
+        .first()
+    )
+    if not auth_code:
+        raise HTTPException(status_code=404, detail="Authorization code not found")
+    return _code_to_dict(auth_code)
+
+
+@router.get("/reimbursement/active-codes")
+def get_active_codes_for_enrollee(
+    enrollee_id: str = Query(...),
+    db: Session = Depends(get_db),
+):
+    """Public: get all ACTIVE PA codes for an enrollee ID."""
+    codes = (
+        db.query(AuthorizationCode)
+        .filter(
+            AuthorizationCode.enrollee_id == enrollee_id.strip(),
+            AuthorizationCode.status == "ACTIVE",
+        )
+        .order_by(AuthorizationCode.created_at.desc())
+        .all()
+    )
+    return [_code_to_dict(c) for c in codes]
+
+
+@router.post("/reimbursement/submit")
+def submit_reimbursement(
+    body: dict,
+    db: Session = Depends(get_db),
+):
+    """Public: submit a reimbursement claim against a PA code."""
+    code = body.get("code", "").strip().upper()
+    claim_amount = float(body.get("claim_amount", 0))
+    description = body.get("description", "")
+
+    auth_code = (
+        db.query(AuthorizationCode)
+        .filter(AuthorizationCode.code == code)
+        .first()
+    )
+    if not auth_code:
+        raise HTTPException(status_code=404, detail="Authorization code not found")
+    if auth_code.status != "ACTIVE":
+        raise HTTPException(status_code=400, detail=f"Code is {auth_code.status}, not ACTIVE")
+    if claim_amount > auth_code.approved_amount:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Claim amount (NGN {claim_amount:,.2f}) exceeds approved amount (NGN {auth_code.approved_amount:,.2f})",
+        )
+
+    # Mark code as USED
+    auth_code.status = "USED"
+    db.commit()
+
+    return {
+        "success": True,
+        "message": "Reimbursement claim submitted successfully",
+        "code": auth_code.code,
+        "enrollee_name": auth_code.enrollee_name,
+        "visit_type_name": auth_code.visit_type_name,
+        "approved_amount": auth_code.approved_amount,
+        "claim_amount": claim_amount,
+        "description": description,
+    }
