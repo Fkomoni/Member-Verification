@@ -12,6 +12,7 @@ import string
 import uuid
 from datetime import datetime, timedelta, timezone
 
+import httpx
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
@@ -342,24 +343,62 @@ async def submit_reimbursement(
     }
 
 
+@router.get("/reimbursement/banks")
+async def list_banks():
+    """Fetch list of Nigerian banks from Paystack."""
+    from app.core.config import settings
+    if not settings.PAYSTACK_SECRET_KEY:
+        return {"success": False, "banks": []}
+    try:
+        async with httpx.AsyncClient(timeout=httpx.Timeout(15.0)) as client:
+            resp = await client.get(
+                "https://api.paystack.co/bank?country=nigeria&perPage=100",
+                headers={"Authorization": f"Bearer {settings.PAYSTACK_SECRET_KEY}"},
+            )
+        if resp.status_code == 200:
+            data = resp.json()
+            banks = [{"name": b["name"], "code": b["code"]} for b in data.get("data", [])]
+            return {"success": True, "banks": banks}
+        return {"success": False, "banks": []}
+    except Exception:
+        return {"success": False, "banks": []}
+
+
 @router.post("/reimbursement/validate-bank")
-def validate_bank_account(body: dict):
+async def validate_bank_account(body: dict):
     """
-    Validate bank account number against name.
-    TODO: Integrate with Paystack Resolve Account API:
+    Validate bank account via Paystack Resolve Account API.
     GET https://api.paystack.co/bank/resolve?account_number=XXX&bank_code=XXX
-    Headers: Authorization: Bearer SECRET_KEY
     """
+    import httpx as _httpx
+    from app.core.config import settings
+
     account_number = body.get("account_number", "")
-    bank_name = body.get("bank_name", "")
+    bank_code = body.get("bank_code", "")
 
-    if not account_number or not bank_name:
-        return {"validated": False, "reason": "Account number and bank name required"}
+    if not account_number or not bank_code:
+        return {"validated": False, "reason": "Account number and bank code required", "account_name": ""}
 
-    # TODO: Replace with Paystack API call
-    # For now, return manual validation mode
-    return {
-        "validated": True,
-        "account_name": "",  # Will be populated by Paystack
-        "message": "Manual entry mode — Paystack integration pending",
-    }
+    if not settings.PAYSTACK_SECRET_KEY:
+        return {"validated": False, "reason": "Paystack not configured", "account_name": ""}
+
+    try:
+        async with _httpx.AsyncClient(timeout=_httpx.Timeout(15.0)) as client:
+            resp = await client.get(
+                f"https://api.paystack.co/bank/resolve?account_number={account_number}&bank_code={bank_code}",
+                headers={"Authorization": f"Bearer {settings.PAYSTACK_SECRET_KEY}"},
+            )
+
+        if resp.status_code == 200:
+            data = resp.json()
+            account_name = data.get("data", {}).get("account_name", "")
+            return {
+                "validated": True,
+                "account_name": account_name,
+                "message": "Account verified successfully",
+            }
+        else:
+            error_msg = resp.json().get("message", "Could not resolve account")
+            return {"validated": False, "reason": error_msg, "account_name": ""}
+    except Exception as e:
+        return {"validated": False, "reason": str(e), "account_name": ""}

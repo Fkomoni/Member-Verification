@@ -1,10 +1,11 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import api from "../services/api";
 import sharedStyles from "../components/shared.module.css";
 import headerStyles from "./DashboardPage.module.css";
 
 export default function MemberReimbursement() {
   const [mode, setMode] = useState(null);
+  const [banks, setBanks] = useState([]);
   const [paCode, setPaCode] = useState("");
   const [enrolleeId, setEnrolleeId] = useState("");
   const [loading, setLoading] = useState(false);
@@ -23,10 +24,12 @@ export default function MemberReimbursement() {
 
   // Bank details
   const [bankName, setBankName] = useState("");
+  const [bankCode, setBankCode] = useState("");
   const [accountNumber, setAccountNumber] = useState("");
   const [accountName, setAccountName] = useState("");
   const [bankValidating, setBankValidating] = useState(false);
   const [bankValidated, setBankValidated] = useState(false);
+  const [bankError, setBankError] = useState("");
 
   // File uploads
   const [receipts, setReceipts] = useState([]);
@@ -35,12 +38,19 @@ export default function MemberReimbursement() {
   const [submitting, setSubmitting] = useState(false);
   const [submitResult, setSubmitResult] = useState(null);
 
+  useEffect(() => {
+    api.get("/reimbursement/banks").then(({ data }) => {
+      if (data.success) setBanks(data.banks);
+    }).catch(() => {});
+  }, []);
+
   const reset = () => {
     setMode(null); setPaCode(""); setEnrolleeId(""); setCodeResult(null);
     setActiveCodes([]); setSelectedCode(null); setClaimAmount("");
     setReimbursementReason(""); setProviderName(""); setVisitDate("");
-    setReasonForVisit(""); setRemarks(""); setBankName(""); setAccountNumber("");
-    setAccountName(""); setBankValidated(false); setReceipts([]);
+    setReasonForVisit(""); setRemarks(""); setBankName(""); setBankCode("");
+    setAccountNumber(""); setAccountName(""); setBankValidated(false);
+    setBankError(""); setReceipts([]);
     setMedicalReport(null); setSubmitResult(null); setError("");
   };
 
@@ -83,22 +93,23 @@ export default function MemberReimbursement() {
   });
 
   const handleValidateBank = async () => {
-    if (!accountNumber || !bankName) return;
+    if (!accountNumber || !bankCode) return;
     setBankValidating(true);
+    setBankError("");
+    setBankValidated(false);
     try {
       const { data } = await api.post("/reimbursement/validate-bank", {
         account_number: accountNumber,
-        bank_name: bankName,
+        bank_code: bankCode,
       });
       if (data.validated) {
-        setAccountName(data.account_name || accountName);
+        setAccountName(data.account_name || "");
         setBankValidated(true);
       } else {
-        setError(data.reason || "Could not validate bank account");
+        setBankError(data.reason || "Could not validate bank account");
       }
     } catch {
-      // If validation endpoint not available, allow manual entry
-      setBankValidated(true);
+      setBankError("Bank validation service unavailable");
     } finally { setBankValidating(false); }
   };
 
@@ -356,17 +367,24 @@ export default function MemberReimbursement() {
                   <div style={rowStyle}>
                     <label className={sharedStyles.label} style={{ flex: 1, minWidth: 180 }}>
                       Bank Name *
-                      <select value={bankName} onChange={(e) => { setBankName(e.target.value); setBankValidated(false); }} required className={sharedStyles.input} style={{ marginTop: "0.25rem" }}>
+                      <select value={bankCode} onChange={(e) => {
+                        const selected = banks.find(b => b.code === e.target.value);
+                        setBankCode(e.target.value);
+                        setBankName(selected ? selected.name : "");
+                        setBankValidated(false); setAccountName(""); setBankError("");
+                      }} required className={sharedStyles.input} style={{ marginTop: "0.25rem" }}>
                         <option value="">Select bank...</option>
-                        {BANKS.map((b) => <option key={b} value={b}>{b}</option>)}
+                        {(banks.length > 0 ? banks : BANKS.map(b => ({ name: b, code: b }))).map((b) => (
+                          <option key={b.code} value={b.code}>{b.name}</option>
+                        ))}
                       </select>
                     </label>
                     <label className={sharedStyles.label} style={{ flex: 1, minWidth: 180 }}>
                       Account Number *
                       <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.25rem" }}>
                         <input type="text" maxLength={10} placeholder="0123456789" value={accountNumber} onChange={(e) => { setAccountNumber(e.target.value); setBankValidated(false); }} required className={sharedStyles.input} />
-                        <button type="button" onClick={handleValidateBank} disabled={bankValidating || accountNumber.length < 10 || !bankName} className={sharedStyles.primaryBtn} style={{ padding: "0.5rem 0.8rem", fontSize: "0.78rem", whiteSpace: "nowrap" }}>
-                          {bankValidating ? "..." : "Verify"}
+                        <button type="button" onClick={handleValidateBank} disabled={bankValidating || accountNumber.length < 10 || !bankCode} className={sharedStyles.primaryBtn} style={{ padding: "0.5rem 0.8rem", fontSize: "0.78rem", whiteSpace: "nowrap" }}>
+                          {bankValidating ? "Verifying..." : "Verify"}
                         </button>
                       </div>
                     </label>
@@ -374,7 +392,8 @@ export default function MemberReimbursement() {
                   <label className={sharedStyles.label}>
                     Account Name
                     <input type="text" value={accountName} onChange={(e) => setAccountName(e.target.value)} placeholder="Account holder name" className={sharedStyles.input} style={{ marginTop: "0.25rem", background: bankValidated ? "#E8F8EE" : "#fff" }} />
-                    {bankValidated && <span style={{ fontSize: "0.75rem", color: "#0A7C3E", fontWeight: 600 }}>&#10004; Verified</span>}
+                    {bankValidated && <span style={{ fontSize: "0.75rem", color: "#0A7C3E", fontWeight: 600 }}>&#10004; Account Verified</span>}
+                    {bankError && <span style={{ fontSize: "0.75rem", color: "#C61531", fontWeight: 600 }}>{bankError}</span>}
                   </label>
                 </div>
 

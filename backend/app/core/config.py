@@ -27,6 +27,9 @@ class Settings(BaseSettings):
     PROGNOSIS_USERNAME: str = ""
     PROGNOSIS_PASSWORD: str = ""
 
+    # Paystack (bank account validation)
+    PAYSTACK_SECRET_KEY: str = ""
+
     model_config = {"env_file": ".env"}
 
 
