@@ -37,4 +37,11 @@ export const listMyCodes = (skip = 0, limit = 50) =>
 export const getCodeDetail = (code) =>
   agentApi.get(`/authorization/codes/${code}`);
 
+// ── Member Lookup ────────────────────────────────
+export const lookupMember = (enrolleeId) =>
+  agentApi.get("/authorization/lookup-member", { params: { enrollee_id: enrolleeId } });
+
+export const getServiceTypes = (cif, schemeId) =>
+  agentApi.get("/authorization/service-types", { params: { cif, scheme_id: schemeId } });
+
 export default agentApi;

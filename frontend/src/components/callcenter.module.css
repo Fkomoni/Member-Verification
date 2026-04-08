@@ -323,6 +323,44 @@
   background: #FAFBFC;
 }
 
+/* -- Member Card ---------------------------------- */
+.memberCard {
+  background: #F0FFF5;
+  border: 1.5px solid #B5E8C9;
+  border-radius: 10px;
+  padding: 1rem 1.25rem;
+  margin-bottom: 1.25rem;
+}
+
+.memberCardHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.memberCardGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.6rem 1.5rem;
+}
+
+.memberCardLabel {
+  display: block;
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.memberCardValue {
+  display: block;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #263626;
+}
+
 .codeCell {
   font-family: "Courier New", monospace;
   font-weight: 700;

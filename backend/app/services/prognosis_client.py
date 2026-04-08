@@ -342,3 +342,49 @@ async def get_enrollee_biodata(enrollee_id: str) -> dict:
             "reason": f"Cannot reach Prognosis API: {e}",
             "data": None,
         }
+
+
+async def get_service_types(cif: str, scheme_id: str) -> dict:
+    """
+    Get available service/visit types for a member.
+
+    GET /api/ListValues/GetSeviceType?cif={cif}&Schemeid={scheme_id}
+    """
+    if not settings.PROGNOSIS_BASE_URL:
+        return {"success": False, "reason": "Prognosis API not configured", "services": []}
+
+    token = await _get_prognosis_token()
+    if not token:
+        return {"success": False, "reason": "Failed to authenticate", "services": []}
+
+    url = f"{settings.PROGNOSIS_BASE_URL}/api/ListValues/GetSeviceType"
+    params = {"cif": cif, "Schemeid": scheme_id}
+    headers = {"Authorization": f"Bearer {token}"}
+
+    try:
+        async with httpx.AsyncClient(timeout=_TIMEOUT, verify=False) as client:
+            resp = await client.get(url, params=params, headers=headers)
+
+        if resp.status_code == 200:
+            data = resp.json()
+            services = data if isinstance(data, list) else [data] if data else []
+            log.info("Prognosis service types for cif=%s: %d types", cif, len(services))
+            return {"success": True, "reason": None, "services": services}
+        elif resp.status_code == 401:
+            global _prognosis_token_expiry
+            _prognosis_token_expiry = 0
+            token = await _get_prognosis_token()
+            if token:
+                headers = {"Authorization": f"Bearer {token}"}
+                async with httpx.AsyncClient(timeout=_TIMEOUT, verify=False) as client:
+                    resp = await client.get(url, params=params, headers=headers)
+                if resp.status_code == 200:
+                    data = resp.json()
+                    services = data if isinstance(data, list) else [data] if data else []
+                    return {"success": True, "reason": None, "services": services}
+            return {"success": False, "reason": "Auth expired", "services": []}
+        else:
+            return {"success": False, "reason": f"Status {resp.status_code}", "services": []}
+    except httpx.RequestError as e:
+        log.error("Prognosis service types request failed: %s", e)
+        return {"success": False, "reason": str(e), "services": []}

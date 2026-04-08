@@ -2,12 +2,15 @@
 Authorization Code endpoints — generate, validate, and list codes.
 """
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+import asyncio
+
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.core.deps import get_current_agent, require_role
 from app.core.rate_limiter import code_validation_limiter, get_client_ip
+from app.services.prognosis_client import get_service_types
 from app.models.models import Agent, AuthorizationCode
 from app.schemas.schemas import (
     AuthCodeListResponse,
@@ -211,3 +214,42 @@ def get_code_detail(
         expires_at=auth_code.expires_at,
         linked_claim_id=auth_code.linked_claim_id,
     )
+
+
+@router.get("/lookup-member")
+def lookup_member_for_agent(
+    enrollee_id: str = Query(...),
+    db: Session = Depends(get_db),
+    agent: Agent = Depends(get_current_agent),
+):
+    """Look up member details by enrollee ID — for the code generator form."""
+    member_data = mock_member_service.lookup_member(db, enrollee_id=enrollee_id)
+    if not member_data:
+        raise HTTPException(status_code=404, detail="Member not found")
+
+    return {
+        "enrollee_id": member_data.get("enrollee_id"),
+        "name": member_data.get("name"),
+        "company": member_data.get("company"),
+        "plan": member_data.get("plan"),
+        "gender": member_data.get("gender"),
+        "phone": member_data.get("phone"),
+        "dob": member_data.get("dob"),
+    }
+
+
+@router.get("/service-types")
+def get_member_service_types(
+    cif: str = Query(...),
+    scheme_id: str = Query(...),
+    agent: Agent = Depends(get_current_agent),
+):
+    """Get available visit/service types for a member from Prognosis."""
+    loop = asyncio.new_event_loop()
+    result = loop.run_until_complete(get_service_types(cif, scheme_id))
+    loop.close()
+
+    return {
+        "success": result.get("success", False),
+        "services": result.get("services", []),
+    }
