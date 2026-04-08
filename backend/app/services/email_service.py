@@ -1,20 +1,21 @@
 """
-Email Service — sends reimbursement claim data + document attachments
-to the claims team email. Files are attached and then discarded (never stored).
+Email Service — sends reimbursement claim data to the claims team
+via the Prognosis SendEmailAlert API.
 
-Uses SMTP when configured, falls back to logging in dev mode.
+POST /api/EnrolleeProfile/SendEmailAlert
+Uses the same Prognosis auth token. Files are base64-encoded in Attachments.
 """
 
+import base64
 import logging
-import smtplib
-from email import encoders
-from email.mime.base import MIMEBase
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
+
+import httpx
 
 from app.core.config import settings
 
 log = logging.getLogger(__name__)
+
+_TIMEOUT = httpx.Timeout(30.0)
 
 
 def _build_claim_html(claim_data: dict) -> str:
@@ -109,101 +110,135 @@ def _build_claim_html(claim_data: dict) -> str:
     """
 
 
+async def _get_prognosis_token() -> str | None:
+    """Get Prognosis auth token (reuses prognosis_client cached token)."""
+    from app.services.prognosis_client import _get_prognosis_token
+    return await _get_prognosis_token()
+
+
 def send_claim_email(
     claim_data: dict,
     attachments: list[tuple[str, bytes, str]] | None = None,
 ) -> bool:
     """
-    Send a reimbursement claim email to the claims team.
+    Send a reimbursement claim email via Prognosis SendEmailAlert API.
+
+    POST /api/EnrolleeProfile/SendEmailAlert
 
     Args:
-        claim_data: Dict with all claim fields (claim_ref, member_name, etc.)
+        claim_data: Dict with all claim fields
         attachments: List of (filename, file_bytes, content_type) tuples.
-                     Files are read into memory, attached, and never persisted.
+                     Files are base64-encoded for the API, then discarded.
 
     Returns True if sent successfully, False otherwise.
     """
+    import asyncio
+
     attachments = attachments or []
     claim_data["attachment_count"] = len(attachments)
 
-    # If SMTP is not configured, log and return
-    if not settings.SMTP_HOST or not settings.CLAIMS_EMAIL:
+    if not settings.CLAIMS_EMAIL:
         log.warning(
-            "SMTP not configured — claim email for %s logged instead of sent. "
-            "Set SMTP_HOST and CLAIMS_EMAIL to enable.",
+            "CLAIMS_EMAIL not configured — claim email for %s logged only.",
             claim_data.get("claim_ref"),
         )
-        log.info("CLAIM EMAIL BODY (dev mode):\n%s", _format_plain_text(claim_data))
-        for fname, fbytes, ctype in attachments:
-            log.info("  ATTACHMENT: %s (%d bytes, %s)", fname, len(fbytes), ctype)
+        _log_plain_text(claim_data, attachments)
         return True  # Treat as success in dev mode
 
-    # Build email
-    msg = MIMEMultipart()
-    msg["From"] = settings.SMTP_FROM_EMAIL
-    msg["To"] = settings.CLAIMS_EMAIL
-    msg["Subject"] = (
-        f"Reimbursement Claim {claim_data.get('claim_ref', '')} "
-        f"— {claim_data.get('member_name', 'Unknown')} "
-        f"({claim_data.get('enrollee_id', '')})"
-    )
-
-    # HTML body
+    # Build email payload
     html_body = _build_claim_html(claim_data)
-    msg.attach(MIMEText(html_body, "html"))
 
-    # Attach files
-    for filename, file_bytes, content_type in attachments:
-        part = MIMEBase("application", "octet-stream")
-        part.set_payload(file_bytes)
-        encoders.encode_base64(part)
-        part.add_header("Content-Disposition", f"attachment; filename={filename}")
-        msg.attach(part)
+    # Base64-encode attachments for the API
+    api_attachments = None
+    if attachments:
+        api_attachments = [
+            {
+                "FileName": fname,
+                "ContentType": ctype,
+                "Base64Content": base64.b64encode(fbytes).decode("utf-8"),
+            }
+            for fname, fbytes, ctype in attachments
+        ]
 
-    # Send via SMTP
+    payload = {
+        "EmailAddress": settings.CLAIMS_EMAIL,
+        "CC": "",
+        "BCC": "",
+        "Subject": (
+            f"REIMBURSEMENT CLAIM: {claim_data.get('claim_ref', '')} "
+            f"- {claim_data.get('member_name', 'Unknown')} "
+            f"({claim_data.get('enrollee_id', '')})"
+        ),
+        "MessageBody": html_body,
+        "Attachments": api_attachments,
+        "Category": "Reimbursement",
+        "UserId": 0,
+        "ProviderId": 0,
+        "ServiceId": 0,
+        "Reference": claim_data.get("claim_ref", ""),
+        "TransactionType": "ReimbursementClaim",
+    }
+
+    # Send via Prognosis API
     try:
-        with smtplib.SMTP(settings.SMTP_HOST, settings.SMTP_PORT, timeout=30) as server:
-            server.ehlo()
-            if settings.SMTP_PORT == 587:
-                server.starttls()
-                server.ehlo()
-            if settings.SMTP_USERNAME:
-                server.login(settings.SMTP_USERNAME, settings.SMTP_PASSWORD)
-            server.sendmail(
-                settings.SMTP_FROM_EMAIL,
-                [settings.CLAIMS_EMAIL],
-                msg.as_string(),
-            )
-        log.info(
-            "Claim email sent: ref=%s to=%s attachments=%d",
-            claim_data.get("claim_ref"),
-            settings.CLAIMS_EMAIL,
-            len(attachments),
-        )
-        return True
+        loop = asyncio.new_event_loop()
+        result = loop.run_until_complete(_send_email_api(payload))
+        loop.close()
+        return result
     except Exception as e:
-        log.error("Failed to send claim email for %s: %s", claim_data.get("claim_ref"), e)
+        log.error("Email send failed for %s: %s", claim_data.get("claim_ref"), e)
         return False
 
 
-def _format_plain_text(claim_data: dict) -> str:
-    """Plain-text fallback for dev logging."""
-    lines = [
-        f"=== REIMBURSEMENT CLAIM: {claim_data.get('claim_ref', 'N/A')} ===",
-        f"Member: {claim_data.get('member_name')} ({claim_data.get('enrollee_id')})",
-        f"Phone: {claim_data.get('member_phone')}",
-        f"Auth Code: {claim_data.get('authorization_code')}",
-        f"Approved Amount: NGN {claim_data.get('approved_amount', 0):,.2f}",
-        f"Claim Amount: NGN {claim_data.get('claim_amount', 0):,.2f}",
-        f"Hospital: {claim_data.get('hospital_name')}",
-        f"Visit Date: {claim_data.get('visit_date')}",
-        f"Reason: {claim_data.get('reason_for_visit')}",
-        f"Reimbursement Reason: {claim_data.get('reimbursement_reason')}",
-        f"Medications: {claim_data.get('medications') or '—'}",
-        f"Lab: {claim_data.get('lab_investigations') or '—'}",
-        f"Bank: {claim_data.get('bank_name')} / {claim_data.get('account_number')} / {claim_data.get('account_name')}",
-        f"Attachments: {claim_data.get('attachment_count', 0)}",
-    ]
-    if claim_data.get("amount_flag"):
-        lines.insert(2, f"*** AMOUNT FLAG: {claim_data['amount_flag']} ***")
-    return "\n".join(lines)
+async def _send_email_api(payload: dict) -> bool:
+    """Call the Prognosis SendEmailAlert endpoint."""
+    if not settings.PROGNOSIS_BASE_URL:
+        log.warning("PROGNOSIS_BASE_URL not configured — cannot send email")
+        return False
+
+    token = await _get_prognosis_token()
+    if not token:
+        log.error("Cannot send email — Prognosis auth failed")
+        return False
+
+    url = f"{settings.PROGNOSIS_BASE_URL}/api/EnrolleeProfile/SendEmailAlert"
+    headers = {
+        "Authorization": f"Bearer {token}",
+        "Content-Type": "application/json",
+    }
+
+    try:
+        async with httpx.AsyncClient(timeout=_TIMEOUT, verify=False) as client:
+            resp = await client.post(url, json=payload, headers=headers)
+
+        if resp.status_code == 200:
+            log.info(
+                "Claim email sent via Prognosis API: ref=%s to=%s",
+                payload.get("Reference"),
+                payload.get("EmailAddress"),
+            )
+            return True
+        else:
+            log.error(
+                "Prognosis SendEmailAlert failed: status=%d body=%s",
+                resp.status_code,
+                resp.text[:300],
+            )
+            return False
+    except httpx.RequestError as e:
+        log.error("Prognosis SendEmailAlert request failed: %s", e)
+        return False
+
+
+def _log_plain_text(claim_data: dict, attachments: list) -> None:
+    """Dev-mode fallback: log claim details to console."""
+    log.info(
+        "CLAIM EMAIL (dev mode): ref=%s member=%s (%s) amount=NGN %s attachments=%d",
+        claim_data.get("claim_ref"),
+        claim_data.get("member_name"),
+        claim_data.get("enrollee_id"),
+        f"{claim_data.get('claim_amount', 0):,.2f}",
+        len(attachments),
+    )
+    for fname, fbytes, ctype in attachments:
+        log.info("  ATTACHMENT: %s (%d bytes, %s)", fname, len(fbytes), ctype)

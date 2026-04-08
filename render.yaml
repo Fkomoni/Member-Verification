@@ -32,19 +32,9 @@ services:
       # Authorization codes
       - key: AUTH_CODE_EXPIRY_HOURS
         value: "72"
-      # Claims email
+      # Claims email (sent via Prognosis SendEmailAlert API)
       - key: CLAIMS_EMAIL
-        sync: false  # set manually
-      - key: SMTP_HOST
-        sync: false  # set manually
-      - key: SMTP_PORT
-        value: "587"
-      - key: SMTP_USERNAME
-        sync: false  # set manually
-      - key: SMTP_PASSWORD
-        sync: false  # set manually
-      - key: SMTP_FROM_EMAIL
-        value: noreply@leadwayhealth.com
+        sync: false  # set manually — email address to receive claim notifications
       # Python
       - key: PYTHON_VERSION
         value: "3.11.9"
