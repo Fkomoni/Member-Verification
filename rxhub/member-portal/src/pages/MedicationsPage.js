@@ -17,7 +17,7 @@ export default function MedicationsPage() {
     try {
       await api.post('/member/medications/delete-with-reason', { medication_id: med.id, comment: reason });
       setMeds(prev => prev.filter(m => m.id !== med.id));
-      alert(`${med.drug_name} has been deleted from your medication list.`);
+      alert(`${med.drug_name} has been deleted from your list of medications.`);
     } catch (err) { alert(err.response?.data?.detail || 'Failed to delete'); }
   };
 

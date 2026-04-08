@@ -251,18 +251,37 @@ async def search_diagnoses(
 
     diagnoses = []
     for r in results[:20]:
-        # Try every possible field name combination
-        name = ""
-        code = ""
-        for k, v in r.items():
-            v_str = str(v).strip() if v else ""
+        # Get all values as dict for flexible mapping
+        keys = list(r.keys())
+        vals = {k: str(v).strip() for k, v in r.items() if v is not None}
+
+        # Find description (longest text field, likely the diagnosis name/description)
+        # Find code (shortest, likely ICD code like I10)
+        text_fields = []
+        code_fields = []
+        for k, v in vals.items():
+            if not v:
+                continue
             k_lower = k.lower()
-            if not name and v_str and any(x in k_lower for x in ["name", "desc", "diagnosis", "title"]):
-                name = v_str
-            if not code and v_str and any(x in k_lower for x in ["id", "code"]):
-                code = v_str
-        if name:
-            diagnoses.append({"diagnosis_name": name, "diagnosis_id": code})
+            if any(x in k_lower for x in ["desc", "description", "name", "title", "diagnosis"]):
+                text_fields.append((k, v))
+            if any(x in k_lower for x in ["id", "code"]):
+                code_fields.append((k, v))
+
+        # Pick the longest text as description, shortest as code
+        name = max(text_fields, key=lambda x: len(x[1]))[1] if text_fields else ""
+        code = min(code_fields, key=lambda x: len(x[1]))[1] if code_fields else ""
+
+        # If name equals code, it means both fields have the same value — try to find a different field
+        if name == code and len(vals) > 1:
+            # Use any field that's longer than the code as the name
+            for k, v in vals.items():
+                if v != code and len(v) > len(code):
+                    name = v
+                    break
+
+        if name or code:
+            diagnoses.append({"diagnosis_name": name or code, "diagnosis_id": code or name})
 
     _logger.info(f"Returning {len(diagnoses)} diagnoses for '{q}'")
     return diagnoses
@@ -359,4 +378,4 @@ async def delete_medication_with_reason(
     db.add(log)
     db.commit()
 
-    return {"message": f"{drug_name} has been deleted from your medication list."}
+    return {"message": f"{drug_name} has been deleted from your list of medications."}

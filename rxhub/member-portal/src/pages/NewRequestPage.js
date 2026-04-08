@@ -256,15 +256,14 @@ export default function NewRequestPage() {
                   <div style={s.dropdown}>
                     {diagResults.map((d, i) => (
                       <div key={i} style={s.dropdownItem} onClick={() => selectDiagnosis(d)}>
-                        <div style={s.dropdownName}>{d.diagnosis_name}</div>
-                        <div style={s.dropdownId}>Code: {d.diagnosis_id}</div>
+                        <div style={s.dropdownName}>{d.diagnosis_id} — {d.diagnosis_name}</div>
                       </div>
                     ))}
                   </div>
                 )}
               </div>
               {diagnosisName && (
-                <div style={s.selectedMed}>Diagnosis: <strong>{diagnosisName}</strong> <span style={s.selectedId}>({diagnosisId})</span></div>
+                <div style={s.selectedMed}>Selected: <strong>{diagnosisId}</strong> — {diagnosisName}</div>
               )}
             </>
           )}
