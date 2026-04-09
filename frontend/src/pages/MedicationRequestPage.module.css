@@ -285,6 +285,32 @@
   margin-top: 0.15rem;
 }
 
+.enrolleeDetails {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 1rem;
+  margin-top: 0.4rem;
+}
+
+.enrolleeDetail {
+  font-size: 0.78rem;
+  color: #555;
+}
+
+.enrolleeDetail strong {
+  color: #333;
+}
+
+.statusActive {
+  color: #0A7C3E;
+  font-weight: 700;
+}
+
+.statusInactive {
+  color: #C61531;
+  font-weight: 700;
+}
+
 .changeBtn {
   padding: 0.35rem 0.85rem;
   background: transparent;

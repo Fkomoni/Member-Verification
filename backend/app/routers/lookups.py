@@ -89,7 +89,26 @@ async def lookup_enrollee(
 
         age = str(rec["Member_Age"]) if rec.get("Member_Age") else None
         gender = str(rec.get("Member_Gender") or "").strip()
-        status_desc = str(rec.get("Member_MemberStatusDescription") or rec.get("Member_MemberStatus") or "").strip()
+        # Map member status code to description
+        MEMBER_STATUS_MAP = {
+            "1": "Active", 1: "Active",
+            "2": "Suspended", 2: "Suspended",
+            "3": "Terminated", 3: "Terminated",
+            "4": "Expired", 4: "Expired",
+            "5": "Inactive", 5: "Inactive",
+            "0": "Inactive", 0: "Inactive",
+            "6": "Cancelled", 6: "Cancelled",
+        }
+
+        raw_status = rec.get("Member_MemberStatus")
+        status_desc = rec.get("Member_MemberStatusDescription") or ""
+        if not status_desc and raw_status is not None:
+            status_desc = MEMBER_STATUS_MAP.get(raw_status, MEMBER_STATUS_MAP.get(str(raw_status), f"Unknown ({raw_status})"))
+        if not status_desc:
+            status_desc = "Unknown"
+
+        is_active = status_desc.lower() == "active" or str(raw_status) == "1"
+
         plan = str(rec.get("Product_schemeName") or rec.get("Member_Plan") or rec.get("Member_AccountName") or "").strip()
         phone = str(rec.get("Member_Phone_One") or rec.get("Member_Phone_Two") or "").strip()
         email = str(rec.get("Member_EmailAddress_Two") or rec.get("Member_EmailAddress_One") or "").strip()
@@ -106,6 +125,8 @@ async def lookup_enrollee(
             "dob": rec.get("Member_DateOfBirth"),
             "plan": plan,
             "status": status_desc,
+            "status_code": raw_status,
+            "is_active": is_active,
             "status_description": status_desc,
             "phone": phone,
             "email": email,

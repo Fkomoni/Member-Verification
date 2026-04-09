@@ -74,8 +74,7 @@ export default function MedicationRequestPage() {
       const { data } = await lookupEnrollee(enrolleeId.trim());
       if (data.found) {
         // Block inactive members
-        const status = (data.status || "").toUpperCase();
-        if (status && status !== "ACTIVE" && status !== "Active") {
+        if (data.is_active === false) {
           setEnrolleeLookupError(`Member status is "${data.status_description || data.status}". Only active members can request medications.`);
           return;
         }
@@ -297,14 +296,18 @@ export default function MedicationRequestPage() {
               <div className={styles.enrolleeConfirmed}>
                 <div className={styles.enrolleeInfo}>
                   <div className={styles.enrolleeNameBig}>{enrolleeData.name}</div>
-                  <div className={styles.enrolleeMeta}>
-                    ID: {enrolleeId}
-                    {enrolleeData.gender && <> &middot; {enrolleeData.gender}</>}
-                    {enrolleeData.age && <> &middot; Age: {enrolleeData.age}</>}
-                  </div>
-                  <div className={styles.enrolleeMeta}>
-                    {enrolleeData.plan && <>Scheme: {enrolleeData.plan}</>}
-                    {enrolleeData.status_description && <> &middot; Status: <strong>{enrolleeData.status_description}</strong></>}
+                  <div className={styles.enrolleeDetails}>
+                    <span className={styles.enrolleeDetail}><strong>ID:</strong> {enrolleeId}</span>
+                    {enrolleeData.gender && <span className={styles.enrolleeDetail}><strong>Gender:</strong> {enrolleeData.gender}</span>}
+                    {enrolleeData.age && <span className={styles.enrolleeDetail}><strong>Age:</strong> {enrolleeData.age}</span>}
+                    {enrolleeData.plan && <span className={styles.enrolleeDetail}><strong>Scheme:</strong> {enrolleeData.plan}</span>}
+                    {enrolleeData.company && <span className={styles.enrolleeDetail}><strong>Company:</strong> {enrolleeData.company}</span>}
+                    <span className={styles.enrolleeDetail}>
+                      <strong>Status:</strong>{" "}
+                      <span className={enrolleeData.is_active ? styles.statusActive : styles.statusInactive}>
+                        {enrolleeData.status_description || enrolleeData.status || "Unknown"}
+                      </span>
+                    </span>
                   </div>
                 </div>
                 <button type="button" className={styles.changeBtn} onClick={clearEnrollee}>Change</button>
