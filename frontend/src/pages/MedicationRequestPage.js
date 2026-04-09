@@ -30,6 +30,7 @@ export default function MedicationRequestPage() {
 
   // ── Member contact ──────────────────────────────
   const [memberPhone, setMemberPhone] = useState("");
+  const [altPhone, setAltPhone] = useState("");
   const [memberEmail, setMemberEmail] = useState("");
 
   // ── Form ────────────────────────────────────────
@@ -72,7 +73,14 @@ export default function MedicationRequestPage() {
     try {
       const { data } = await lookupEnrollee(enrolleeId.trim());
       if (data.found) {
+        // Block inactive members
+        const status = (data.status || "").toUpperCase();
+        if (status && status !== "ACTIVE" && status !== "Active") {
+          setEnrolleeLookupError(`Member status is "${data.status_description || data.status}". Only active members can request medications.`);
+          return;
+        }
         setEnrolleeData(data);
+        // Auto-populate phone and email
         if (data.phone) setMemberPhone(data.phone);
         if (data.email) setMemberEmail(data.email);
       } else {
@@ -199,7 +207,7 @@ export default function MedicationRequestPage() {
 
   const resetForm = () => {
     setSuccess(null); setEnrolleeId(""); setEnrolleeData(null);
-    setMemberPhone(""); setMemberEmail("");
+    setMemberPhone(""); setAltPhone(""); setMemberEmail("");
     setDiagnosis(""); setDiagnosisSearch(""); setTreatingDoctor("");
     setProviderNotes(""); setDeliveryState(""); setDeliveryAddress("");
     setUrgency("routine"); setMedications([{ ...EMPTY_MED }]); setError("");
@@ -290,19 +298,26 @@ export default function MedicationRequestPage() {
                 <div className={styles.enrolleeInfo}>
                   <div className={styles.enrolleeNameBig}>{enrolleeData.name}</div>
                   <div className={styles.enrolleeMeta}>
-                  ID: {enrolleeId}
-                  {enrolleeData.gender && <> &middot; {enrolleeData.gender}</>}
-                  {enrolleeData.plan && <> &middot; Scheme: {enrolleeData.plan}</>}
-                  {enrolleeData.status && <> &middot; {enrolleeData.status}</>}
-                </div>
+                    ID: {enrolleeId}
+                    {enrolleeData.gender && <> &middot; {enrolleeData.gender}</>}
+                    {enrolleeData.age && <> &middot; Age: {enrolleeData.age}</>}
+                  </div>
+                  <div className={styles.enrolleeMeta}>
+                    {enrolleeData.plan && <>Scheme: {enrolleeData.plan}</>}
+                    {enrolleeData.status_description && <> &middot; Status: <strong>{enrolleeData.status_description}</strong></>}
+                  </div>
                 </div>
                 <button type="button" className={styles.changeBtn} onClick={clearEnrollee}>Change</button>
               </div>
             )}
-            <div className={styles.formRow}>
+            <div className={styles.formRowThree}>
               <div className={styles.field}>
                 <label className={styles.label}>Member Phone <span className={styles.required}>*</span></label>
                 <input className={styles.input} value={memberPhone} onChange={(e) => setMemberPhone(e.target.value)} placeholder="e.g. 08012345678" />
+              </div>
+              <div className={styles.field}>
+                <label className={styles.label}>Alternative Phone</label>
+                <input className={styles.input} value={altPhone} onChange={(e) => setAltPhone(e.target.value)} placeholder="Optional" />
               </div>
               <div className={styles.field}>
                 <label className={styles.label}>Member Email</label>

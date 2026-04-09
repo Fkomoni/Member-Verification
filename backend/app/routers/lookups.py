@@ -79,39 +79,38 @@ async def lookup_enrollee(
             if isinstance(rec, dict):
                 logger.info("Enrollee record keys: %s", list(rec.keys()))
 
-            # Extract name — try every possible field pattern
-            name_parts = []
-            for key in ("Surname", "surname", "LastName", "lastName", "last_name"):
-                if rec.get(key):
-                    name_parts.append(str(rec[key]).strip())
-                    break
-            for key in ("Firstname", "firstname", "FirstName", "firstName", "first_name", "OtherNames", "otherNames"):
-                if rec.get(key):
-                    name_parts.append(str(rec[key]).strip())
-                    break
+            # Extract fields using exact Prognosis field names from logs
+            surname = rec.get("Member_Surname") or ""
+            firstname = rec.get("Member_Firstname") or rec.get("Member_othernames") or ""
+            name = f"{surname} {firstname}".strip() or "Unknown"
 
-            name = " ".join(name_parts) if name_parts else None
-            if not name:
-                for key in ("MemberName", "memberName", "Name", "name", "FullName", "fullName", "EnrolleeName", "enrolleeName"):
-                    if rec.get(key):
-                        name = str(rec[key]).strip()
-                        break
-            if not name:
-                name = "Member " + enrollee_id
+            # Calculate age from DOB
+            age = None
+            member_age = rec.get("Member_Age")
+            if member_age:
+                age = str(member_age)
+
+            # Member status
+            status = rec.get("Member_MemberStatus") or rec.get("Member_MemberStatusDescription") or ""
+            status_desc = rec.get("Member_MemberStatusDescription") or status
 
             return {
                 "found": True,
                 "enrollee_id": enrollee_id,
                 "name": name,
-                "gender": rec.get("Gender") or rec.get("gender") or rec.get("Sex") or rec.get("sex"),
-                "dob": rec.get("DateOfBirth") or rec.get("dateOfBirth") or rec.get("dob") or rec.get("DOB"),
-                "plan": (rec.get("PlanName") or rec.get("planName") or rec.get("Plan") or
-                         rec.get("plan") or rec.get("SchemeName") or rec.get("schemeName") or
-                         rec.get("CompanyName") or rec.get("companyName")),
-                "status": rec.get("Status") or rec.get("status") or rec.get("EnrolleeStatus"),
-                "phone": (rec.get("Phone") or rec.get("phone") or rec.get("MobilePhone") or
-                          rec.get("mobilePhone") or rec.get("Telephone") or rec.get("telephone")),
-                "email": rec.get("Email") or rec.get("email"),
+                "gender": rec.get("Member_Gender") or rec.get("Female") or "",
+                "age": age,
+                "dob": rec.get("Member_DateOfBirth"),
+                "plan": rec.get("Product_schemeName") or rec.get("Member_AccountName") or "",
+                "status": status,
+                "status_description": status_desc,
+                "phone": rec.get("Member_Phone_One") or rec.get("Member_Phone_Two") or rec.get("Member_Phone_Three") or "",
+                "email": rec.get("Member_EmailAddress_Two") or rec.get("Member_EmailAddress_One") or "",
+                "member_id": rec.get("Member_ParentMembershipID") or rec.get("Member_MembershipID") or "",
+                "company": rec.get("Member_AccountName") or "",
+                "location": rec.get("Member_Location") or "",
+                "state": rec.get("Member_initialStatusDescription") or "",
+                "country": rec.get("Member_Country") or "",
                 "raw": rec,
             }
         elif resp.status_code == 404:
