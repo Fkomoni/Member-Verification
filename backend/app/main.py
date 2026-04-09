@@ -91,18 +91,21 @@ async def on_startup():
         from app.models.medication import DrugMaster
         from app.services.tariff_sync import run_tariff_sync
         db = SessionLocal()
-        # Check if drug_name_display is populated
-        count_wh = db.query(DrugMaster).filter(DrugMaster.source == "wellahealth").count()
-        count_display = db.query(DrugMaster).filter(
-            DrugMaster.source == "wellahealth",
-            DrugMaster.drug_name_display.isnot(None),
-        ).count()
-        if count_wh < 100 or count_display < count_wh:
-            logger.info("Drug master has %d WellaHealth records — starting tariff sync...", count)
+        # Check if drug_name_display is populated for searchability
+        from sqlalchemy import text as sql_text
+        try:
+            row = db.execute(sql_text(
+                "SELECT COUNT(*) FROM drug_master WHERE drug_name_display IS NOT NULL AND source = 'wellahealth'"
+            )).scalar()
+            count_display = row or 0
+        except Exception:
+            count_display = 0
+        if count_display < 50:
+            logger.info("Drug master has %d searchable WellaHealth records — starting tariff sync...", count_display)
             result = await run_tariff_sync(db)
             logger.info("Tariff sync result: %s", result)
         else:
-            logger.info("Drug master has %d WellaHealth records — skipping sync", count)
+            logger.info("Drug master has %d searchable WellaHealth records — skipping sync", count_display)
         db.close()
     except Exception as e:
         logger.error("Startup tariff sync failed (non-blocking): %s", e)

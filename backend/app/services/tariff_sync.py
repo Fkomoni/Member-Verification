@@ -30,7 +30,7 @@ async def fetch_full_tariff() -> list[dict]:
 
     all_drugs = []
     page = 1
-    page_size = 500
+    page_size = 1000  # Fetch large pages to minimize requests
 
     while True:
         data = await wellahealth_client._request(
@@ -38,22 +38,24 @@ async def fetch_full_tariff() -> list[dict]:
             params={"pageIndex": page, "pageSize": page_size},
         )
         if not data:
+            logger.warning("Tariff sync: no response on page %d", page)
             break
 
         items = data.get("data", []) if isinstance(data, dict) else data
         if not isinstance(items, list) or len(items) == 0:
+            logger.info("Tariff sync: no more items on page %d", page)
             break
 
         all_drugs.extend(items)
-        logger.info("Tariff sync: fetched page %d, got %d items (total %d)",
-                     page, len(items), len(all_drugs))
-
-        # Check if more pages
         page_count = data.get("pageCount", 1) if isinstance(data, dict) else 1
-        if page >= page_count:
+        logger.info("Tariff sync: page %d/%d, got %d items (total %d)",
+                     page, page_count, len(items), len(all_drugs))
+
+        if page >= page_count or len(items) < page_size:
             break
         page += 1
 
+    logger.info("Tariff sync: fetched %d total drugs from WellaHealth", len(all_drugs))
     return all_drugs
 
 

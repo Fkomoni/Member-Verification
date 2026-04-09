@@ -225,36 +225,41 @@ def search_medications(
 ):
     """
     Fast typeahead search against local drug_master (synced from WellaHealth tariff).
-    Searches drug_name_display, generic_name, and brand_name.
+    Uses ILIKE for case-insensitive search across drug_name_display, generic_name, brand_name.
     """
     from app.models.medication import DrugMaster
-    search_term = f"%{q.strip().lower()}%"
+    from sqlalchemy import cast, String, text
 
-    results = (
-        db.query(DrugMaster)
-        .filter(
-            DrugMaster.is_active.is_(True),
-            or_(
-                func.lower(func.coalesce(DrugMaster.drug_name_display, "")).like(search_term),
-                func.lower(DrugMaster.generic_name).like(search_term),
-                func.lower(func.coalesce(DrugMaster.brand_name, "")).like(search_term),
-            ),
-        )
-        .order_by(DrugMaster.drug_name_display)
-        .limit(limit)
-        .all()
-    )
+    search_term = f"%{q.strip()}%"
+
+    # Simple ILIKE search — works on PostgreSQL
+    results = db.execute(
+        text("""
+            SELECT drug_id, drug_name_display, generic_name, brand_name,
+                   strength, dosage_form, drug_class, category
+            FROM drug_master
+            WHERE is_active = true
+              AND (
+                drug_name_display ILIKE :q
+                OR generic_name ILIKE :q
+                OR brand_name ILIKE :q
+              )
+            ORDER BY drug_name_display
+            LIMIT :lim
+        """),
+        {"q": search_term, "lim": limit},
+    ).fetchall()
 
     return {
         "results": [
             {
-                "drug_id": str(r.drug_id),
-                "drug_name": r.drug_name_display or r.generic_name,
-                "generic_name": r.generic_name,
-                "brand_name": r.brand_name,
-                "strength": r.strength,
-                "dosage_form": r.dosage_form,
-                "category": r.category,
+                "drug_id": str(r[0]),
+                "drug_name": r[1] or r[2] or "",
+                "generic_name": r[2] or "",
+                "brand_name": r[3] or "",
+                "strength": r[4] or "",
+                "dosage_form": r[5] or "",
+                "category": r[7] or "unknown",
             }
             for r in results
         ],

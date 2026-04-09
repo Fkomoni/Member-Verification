@@ -59,7 +59,7 @@ def _build_fulfilment_payload(
                 "name": item.drug_name,
                 "dose": item.dosage_instruction or "",
                 "strength": item.strength or "",
-                "frequency": item.route or "",  # frequency stored in route field for now
+                "frequency": getattr(item, 'route', '') or "",
                 "duration": item.duration or "",
             }
             for i, item in enumerate(items)
