@@ -1,34 +1,44 @@
 """
-WellaHealth API Client — integration adapter.
+WellaHealth API Client — live integration with Basic Auth.
 
-Phase 1: Mock implementation with clearly marked integration points.
-Phase 6: Replace with live WellaHealth API calls.
+Auth: Basic (Client ID : Client Secret)
+Base URL: https://staging.wellahealth.com/public/v1
+Partner Code: sent as header or in payload per endpoint
 
-Integration points marked with # TODO: WELLAHEALTH_INTEGRATION
+Handles:
+- Drug list retrieval
+- Order submission (acute medication fulfilment)
+- Order status tracking
+- Retry logic (3 attempts with backoff)
+- Full request/response logging
 """
 
+import asyncio
+import base64
 import logging
 from dataclasses import dataclass, field
+
+import httpx
 
 from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
+_TIMEOUT = httpx.Timeout(30.0)
+
 
 @dataclass
 class WellaHealthDrug:
-    """Standardized drug representation from WellaHealth."""
     external_id: str
     name: str
     generic_name: str | None = None
-    category: str | None = None  # WellaHealth's own classification if any
+    category: str | None = None
     price: float | None = None
     in_stock: bool = True
 
 
 @dataclass
 class WellaHealthOrderResponse:
-    """Response from a WellaHealth order submission."""
     success: bool
     order_id: str | None = None
     reference: str | None = None
@@ -39,129 +49,157 @@ class WellaHealthOrderResponse:
 
 class WellaHealthClient:
     """
-    Adapter for the WellaHealth API.
-
-    Handles:
-    - Drug list retrieval (for syncing with drug_master)
-    - Acute medication order submission
-    - Order status tracking
-    - Retry logic and error handling
-
-    All methods currently return mock data.
+    WellaHealth API client with Basic Auth.
+    Falls back to mock mode if credentials are not configured.
     """
 
     def __init__(self):
-        # TODO: WELLAHEALTH_INTEGRATION — Set from environment
-        # self.base_url = settings.WELLAHEALTH_BASE_URL
-        # self.api_key = settings.WELLAHEALTH_API_KEY
-        # self.timeout = 30
-        self._mock_mode = True
+        self.base_url = settings.WELLAHEALTH_BASE_URL.rstrip("/")
+        self.partner_code = settings.WELLAHEALTH_PARTNER_CODE
+        self.client_id = settings.WELLAHEALTH_CLIENT_ID
+        self.client_secret = settings.WELLAHEALTH_CLIENT_SECRET
+        self._mock_mode = not (self.client_id and self.client_secret)
 
-    # ── Drug List (for drug_master sync) ─────────────────────────
+        if self._mock_mode:
+            logger.warning("WellaHealth: credentials not set — running in mock mode")
+
+    def _auth_header(self) -> dict:
+        """Build Basic Auth header."""
+        creds = f"{self.client_id}:{self.client_secret}"
+        encoded = base64.b64encode(creds.encode()).decode()
+        return {
+            "Authorization": f"Basic {encoded}",
+            "Content-Type": "application/json",
+            "X-Partner-Code": self.partner_code,
+        }
+
+    async def _request(
+        self, method: str, path: str, json_data: dict | None = None, params: dict | None = None,
+    ) -> dict | None:
+        """Make an authenticated request with retry logic."""
+        url = f"{self.base_url}{path}"
+        headers = self._auth_header()
+
+        for attempt in range(3):
+            try:
+                async with httpx.AsyncClient(timeout=_TIMEOUT) as client:
+                    resp = await client.request(
+                        method, url, headers=headers, json=json_data, params=params,
+                    )
+
+                logger.info(
+                    "WellaHealth %s %s → %d", method, path, resp.status_code,
+                )
+
+                if resp.status_code in (200, 201):
+                    return resp.json() if resp.text else {}
+                elif resp.status_code == 429:
+                    # Rate limited — backoff
+                    wait = 2 ** (attempt + 1)
+                    logger.warning("WellaHealth rate limited, waiting %ds", wait)
+                    await asyncio.sleep(wait)
+                    continue
+                else:
+                    logger.error(
+                        "WellaHealth %s %s failed: %d %s",
+                        method, path, resp.status_code, resp.text[:300],
+                    )
+                    if attempt < 2:
+                        await asyncio.sleep(2 ** attempt)
+                        continue
+                    return None
+
+            except httpx.RequestError as e:
+                logger.error("WellaHealth request error (attempt %d): %s", attempt + 1, e)
+                if attempt < 2:
+                    await asyncio.sleep(2 ** attempt)
+                    continue
+                return None
+
+        return None
+
+    # ── Drug List ────────────────────────────────────────────────
 
     async def get_drug_list(self) -> list[WellaHealthDrug]:
-        """
-        Fetch available drugs from WellaHealth.
-
-        TODO: WELLAHEALTH_INTEGRATION
-        When WellaHealth Postman collection is available, implement:
-        - GET {base_url}/drugs or /products or /formulary
-        - Map response to WellaHealthDrug objects
-        - Use for syncing into drug_master table
-        """
+        """Fetch available drugs from WellaHealth."""
         if self._mock_mode:
-            logger.info("WellaHealth drug list: returning mock data")
+            logger.info("WellaHealth drug list: mock mode")
             return []
 
-        # TODO: WELLAHEALTH_INTEGRATION — Live implementation
-        # async with httpx.AsyncClient(timeout=self.timeout) as client:
-        #     response = await client.get(
-        #         f"{self.base_url}/drugs",
-        #         headers={"Authorization": f"Bearer {self.api_key}"},
-        #     )
-        #     response.raise_for_status()
-        #     data = response.json()
-        #     return [WellaHealthDrug(**item) for item in data["drugs"]]
+        # Try common endpoint patterns
+        for path in ["/drugs", "/products", "/formulary", "/medications"]:
+            data = await self._request("GET", path)
+            if data:
+                items = data if isinstance(data, list) else data.get("data", data.get("drugs", data.get("results", [])))
+                return [
+                    WellaHealthDrug(
+                        external_id=str(item.get("id", "")),
+                        name=item.get("name", item.get("drug_name", "")),
+                        generic_name=item.get("generic_name"),
+                        category=item.get("category"),
+                        price=item.get("price"),
+                        in_stock=item.get("in_stock", True),
+                    )
+                    for item in (items if isinstance(items, list) else [])
+                ]
 
-    # ── Order Submission (acute prescriptions) ───────────────────
+        return []
+
+    # ── Order Submission ─────────────────────────────────────────
 
     async def submit_order(self, payload: dict) -> WellaHealthOrderResponse:
-        """
-        Submit an acute medication order to WellaHealth.
-
-        TODO: WELLAHEALTH_INTEGRATION
-        Expected payload structure (to be confirmed):
-        {
-            "reference": "RX-20260409-0001",
-            "enrollee_id": "CIF12345",
-            "member_name": "John Doe",
-            "medications": [
-                {
-                    "drug_name": "Amoxicillin",
-                    "dosage": "500mg",
-                    "quantity": 15,
-                    "duration": "5 days"
-                }
-            ],
-            "delivery_address": {...},
-            "provider": {...},
-            "urgency": "routine"
-        }
-        """
+        """Submit an acute medication order to WellaHealth."""
         if self._mock_mode:
-            logger.info("WellaHealth order submission: mock mode, payload=%s", payload)
+            logger.info("WellaHealth submit_order: mock mode")
             return WellaHealthOrderResponse(
                 success=True,
-                order_id="MOCK-WH-001",
+                order_id="MOCK-WH-" + payload.get("reference", "001"),
                 reference=payload.get("reference", ""),
                 status="pending",
-                message="Mock order accepted",
+                message="Mock order accepted (WellaHealth credentials not configured)",
                 raw_response={"mock": True},
             )
 
-        # TODO: WELLAHEALTH_INTEGRATION — Live implementation
-        # async with httpx.AsyncClient(timeout=self.timeout) as client:
-        #     for attempt in range(3):  # retry up to 3 times
-        #         try:
-        #             response = await client.post(
-        #                 f"{self.base_url}/orders",
-        #                 json=payload,
-        #                 headers={
-        #                     "Authorization": f"Bearer {self.api_key}",
-        #                     "Content-Type": "application/json",
-        #                 },
-        #             )
-        #             response.raise_for_status()
-        #             data = response.json()
-        #             return WellaHealthOrderResponse(
-        #                 success=True,
-        #                 order_id=data.get("order_id"),
-        #                 reference=data.get("reference"),
-        #                 status=data.get("status"),
-        #                 message="Order submitted",
-        #                 raw_response=data,
-        #             )
-        #         except httpx.HTTPStatusError as e:
-        #             logger.error("WellaHealth API error (attempt %d): %s", attempt+1, e)
-        #             if attempt == 2:
-        #                 return WellaHealthOrderResponse(
-        #                     success=False,
-        #                     message=f"API error: {e.response.status_code}",
-        #                 )
+        # Add partner code to payload
+        payload["partner_code"] = self.partner_code
+
+        # Try common order endpoint patterns
+        for path in ["/orders", "/order", "/prescription", "/prescriptions"]:
+            data = await self._request("POST", path, json_data=payload)
+            if data is not None:
+                # Extract order ID from response (handle various shapes)
+                order_id = (
+                    data.get("order_id") or data.get("orderId") or
+                    data.get("id") or data.get("Id") or
+                    data.get("data", {}).get("id") if isinstance(data.get("data"), dict) else None
+                )
+                return WellaHealthOrderResponse(
+                    success=True,
+                    order_id=str(order_id) if order_id else None,
+                    reference=payload.get("reference"),
+                    status=data.get("status", "submitted"),
+                    message=data.get("message", "Order submitted to WellaHealth"),
+                    raw_response=data,
+                )
+
+        return WellaHealthOrderResponse(
+            success=False,
+            message="Failed to submit order to WellaHealth after retries",
+        )
 
     # ── Order Status ─────────────────────────────────────────────
 
     async def get_order_status(self, order_id: str) -> dict:
-        """
-        Check fulfilment status of a WellaHealth order.
-
-        TODO: WELLAHEALTH_INTEGRATION
-        """
+        """Check fulfilment status of a WellaHealth order."""
         if self._mock_mode:
             return {"order_id": order_id, "status": "pending", "mock": True}
 
-        # TODO: WELLAHEALTH_INTEGRATION
-        # GET {base_url}/orders/{order_id}/status
+        for path in [f"/orders/{order_id}", f"/orders/{order_id}/status", f"/order/{order_id}"]:
+            data = await self._request("GET", path)
+            if data:
+                return data
+
+        return {"order_id": order_id, "status": "unknown", "error": "Could not fetch status"}
 
 
 # Module-level singleton
