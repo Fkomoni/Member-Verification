@@ -30,14 +30,8 @@ class Settings(BaseSettings):
     # Paystack (bank account validation)
     PAYSTACK_SECRET_KEY: str = ""
 
-    # Email (SMTP)
-    SMTP_HOST: str = "smtp.gmail.com"
-    SMTP_PORT: int = 587
-    SMTP_USER: str = ""
-    SMTP_PASSWORD: str = ""
-    SMTP_FROM_EMAIL: str = ""
-    SMTP_FROM_NAME: str = "Leadway Health Claims"
-    CLAIMS_TEAM_EMAIL: str = ""  # claims team receives copy of every submission
+    # Email — sent via Prognosis SendEmailAlert API (no SMTP needed)
+    CLAIMS_TEAM_EMAIL: str = ""  # claims team receives CC of every claim submission
 
     model_config = {"env_file": ".env"}
 

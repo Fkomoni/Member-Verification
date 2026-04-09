@@ -379,11 +379,11 @@ async def submit_reimbursement(
     db.add(claim)
     db.commit()
 
-    # Send confirmation email to member + claims team
+    # Send confirmation email to member + claims team via Prognosis
     from app.services.email_service import send_claim_confirmation
     member_email = body.get("member_email", "")
     try:
-        send_claim_confirmation(
+        await send_claim_confirmation(
             member_email=member_email,
             enrollee_name=auth_code.enrollee_name,
             enrollee_id=auth_code.enrollee_id,

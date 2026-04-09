@@ -1,43 +1,57 @@
 """
-Email service for sending claim confirmation emails via SMTP.
+Email service using Prognosis SendEmailAlert API.
+POST /api/EnrolleeProfile/SendEmailAlert
 """
 
 import logging
-import smtplib
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
+
+import httpx
 
 from app.core.config import settings
+from app.services.prognosis_client import _get_prognosis_token
 
 log = logging.getLogger(__name__)
+_TIMEOUT = httpx.Timeout(30.0)
 
 
-def _send_email(to_emails: list[str], subject: str, html_body: str) -> bool:
-    """Send an HTML email via SMTP. Returns True on success."""
-    if not settings.SMTP_USER or not settings.SMTP_PASSWORD:
-        log.warning("SMTP not configured — skipping email")
+async def _send_via_prognosis(to: str, cc: str, subject: str, body_html: str) -> bool:
+    """Send email via Prognosis SendEmailAlert API."""
+    if not settings.PROGNOSIS_BASE_URL:
+        log.warning("PROGNOSIS_BASE_URL not configured — skipping email")
         return False
+
+    token = await _get_prognosis_token()
+    if not token:
+        log.error("Cannot send email — Prognosis auth failed")
+        return False
+
+    url = f"{settings.PROGNOSIS_BASE_URL}/api/EnrolleeProfile/SendEmailAlert"
+    payload = {
+        "EmailAddress": to,
+        "CC": cc,
+        "BCC": "",
+        "Subject": subject,
+        "MessageBody": body_html,
+        "Attachments": None,
+        "Category": "ReimbursementClaim",
+        "UserId": 0,
+        "ProviderId": 0,
+        "ServiceId": 0,
+        "Reference": "",
+        "TransactionType": "ClaimSubmission",
+    }
 
     try:
-        msg = MIMEMultipart("alternative")
-        msg["Subject"] = subject
-        msg["From"] = f"{settings.SMTP_FROM_NAME} <{settings.SMTP_FROM_EMAIL or settings.SMTP_USER}>"
-        msg["To"] = ", ".join(to_emails)
-        msg.attach(MIMEText(html_body, "html"))
-
-        with smtplib.SMTP(settings.SMTP_HOST, settings.SMTP_PORT) as server:
-            server.starttls()
-            server.login(settings.SMTP_USER, settings.SMTP_PASSWORD)
-            server.sendmail(msg["From"], to_emails, msg.as_string())
-
-        log.info("Email sent to %s: %s", to_emails, subject)
-        return True
-    except Exception as e:
-        log.error("Failed to send email: %s", e)
+        async with httpx.AsyncClient(timeout=_TIMEOUT, verify=False) as client:
+            resp = await client.post(url, json=payload, headers={"Authorization": f"Bearer {token}"})
+        log.info("Prognosis SendEmailAlert status=%d to=%s cc=%s", resp.status_code, to, cc)
+        return resp.status_code in (200, 201)
+    except httpx.RequestError as e:
+        log.error("Prognosis SendEmailAlert failed: %s", e)
         return False
 
 
-def send_claim_confirmation(
+async def send_claim_confirmation(
     member_email: str,
     enrollee_name: str,
     enrollee_id: str,
@@ -56,10 +70,6 @@ def send_claim_confirmation(
     batch_number: str | None = None,
     prognosis_status: str | None = None,
 ):
-    """
-    Send confirmation email to member (and CC claims team) after
-    a reimbursement claim is submitted to Prognosis.
-    """
     masked_acct = f"****{account_number[-4:]}" if len(account_number) >= 4 else account_number
 
     html = f"""
@@ -126,8 +136,6 @@ def send_claim_confirmation(
           </div>
         </div>
 
-        {f'<p style="font-size: 13px; color: #888;">Prognosis Status: {prognosis_status}</p>' if prognosis_status else ''}
-
         <p style="font-size: 14px; color: #555; line-height: 1.6; margin-top: 20px;">
           Your claim is now under review. You will be notified once it has been processed.
           If you have questions, please contact the Leadway Health call center.
@@ -144,15 +152,17 @@ def send_claim_confirmation(
     if batch_number:
         subject = f"Reimbursement Claim {batch_number} — {pa_code}"
 
-    # Collect recipients: member + claims team
-    recipients = []
-    if member_email:
-        recipients.append(member_email)
-    if settings.CLAIMS_TEAM_EMAIL:
-        recipients.append(settings.CLAIMS_TEAM_EMAIL)
+    # Send to member with claims team CC'd
+    to_email = member_email or ""
+    cc_email = settings.CLAIMS_TEAM_EMAIL if hasattr(settings, "CLAIMS_TEAM_EMAIL") and settings.CLAIMS_TEAM_EMAIL else ""
 
-    if not recipients:
+    if not to_email and not cc_email:
         log.warning("No email recipients — skipping claim confirmation email")
         return False
 
-    return _send_email(recipients, subject, html)
+    # If no member email, send directly to claims team
+    if not to_email:
+        to_email = cc_email
+        cc_email = ""
+
+    return await _send_via_prognosis(to_email, cc_email, subject, html)
