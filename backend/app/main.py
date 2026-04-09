@@ -57,6 +57,32 @@ async def on_startup():
     """Create tables and sync tariff on startup."""
     logger.info("Creating database tables (if not exist)...")
     Base.metadata.create_all(bind=engine)
+
+    # Ensure new columns exist (for existing tables)
+    try:
+        from sqlalchemy import text
+        with engine.connect() as conn:
+            for col, col_type in [
+                ("drug_name_display", "VARCHAR(400)"),
+                ("brand_name", "VARCHAR(300)"),
+                ("dosage_form", "VARCHAR(100)"),
+                ("strength", "VARCHAR(100)"),
+                ("drug_class", "VARCHAR(200)"),
+                ("member_phone", "VARCHAR(30)"),
+                ("member_email", "VARCHAR(200)"),
+            ]:
+                try:
+                    # Try drug_master columns
+                    if col not in ("member_phone", "member_email"):
+                        conn.execute(text(f"ALTER TABLE drug_master ADD COLUMN IF NOT EXISTS {col} {col_type}"))
+                    else:
+                        conn.execute(text(f"ALTER TABLE medication_requests ADD COLUMN IF NOT EXISTS {col} {col_type}"))
+                except Exception:
+                    pass
+            conn.commit()
+    except Exception as e:
+        logger.warning("Column migration non-critical: %s", e)
+
     logger.info("Database tables ready.")
 
     # Auto-sync WellaHealth tariff if drug_master has few records
@@ -65,8 +91,13 @@ async def on_startup():
         from app.models.medication import DrugMaster
         from app.services.tariff_sync import run_tariff_sync
         db = SessionLocal()
-        count = db.query(DrugMaster).filter(DrugMaster.source == "wellahealth").count()
-        if count < 100:
+        # Check if drug_name_display is populated
+        count_wh = db.query(DrugMaster).filter(DrugMaster.source == "wellahealth").count()
+        count_display = db.query(DrugMaster).filter(
+            DrugMaster.source == "wellahealth",
+            DrugMaster.drug_name_display.isnot(None),
+        ).count()
+        if count_wh < 100 or count_display < count_wh:
             logger.info("Drug master has %d WellaHealth records — starting tariff sync...", count)
             result = await run_tariff_sync(db)
             logger.info("Tariff sync result: %s", result)

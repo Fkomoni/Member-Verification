@@ -78,15 +78,20 @@ def sync_tariff_to_db(tariff_data: list[dict], db: Session) -> dict:
         strength = (item.get("strength") or "").strip()
         drug_class = (item.get("drugClass") or "").strip()
 
-        # Check if already exists by display name
+        # Check if already exists by display name or generic name
         existing = (
             db.query(DrugMaster)
-            .filter(func.lower(DrugMaster.drug_name_display) == drug_name.lower())
+            .filter(
+                (func.lower(func.coalesce(DrugMaster.drug_name_display, "")) == drug_name.lower()) |
+                (func.lower(DrugMaster.generic_name) == drug_name.lower()) |
+                (func.lower(DrugMaster.generic_name) == generic_name.lower() if generic_name else False)
+            )
             .first()
         )
 
         if existing:
-            # Update
+            # Update — always set drug_name_display
+            existing.drug_name_display = drug_name
             if generic_name:
                 existing.generic_name = generic_name
             if brand_name:
