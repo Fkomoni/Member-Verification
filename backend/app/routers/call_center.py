@@ -177,7 +177,7 @@ def generate_authorization_code(
         notes=notes,
         status="ACTIVE",
         agent_id=agent.agent_id,
-        expires_at=datetime.now(timezone.utc) + timedelta(hours=72),
+        expires_at=datetime.now(timezone.utc) + timedelta(days=7),
     )
     db.add(auth_code)
     db.commit()
