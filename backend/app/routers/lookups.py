@@ -51,77 +51,72 @@ async def lookup_enrollee(
         async with httpx.AsyncClient(timeout=_TIMEOUT, verify=False) as client:
             resp = await client.get(url, params=params, headers=headers)
 
-        if resp.status_code == 200:
-            data = resp.json()
-            logger.info("Enrollee lookup raw response: %s", str(data)[:500])
-
-            # Handle various response shapes
-            rec = None
-            if isinstance(data, list) and len(data) > 0:
-                rec = data[0]
-            elif isinstance(data, dict):
-                # Try nested result/data fields
-                for key in ("result", "Result", "data", "Data"):
-                    nested = data.get(key)
-                    if isinstance(nested, list) and len(nested) > 0:
-                        rec = nested[0]
-                        break
-                    elif isinstance(nested, dict):
-                        rec = nested
-                        break
-                if rec is None:
-                    rec = data  # Use root dict directly
-
-            if not rec or (isinstance(rec, dict) and not rec):
-                raise HTTPException(404, "Enrollee not found")
-
-            # Log the record keys for debugging
-            if isinstance(rec, dict):
-                logger.info("Enrollee record keys: %s", list(rec.keys()))
-
-            # Extract fields using exact Prognosis field names from logs
-            surname = rec.get("Member_Surname") or ""
-            firstname = rec.get("Member_Firstname") or rec.get("Member_othernames") or ""
-            name = f"{surname} {firstname}".strip() or "Unknown"
-
-            # Calculate age from DOB
-            age = None
-            member_age = rec.get("Member_Age")
-            if member_age:
-                age = str(member_age)
-
-            # Member status
-            status = rec.get("Member_MemberStatus") or rec.get("Member_MemberStatusDescription") or ""
-            status_desc = rec.get("Member_MemberStatusDescription") or status
-
-            return {
-                "found": True,
-                "enrollee_id": enrollee_id,
-                "name": name,
-                "gender": rec.get("Member_Gender") or rec.get("Female") or "",
-                "age": age,
-                "dob": rec.get("Member_DateOfBirth"),
-                "plan": rec.get("Product_schemeName") or rec.get("Member_AccountName") or "",
-                "status": status,
-                "status_description": status_desc,
-                "phone": rec.get("Member_Phone_One") or rec.get("Member_Phone_Two") or rec.get("Member_Phone_Three") or "",
-                "email": rec.get("Member_EmailAddress_Two") or rec.get("Member_EmailAddress_One") or "",
-                "member_id": rec.get("Member_ParentMembershipID") or rec.get("Member_MembershipID") or "",
-                "company": rec.get("Member_AccountName") or "",
-                "location": rec.get("Member_Location") or "",
-                "state": rec.get("Member_initialStatusDescription") or "",
-                "country": rec.get("Member_Country") or "",
-                "raw": rec,
-            }
-        elif resp.status_code == 404:
-            raise HTTPException(404, "Enrollee not found")
-        else:
-            logger.warning("Enrollee lookup failed: %d %s", resp.status_code, resp.text[:200])
+        if resp.status_code != 200:
+            logger.warning("Enrollee lookup HTTP %d: %s", resp.status_code, resp.text[:200])
             raise HTTPException(resp.status_code, "Enrollee lookup failed")
 
-    except httpx.RequestError as e:
-        logger.error("Enrollee lookup error: %s", e)
-        raise HTTPException(503, f"Cannot reach Prognosis: {e}")
+        data = resp.json()
+        logger.info("Enrollee lookup raw type=%s keys=%s", type(data).__name__,
+                     list(data.keys()) if isinstance(data, dict) else "N/A")
+
+        # Extract record from response
+        rec = None
+        if isinstance(data, dict):
+            # Try {"status": ..., "result": [{...}]}
+            for key in ("result", "Result", "data", "Data"):
+                nested = data.get(key)
+                if isinstance(nested, list) and len(nested) > 0:
+                    rec = nested[0]
+                    break
+                elif isinstance(nested, dict) and nested:
+                    rec = nested
+                    break
+            if rec is None and "Member_Surname" in data:
+                rec = data
+        elif isinstance(data, list) and len(data) > 0:
+            rec = data[0]
+
+        if not rec:
+            logger.warning("Enrollee not found or empty response for %s", enrollee_id)
+            raise HTTPException(404, "Enrollee not found")
+
+        logger.info("Enrollee record keys: %s", list(rec.keys())[:20])
+
+        # Extract fields using exact Prognosis field names
+        surname = str(rec.get("Member_Surname") or "").strip()
+        firstname = str(rec.get("Member_Firstname") or rec.get("Member_othernames") or "").strip()
+        name = f"{surname} {firstname}".strip() or f"Member {enrollee_id}"
+
+        age = str(rec["Member_Age"]) if rec.get("Member_Age") else None
+        gender = str(rec.get("Member_Gender") or "").strip()
+        status_desc = str(rec.get("Member_MemberStatusDescription") or rec.get("Member_MemberStatus") or "").strip()
+        plan = str(rec.get("Product_schemeName") or rec.get("Member_Plan") or rec.get("Member_AccountName") or "").strip()
+        phone = str(rec.get("Member_Phone_One") or rec.get("Member_Phone_Two") or "").strip()
+        email = str(rec.get("Member_EmailAddress_Two") or rec.get("Member_EmailAddress_One") or "").strip()
+
+        logger.info("Enrollee parsed: name=%s, gender=%s, age=%s, plan=%s, status=%s",
+                     name, gender, age, plan, status_desc)
+
+        return {
+            "found": True,
+            "enrollee_id": enrollee_id,
+            "name": name,
+            "gender": gender,
+            "age": age,
+            "dob": rec.get("Member_DateOfBirth"),
+            "plan": plan,
+            "status": status_desc,
+            "status_description": status_desc,
+            "phone": phone,
+            "email": email,
+            "company": str(rec.get("Member_AccountName") or "").strip(),
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("Enrollee lookup unexpected error: %s", e, exc_info=True)
+        raise HTTPException(500, f"Enrollee lookup error: {str(e)}")
 
 
 # ── Diagnosis List ───────────────────────────────────────────────
