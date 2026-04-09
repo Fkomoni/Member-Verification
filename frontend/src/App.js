@@ -5,6 +5,7 @@ import LoginPage from "./pages/LoginPage";
 import DashboardPage from "./pages/DashboardPage";
 import MedicationRequestPage from "./pages/MedicationRequestPage";
 import RequestHistoryPage from "./pages/RequestHistoryPage";
+import AdminReviewPage from "./pages/AdminReviewPage";
 
 function PrivateRoute({ children }) {
   const { provider } = useAuth();
@@ -28,6 +29,14 @@ export default function App() {
         element={
           <PrivateRoute>
             <MedicationRequestPage />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/admin/review"
+        element={
+          <PrivateRoute>
+            <AdminReviewPage />
           </PrivateRoute>
         }
       />
