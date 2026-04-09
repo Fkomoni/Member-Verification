@@ -4,6 +4,7 @@ import { useAuth } from "./context/AuthContext";
 import LoginPage from "./pages/LoginPage";
 import DashboardPage from "./pages/DashboardPage";
 import MedicationRequestPage from "./pages/MedicationRequestPage";
+import RequestHistoryPage from "./pages/RequestHistoryPage";
 
 function PrivateRoute({ children }) {
   const { provider } = useAuth();
@@ -27,6 +28,14 @@ export default function App() {
         element={
           <PrivateRoute>
             <MedicationRequestPage />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/medication-requests"
+        element={
+          <PrivateRoute>
+            <RequestHistoryPage />
           </PrivateRoute>
         }
       />
