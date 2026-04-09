@@ -31,6 +31,7 @@ app.add_middleware(
     allow_origins=[
         "http://localhost:3000",
         "https://member-verification-portal.onrender.com",
+        "https://leadway-rx-portal.onrender.com",
     ],
     allow_credentials=True,
     allow_methods=["*"],
