@@ -38,6 +38,7 @@ from app.models.models import Provider
 from app.schemas.medication import MedicationRequestListOut, MedicationRequestOut
 from app.services.classification_service import run_classification
 from app.services.routing_service import run_routing
+from app.services.ai_normalization import run_ai_normalization
 from app.services.wellahealth_dispatch import dispatch_to_wellahealth
 from app.services.whatsapp_dispatch import dispatch_to_whatsapp
 
@@ -300,6 +301,37 @@ def add_admin_comment(
 
     db.commit()
     return {"message": "Comment added"}
+
+
+# ── Re-run AI Normalization ───────────────────────────────────────
+
+@router.post("/admin/requests/{request_id}/normalize")
+def rerun_normalization(
+    request_id: uuid.UUID,
+    db: Session = Depends(get_db),
+    provider: Provider = Depends(get_current_provider),
+):
+    """Re-run AI/fuzzy normalization on a request's medications, then re-classify and re-route."""
+    req = db.query(MedicationRequest).filter(MedicationRequest.request_id == request_id).first()
+    if not req:
+        raise HTTPException(404, "Request not found")
+
+    updated = run_ai_normalization(request_id, db, actor=provider.email)
+
+    # Re-classify after normalization
+    if updated > 0:
+        try:
+            run_classification(request_id, db, actor=provider.email)
+            routing_record = run_routing(request_id, db, actor=provider.email)
+            if routing_record.destination == "wellahealth":
+                dispatch_to_wellahealth(request_id, db, actor=provider.email)
+            elif routing_record.destination in ("whatsapp_lagos", "whatsapp_outside_lagos"):
+                dispatch_to_whatsapp(request_id, db, routing_record.destination, actor=provider.email)
+        except Exception as e:
+            logger.error("Re-classification after normalization failed: %s", e)
+
+    db.commit()
+    return {"message": f"Normalization complete. {updated} item(s) updated.", "updated": updated}
 
 
 # ── Get Audit Trail ──────────────────────────────────────────────

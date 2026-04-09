@@ -174,8 +174,23 @@ def classify_item(
             requires_review=True,
         )
 
-    # 5. Unknown — no match found
-    # TODO: AI_CLASSIFICATION — Phase 8 will attempt LangChain classification here
+    # 5. Try fuzzy matching (AI normalization layer)
+    from app.services.ai_normalization import fuzzy_match_drug
+    fuzzy = fuzzy_match_drug(item.drug_name, db)
+    if fuzzy:
+        return ItemClassification(
+            item_id=str(item.item_id),
+            drug_name=item.drug_name,
+            category=fuzzy["category"],
+            confidence=fuzzy["confidence"],
+            source=fuzzy["source"],
+            matched_drug_id=fuzzy.get("drug_id"),
+            generic_name=fuzzy.get("generic_name"),
+            requires_review=fuzzy.get("requires_review", True),
+        )
+
+    # 6. Unknown — no match found
+    # TODO: AI_CLASSIFICATION — LangChain agent will be called here when connected
     logger.warning("Drug not found in master: '%s'", item.drug_name)
     return ItemClassification(
         item_id=str(item.item_id),
