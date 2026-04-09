@@ -40,6 +40,14 @@ class Settings(BaseSettings):
     WHATSAPP_LAGOS_NUMBER: str = ""
     WHATSAPP_OUTSIDE_LAGOS_NUMBER: str = ""
 
+    # WhatsApp Bot Webhook (existing Leadway bot)
+    WHATSAPP_WEBHOOK_URL: str = ""
+    WHATSAPP_VERIFY_TOKEN: str = ""
+    WHATSAPP_APP_SECRET: str = ""
+
+    # Anthropic API (LangChain AI drug classification)
+    ANTHROPIC_API_KEY: str = ""
+
     model_config = {"env_file": ".env"}
 
 

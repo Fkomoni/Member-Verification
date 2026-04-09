@@ -133,48 +133,81 @@ def fuzzy_match_drug(
 
 async def ai_classify_drug(drug_name: str) -> dict | None:
     """
-    Use AI/LangChain to classify an unrecognized drug.
+    Use Anthropic Claude to classify an unrecognized drug.
 
-    TODO: LANGCHAIN_INTEGRATION
-    When connected, this will:
-    1. Send drug name to LangChain agent
-    2. Agent uses tool calling to:
-       - Normalize drug name (strip dosage/frequency)
-       - Map brand name to generic
-       - Classify as acute/chronic/either
-    3. Return classification with confidence score
-
-    Inputs: raw drug name string
-    Outputs: { generic_name, category, confidence, reasoning }
-    Confidence handling: < 0.7 → flag for review
-    Fallback: if AI fails, return None (item stays unknown)
-    Manual review trigger: all AI classifications with confidence < 0.7
+    Returns: { generic_name, category, confidence, reasoning } or None on failure.
     """
-    # TODO: LANGCHAIN_INTEGRATION — Replace mock with live LangChain agent
-    #
-    # from langchain.chat_models import ChatOpenAI
-    # from langchain.agents import create_tool_calling_agent
-    #
-    # llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
-    # prompt = f"""
-    # You are a pharmaceutical classification assistant.
-    # Given a drug name (possibly a brand name, abbreviation, or misspelling),
-    # determine:
-    # 1. The correct generic name
-    # 2. Whether it is "acute" (short-term treatment like antibiotics, antimalarials)
-    #    or "chronic" (long-term treatment like antihypertensives, diabetes meds)
-    #    or "either" (can be used for both)
-    # 3. Your confidence level (0.0 to 1.0)
-    #
-    # Drug name: {drug_name}
-    #
-    # Respond in JSON: {{"generic_name": "...", "category": "acute|chronic|either", "confidence": 0.X, "reasoning": "..."}}
-    # """
-    # response = await llm.ainvoke(prompt)
-    # return parse_response(response)
+    from app.core.config import settings
 
-    logger.info("AI classification requested for '%s' — mock mode", drug_name)
-    return None  # Mock returns None; classification_service handles fallback
+    if not settings.ANTHROPIC_API_KEY:
+        logger.info("AI classification for '%s': ANTHROPIC_API_KEY not set, skipping", drug_name)
+        return None
+
+    try:
+        import httpx
+        import json as json_module
+
+        prompt = f"""You are a Nigerian pharmaceutical classification assistant.
+Given a drug name (possibly a brand name, abbreviation, or misspelling common in Nigerian prescriptions),
+determine:
+1. The correct generic/INN name
+2. Whether it is "acute" (short-term: antibiotics, antimalarials, analgesics, antihistamines)
+   or "chronic" (long-term: antihypertensives, diabetes meds, anticonvulsants, ARVs)
+   or "either" (can be both depending on context: PPIs, corticosteroids, supplements)
+3. Your confidence (0.0 to 1.0)
+
+Drug name: {drug_name}
+
+Respond ONLY with valid JSON, no other text:
+{{"generic_name": "...", "category": "acute|chronic|either", "confidence": 0.X, "reasoning": "brief explanation"}}"""
+
+        async with httpx.AsyncClient(timeout=httpx.Timeout(15.0)) as client:
+            resp = await client.post(
+                "https://api.anthropic.com/v1/messages",
+                headers={
+                    "x-api-key": settings.ANTHROPIC_API_KEY,
+                    "anthropic-version": "2023-06-01",
+                    "content-type": "application/json",
+                },
+                json={
+                    "model": "claude-haiku-4-5-20251001",
+                    "max_tokens": 200,
+                    "messages": [{"role": "user", "content": prompt}],
+                },
+            )
+
+        if resp.status_code != 200:
+            logger.warning("Anthropic API returned %d for '%s'", resp.status_code, drug_name)
+            return None
+
+        data = resp.json()
+        text = data.get("content", [{}])[0].get("text", "")
+
+        # Parse JSON from response
+        result = json_module.loads(text.strip())
+        category = result.get("category", "").lower()
+        if category not in ("acute", "chronic", "either"):
+            category = "unknown"
+
+        confidence = float(result.get("confidence", 0.5))
+
+        logger.info(
+            "AI classified '%s' → %s (%s, confidence %.2f)",
+            drug_name, result.get("generic_name"), category, confidence,
+        )
+
+        return {
+            "generic_name": result.get("generic_name"),
+            "category": category,
+            "confidence": confidence,
+            "reasoning": result.get("reasoning", ""),
+            "source": "ai",
+            "requires_review": confidence < 0.7,
+        }
+
+    except Exception as e:
+        logger.error("AI classification failed for '%s': %s", drug_name, e)
+        return None
 
 
 # ── Main normalization entry point ───────────────────────────────
@@ -214,11 +247,6 @@ def normalize_and_classify_item(
         )
         return {**fuzzy, "changed": True}
 
-    # TODO: LANGCHAIN_INTEGRATION — Try AI classification here
-    # ai_result = await ai_classify_drug(item.drug_name)
-    # if ai_result:
-    #     return {**ai_result, "source": "ai", "changed": True}
-
     # No match found
     return {
         "category": "unknown",
@@ -229,6 +257,24 @@ def normalize_and_classify_item(
         "requires_review": True,
         "changed": False,
     }
+
+
+async def normalize_item_with_ai(
+    item: MedicationRequestItem,
+    db: Session,
+) -> dict:
+    """Full pipeline including AI for a single item."""
+    # Try fuzzy first
+    result = normalize_and_classify_item(item, db)
+    if result.get("changed") or result.get("category") != "unknown":
+        return result
+
+    # Try AI classification
+    ai_result = await ai_classify_drug(item.drug_name)
+    if ai_result and ai_result.get("category") in ("acute", "chronic", "either"):
+        return {**ai_result, "changed": True}
+
+    return result
 
 
 def run_ai_normalization(
