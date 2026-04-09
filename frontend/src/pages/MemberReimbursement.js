@@ -25,6 +25,8 @@ export default function MemberReimbursement() {
   // Bank details
   const [bankName, setBankName] = useState("");
   const [bankCode, setBankCode] = useState("");
+  const [bankSearch, setBankSearch] = useState("");
+  const [bankDropdownOpen, setBankDropdownOpen] = useState(false);
   const [accountNumber, setAccountNumber] = useState("");
   const [accountName, setAccountName] = useState("");
   const [bankValidating, setBankValidating] = useState(false);
@@ -51,7 +53,8 @@ export default function MemberReimbursement() {
     setReimbursementReason(""); setProviderName(""); setVisitDate("");
     setReasonForVisit(""); setRemarks(""); setBankName(""); setBankCode("");
     setAccountNumber(""); setAccountName(""); setBankValidated(false);
-    setBankError(""); setMemberEmail(""); setReceipts([]);
+    setBankError(""); setBankSearch(""); setBankDropdownOpen(false);
+    setMemberEmail(""); setReceipts([]);
     setMedicalReport(null); setSubmitResult(null); setError("");
   };
 
@@ -381,25 +384,39 @@ export default function MemberReimbursement() {
                 <div style={{ borderTop: "1px solid #eee", paddingTop: "1rem", marginTop: "0.5rem" }}>
                   <h3 style={{ fontSize: "0.95rem", fontWeight: 700, color: "#263626", marginBottom: "0.75rem" }}>Bank Details for Payment</h3>
                   <div style={rowStyle}>
-                    <label className={sharedStyles.label} style={{ flex: 1, minWidth: 180 }}>
+                    <label className={sharedStyles.label} style={{ flex: 1, minWidth: 180, position: "relative" }}>
                       Bank Name *
-                      <select value={bankCode} onChange={(e) => {
-                        const allBanks = banks.length > 0 ? banks : BANKS;
-                        const selected = allBanks.find(b => b.code === e.target.value);
-                        setBankCode(e.target.value);
-                        setBankName(selected ? selected.name : "");
-                        setBankValidated(false); setAccountName(""); setBankError("");
-                      }} required className={sharedStyles.input} style={{ marginTop: "0.25rem" }}>
-                        <option value="">Select bank...</option>
-                        {(banks.length > 0 ? banks : BANKS).map((b) => (
-                          <option key={b.code} value={b.code}>{b.name}</option>
-                        ))}
-                      </select>
+                      <input
+                        type="text"
+                        placeholder="Type to search banks..."
+                        value={bankSearch}
+                        onChange={(e) => { setBankSearch(e.target.value); setBankDropdownOpen(true); }}
+                        onFocus={() => setBankDropdownOpen(true)}
+                        className={sharedStyles.input}
+                        style={{ marginTop: "0.25rem" }}
+                      />
+                      {bankCode && <span style={{ fontSize: "0.72rem", color: "#0A7C3E", fontWeight: 600 }}>{bankName}</span>}
+                      {bankDropdownOpen && (
+                        <div style={{ position: "absolute", top: "100%", left: 0, right: 0, maxHeight: 200, overflowY: "auto", background: "#fff", border: "1.5px solid #ddd", borderRadius: "0 0 8px 8px", zIndex: 10, boxShadow: "0 4px 12px rgba(0,0,0,0.1)" }}>
+                          {(banks.length > 0 ? banks : BANKS)
+                            .filter(b => b.name.toLowerCase().includes(bankSearch.toLowerCase()))
+                            .map((b) => (
+                              <div key={b.code} onClick={() => {
+                                setBankCode(b.code); setBankName(b.name); setBankSearch(b.name);
+                                setBankDropdownOpen(false); setBankValidated(false); setAccountName(""); setBankError("");
+                              }} style={{ padding: "0.55rem 0.85rem", cursor: "pointer", fontSize: "0.88rem", borderBottom: "1px solid #f5f5f5" }}
+                              onMouseOver={(e) => e.currentTarget.style.background = "#FFF0F0"}
+                              onMouseOut={(e) => e.currentTarget.style.background = "#fff"}>
+                                {b.name}
+                              </div>
+                            ))}
+                        </div>
+                      )}
                     </label>
                     <label className={sharedStyles.label} style={{ flex: 1, minWidth: 180 }}>
                       Account Number *
                       <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.25rem" }}>
-                        <input type="text" maxLength={10} placeholder="0123456789" value={accountNumber} onChange={(e) => { setAccountNumber(e.target.value); setBankValidated(false); }} required className={sharedStyles.input} />
+                        <input type="text" maxLength={10} placeholder="0123456789" value={accountNumber} onChange={(e) => { setAccountNumber(e.target.value); setBankValidated(false); setAccountName(""); }} required className={sharedStyles.input} />
                         <button type="button" onClick={handleValidateBank} disabled={bankValidating || accountNumber.length < 10 || !bankCode} className={sharedStyles.primaryBtn} style={{ padding: "0.5rem 0.8rem", fontSize: "0.78rem", whiteSpace: "nowrap" }}>
                           {bankValidating ? "Verifying..." : "Verify"}
                         </button>
@@ -408,14 +425,22 @@ export default function MemberReimbursement() {
                   </div>
                   <label className={sharedStyles.label}>
                     Account Name
-                    <input type="text" value={accountName} onChange={(e) => setAccountName(e.target.value)} placeholder="Account holder name" className={sharedStyles.input} style={{ marginTop: "0.25rem", background: bankValidated ? "#E8F8EE" : "#fff" }} />
+                    <input
+                      type="text"
+                      value={accountName}
+                      readOnly
+                      placeholder={bankValidated ? "" : "Click Verify to auto-fill account name"}
+                      className={sharedStyles.input}
+                      style={{ marginTop: "0.25rem", background: bankValidated ? "#E8F8EE" : "#F8F9FA", cursor: "not-allowed", color: bankValidated ? "#0A7C3E" : "#999", fontWeight: bankValidated ? 700 : 400 }}
+                    />
                     {bankValidated && <span style={{ fontSize: "0.75rem", color: "#0A7C3E", fontWeight: 600 }}>&#10004; Account Verified</span>}
                     {bankError && <span style={{ fontSize: "0.75rem", color: "#C61531", fontWeight: 600 }}>{bankError}</span>}
+                    {!bankValidated && !bankError && <span style={{ fontSize: "0.72rem", color: "#888" }}>Account name is auto-filled after verification — cannot be edited manually</span>}
                   </label>
                 </div>
 
                 {/* Submit */}
-                <button onClick={handleSubmit} disabled={submitting || !claimAmount || !reasonForVisit || !providerName || !visitDate || !accountNumber || receipts.length === 0} className={sharedStyles.primaryBtn} style={{ marginTop: "0.75rem", width: "100%" }}>
+                <button onClick={handleSubmit} disabled={submitting || !claimAmount || !reasonForVisit || !providerName || !visitDate || !bankValidated || !accountName || receipts.length === 0} className={sharedStyles.primaryBtn} style={{ marginTop: "0.75rem", width: "100%" }}>
                   {submitting ? "Submitting Claim..." : "Submit Reimbursement Claim"}
                 </button>
               </>
