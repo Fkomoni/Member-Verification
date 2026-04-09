@@ -12,7 +12,7 @@ class Settings(BaseSettings):
     # JWT
     SECRET_KEY: str = "CHANGE-THIS-TO-A-SECURE-RANDOM-KEY"
     ALGORITHM: str = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 480  # 8 hours
 
     # Encryption key for biometric templates (Fernet, 32-byte base64)
     BIOMETRIC_ENCRYPTION_KEY: str = "CHANGE-THIS-GENERATE-WITH-Fernet.generate_key()"

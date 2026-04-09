@@ -285,7 +285,7 @@ export default function MedicationRequestPage() {
                 <label className={styles.label}>Enrollee ID <span className={styles.required}>*</span></label>
                 <div className={styles.lookupRow}>
                   <input className={styles.input} value={enrolleeId} onChange={(e) => setEnrolleeId(e.target.value)}
-                    placeholder="Enter CIF number" onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), handleEnrolleeLookup())} />
+                    placeholder="Enter Enrollee ID" onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), handleEnrolleeLookup())} />
                   <button type="button" className={styles.lookupBtn} onClick={handleEnrolleeLookup}
                     disabled={enrolleeLookupLoading || !enrolleeId.trim()}>
                     {enrolleeLookupLoading ? "Searching..." : "Look Up"}

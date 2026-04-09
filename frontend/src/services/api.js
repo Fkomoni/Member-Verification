@@ -13,6 +13,19 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+// Auto-redirect to login on 401 (expired token)
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response && error.response.status === 401) {
+      localStorage.removeItem("access_token");
+      localStorage.removeItem("provider");
+      window.location.href = "/login";
+    }
+    return Promise.reject(error);
+  }
+);
+
 // ── Auth ──────────────────────────────────────────
 export const login = (email, password) =>
   api.post("/login", { email, password });
