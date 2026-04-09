@@ -200,6 +200,17 @@ class ClassificationSummaryOut(BaseModel):
     model_config = {"from_attributes": True}
 
 
+# ── Routing Schemas (Phase 4) ────────────────────────────────────
+
+class RoutingSummaryOut(BaseModel):
+    """Lightweight routing info embedded in request responses."""
+    destination: str  # wellahealth | whatsapp_lagos | whatsapp_outside_lagos | manual_review
+    reasoning: str | None = None
+    is_lagos: bool | None = None
+
+    model_config = {"from_attributes": True}
+
+
 class MedicationRequestOut(BaseModel):
     request_id: uuid.UUID
     reference_number: str
@@ -223,6 +234,7 @@ class MedicationRequestOut(BaseModel):
     facility_branch: str | None = None
     items: list[MedicationItemOut] = []
     classification: ClassificationSummaryOut | None = None
+    routing: RoutingSummaryOut | None = None
     created_at: datetime
     updated_at: datetime
 

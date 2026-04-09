@@ -243,6 +243,22 @@ export default function MedicationRequestPage() {
     return map[cls] || styles.badgeUnknown;
   };
 
+  const routeLabel = (dest) => {
+    const labels = {
+      wellahealth: "WellaHealth API",
+      whatsapp_lagos: "Leadway WhatsApp (Lagos)",
+      whatsapp_outside_lagos: "Leadway WhatsApp (Outside Lagos)",
+      manual_review: "Manual Review Queue",
+    };
+    return labels[dest] || dest;
+  };
+
+  const routeIcon = (dest) => {
+    if (dest === "wellahealth") return "arrow-right";
+    if (dest?.startsWith("whatsapp")) return "whatsapp";
+    return "flag";
+  };
+
   // ── Success state ───────────────────────────────
   if (success) {
     const cls = success.classification;
@@ -295,6 +311,28 @@ export default function MedicationRequestPage() {
                   One or more medications need manual review before routing.
                 </div>
               )}
+            </div>
+          )}
+
+          {/* Routing Decision */}
+          {success.routing && (
+            <div className={styles.routingCard}>
+              <h3 className={styles.classificationCardTitle}>Routing Decision</h3>
+              <div className={styles.routingDestination}>
+                <span className={styles.routingLabel}>Destination</span>
+                <span className={styles.routingBadge}>
+                  {routeLabel(success.routing.destination)}
+                </span>
+              </div>
+              {success.routing.reasoning && (
+                <div className={styles.classificationReasoning}>
+                  {success.routing.reasoning}
+                </div>
+              )}
+              <div className={styles.routingStatusRow}>
+                <span className={styles.routingStatusLabel}>Status:</span>
+                <span className={styles.routingStatusValue}>{success.status}</span>
+              </div>
             </div>
           )}
 

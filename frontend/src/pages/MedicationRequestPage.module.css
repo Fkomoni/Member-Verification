@@ -614,6 +614,63 @@
   border: 1px solid #F5DFA0;
 }
 
+/* ── Routing Card ────────────────────────────── */
+.routingCard {
+  background: #fff;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 1.25rem;
+  box-shadow: 0 1px 8px rgba(0, 0, 0, 0.05);
+  border: 1px solid #eee;
+  border-left: 4px solid var(--lw-crimson, #C61531);
+}
+
+.routingDestination {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  margin-bottom: 0.75rem;
+}
+
+.routingLabel {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #999;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.routingBadge {
+  display: inline-block;
+  padding: 0.4rem 0.85rem;
+  border-radius: 8px;
+  font-size: 0.92rem;
+  font-weight: 700;
+  background: #F4F5F7;
+  color: var(--lw-dark, #263626);
+  border: 1px solid #e0e0e0;
+  width: fit-content;
+}
+
+.routingStatusRow {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+  font-size: 0.82rem;
+}
+
+.routingStatusLabel {
+  color: #999;
+  font-weight: 600;
+}
+
+.routingStatusValue {
+  font-weight: 700;
+  color: var(--lw-dark, #263626);
+  text-transform: capitalize;
+}
+
 /* ── Classification badge colors ─────────────── */
 .badgeMixed {
   background: #FFF0F0;

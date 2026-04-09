@@ -32,6 +32,7 @@ from app.schemas.medication import (
     MedicationRequestOut,
 )
 from app.services.classification_service import run_classification
+from app.services.routing_service import run_routing
 from app.utils.nigerian_locations import is_lagos_location
 
 logger = logging.getLogger(__name__)
@@ -128,11 +129,19 @@ def create_medication_request(
     db.flush()
 
     # ── Auto-classify ──────────────────────────────
+    classification_ok = False
     try:
         run_classification(request.request_id, db, actor=provider.email)
+        classification_ok = True
     except Exception as e:
         logger.error("Classification failed for %s: %s", ref, e)
-        # Classification failure is non-blocking — request is still created
+
+    # ── Auto-route (only if classification succeeded) ─
+    if classification_ok:
+        try:
+            run_routing(request.request_id, db, actor=provider.email)
+        except Exception as e:
+            logger.error("Routing failed for %s: %s", ref, e)
 
     db.commit()
     db.refresh(request)
@@ -142,12 +151,13 @@ def create_medication_request(
         ref, provider.email, payload.enrollee_id, lagos,
     )
 
-    # Reload with items and classification
+    # Reload with items, classification, and routing
     request = (
         db.query(MedicationRequest)
         .options(
             joinedload(MedicationRequest.items),
             joinedload(MedicationRequest.classification),
+            joinedload(MedicationRequest.routing),
         )
         .filter(MedicationRequest.request_id == request.request_id)
         .first()
@@ -181,6 +191,7 @@ def list_medication_requests(
         .options(
             joinedload(MedicationRequest.items),
             joinedload(MedicationRequest.classification),
+            joinedload(MedicationRequest.routing),
         )
         .order_by(MedicationRequest.created_at.desc())
         .offset((page - 1) * per_page)
@@ -210,6 +221,7 @@ def get_medication_request(
         .options(
             joinedload(MedicationRequest.items),
             joinedload(MedicationRequest.classification),
+            joinedload(MedicationRequest.routing),
         )
         .filter(
             MedicationRequest.request_id == request_id,
