@@ -11,6 +11,7 @@ import logging
 
 import httpx
 from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy import func, or_
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
@@ -226,7 +227,6 @@ def search_medications(
     Fast typeahead search against local drug_master (synced from WellaHealth tariff).
     Searches drug_name_display, generic_name, and brand_name.
     """
-    from sqlalchemy import or_
     from app.models.medication import DrugMaster
     search_term = f"%{q.strip().lower()}%"
 
