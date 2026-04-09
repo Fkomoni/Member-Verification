@@ -1,11 +1,14 @@
 """
-Pydantic schemas for the medication routing module — Phase 1: Drug Master.
+Pydantic schemas for the medication routing module.
+
+Phase 1: Drug Master
+Phase 2: Medication Request Submission
 """
 
 import uuid
 from datetime import datetime
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 
 # ── Drug Master Schemas ──────────────────────────────────────────
@@ -98,3 +101,104 @@ class LocationListOut(BaseModel):
 class LgaListOut(BaseModel):
     state: str
     lgas: list[str]
+
+
+# ── Medication Request Schemas (Phase 2) ─────────────────────────
+
+class MedicationItemIn(BaseModel):
+    """A single medication line in a request submission."""
+    drug_name: str = Field(..., min_length=1, max_length=300)
+    generic_name: str | None = None
+    matched_drug_id: uuid.UUID | None = None
+    strength: str | None = None
+    dosage_instruction: str = Field(..., min_length=1)
+    duration: str = Field(..., min_length=1, max_length=100)
+    quantity: str = Field(..., min_length=1, max_length=100)
+    route: str | None = None
+
+
+class MedicationRequestIn(BaseModel):
+    """Payload for creating a new medication request."""
+    enrollee_id: str = Field(..., min_length=1, max_length=50)
+    enrollee_name: str = Field(..., min_length=1, max_length=200)
+    enrollee_dob: datetime | None = None
+    enrollee_gender: str | None = None
+    diagnosis: str = Field(..., min_length=1)
+    treating_doctor: str = Field(..., min_length=1, max_length=200)
+    doctor_phone: str | None = None
+    provider_notes: str | None = None
+
+    # Delivery location
+    delivery_state: str = Field(..., min_length=1, max_length=100)
+    delivery_lga: str = Field(..., min_length=1, max_length=100)
+    delivery_city: str | None = None
+    delivery_address: str | None = None
+    delivery_landmark: str | None = None
+
+    urgency: str = Field(default="routine")
+    facility_name: str = Field(..., min_length=1, max_length=300)
+    facility_branch: str | None = None
+
+    # Medication lines — at least one required
+    medications: list[MedicationItemIn] = Field(..., min_length=1)
+
+    @field_validator("urgency")
+    @classmethod
+    def validate_urgency(cls, v: str) -> str:
+        allowed = {"routine", "urgent", "emergency"}
+        if v.lower() not in allowed:
+            raise ValueError(f"urgency must be one of {allowed}")
+        return v.lower()
+
+
+class MedicationItemOut(BaseModel):
+    item_id: uuid.UUID
+    drug_name: str
+    generic_name: str | None = None
+    matched_drug_id: uuid.UUID | None = None
+    strength: str | None = None
+    dosage_instruction: str
+    duration: str
+    quantity: str
+    route: str | None = None
+    item_category: str | None = None
+    requires_review: bool
+    classification_confidence: float | None = None
+    classification_source: str | None = None
+
+    model_config = {"from_attributes": True}
+
+
+class MedicationRequestOut(BaseModel):
+    request_id: uuid.UUID
+    reference_number: str
+    enrollee_id: str
+    enrollee_name: str
+    enrollee_dob: datetime | None = None
+    enrollee_gender: str | None = None
+    diagnosis: str
+    treating_doctor: str
+    doctor_phone: str | None = None
+    provider_notes: str | None = None
+    delivery_state: str
+    delivery_lga: str
+    delivery_city: str | None = None
+    delivery_address: str | None = None
+    delivery_landmark: str | None = None
+    is_lagos: bool | None = None
+    urgency: str
+    status: str
+    facility_name: str
+    facility_branch: str | None = None
+    items: list[MedicationItemOut] = []
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class MedicationRequestListOut(BaseModel):
+    total: int
+    page: int
+    per_page: int
+    requests: list[MedicationRequestOut]

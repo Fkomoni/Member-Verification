@@ -3,6 +3,7 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import { useAuth } from "./context/AuthContext";
 import LoginPage from "./pages/LoginPage";
 import DashboardPage from "./pages/DashboardPage";
+import MedicationRequestPage from "./pages/MedicationRequestPage";
 
 function PrivateRoute({ children }) {
   const { provider } = useAuth();
@@ -18,6 +19,14 @@ export default function App() {
         element={
           <PrivateRoute>
             <DashboardPage />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/medication-request"
+        element={
+          <PrivateRoute>
+            <MedicationRequestPage />
           </PrivateRoute>
         }
       />

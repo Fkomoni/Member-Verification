@@ -26,19 +26,12 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  text-decoration: none;
 }
 
-.headerBrand {
-  font-size: 1rem;
-  font-weight: 800;
-  color: #263626;
-  letter-spacing: 0.04em;
-}
-
-.headerBrandHealth {
-  font-size: 0.95rem;
-  font-weight: 700;
-  color: #C61531;
+.headerLogoImg {
+  height: 36px;
+  width: auto;
 }
 
 .headerDivider {
@@ -79,6 +72,35 @@
 .logoutBtn:hover {
   background: #C61531;
   color: #fff;
+}
+
+/* ── Navigation Bar ───────────────────────────── */
+.navBar {
+  display: flex;
+  gap: 0;
+  background: #fff;
+  border-bottom: 1px solid #eee;
+  padding: 0 2rem;
+}
+
+.navLink {
+  padding: 0.75rem 1.25rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #777;
+  text-decoration: none;
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s;
+}
+
+.navLink:hover {
+  color: #C61531;
+}
+
+.navLinkActive {
+  composes: navLink;
+  color: #C61531;
+  border-bottom-color: #C61531;
 }
 
 /* ── Main ─────────────────────────────────────── */

@@ -59,4 +59,24 @@ export const validateClaim = (verificationToken, timestamp, providerId) =>
 export const getClaimsStatus = (enrolleeId) =>
   api.post("/claims-status", { enrollee_id: enrolleeId });
 
+// ── Drug Master ──────────────────────────────────
+export const searchDrugs = (query) =>
+  api.get("/drugs/search", { params: { q: query } });
+
+export const getStates = () =>
+  api.get("/locations/states");
+
+export const getLgas = (state) =>
+  api.get("/locations/lgas", { params: { state } });
+
+// ── Medication Requests ──────────────────────────
+export const createMedicationRequest = (payload) =>
+  api.post("/medication-requests", payload);
+
+export const listMedicationRequests = (page = 1, perPage = 20, status) =>
+  api.get("/medication-requests", { params: { page, per_page: perPage, status } });
+
+export const getMedicationRequest = (requestId) =>
+  api.get(`/medication-requests/${requestId}`);
+
 export default api;
