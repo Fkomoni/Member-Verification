@@ -118,37 +118,57 @@ class WellaHealthClient:
 
         return None
 
-    # ── Drug List ────────────────────────────────────────────────
+    # ── Drug List (Tariff) ──────────────────────────────────────
 
-    async def get_drug_list(self) -> list[WellaHealthDrug]:
-        """Fetch available drugs from WellaHealth."""
+    async def get_drug_list(self, page: int = 1, page_size: int = 100) -> list[WellaHealthDrug]:
+        """
+        Fetch available drugs from WellaHealth tariff.
+        GET /tariff?pageIndex={page}&pageSize={page_size}
+        """
         if self._mock_mode:
             logger.info("WellaHealth drug list: mock mode")
             return []
 
-        # Try common endpoint patterns
-        for path in ["/drugs", "/products", "/formulary", "/medications"]:
-            data = await self._request("GET", path)
-            if data:
-                items = data if isinstance(data, list) else data.get("data", data.get("drugs", data.get("results", [])))
-                return [
-                    WellaHealthDrug(
-                        external_id=str(item.get("id", "")),
-                        name=item.get("name", item.get("drug_name", "")),
-                        generic_name=item.get("generic_name"),
-                        category=item.get("category"),
-                        price=item.get("price"),
-                        in_stock=item.get("in_stock", True),
-                    )
-                    for item in (items if isinstance(items, list) else [])
-                ]
+        data = await self._request(
+            "GET", "/tariff",
+            params={"pageIndex": page, "pageSize": page_size},
+        )
+        if not data:
+            return []
 
-        return []
+        items = data if isinstance(data, list) else data.get("data", data.get("results", data.get("items", [])))
+        return [
+            WellaHealthDrug(
+                external_id=str(item.get("id", item.get("Id", ""))),
+                name=item.get("name", item.get("drugName", item.get("drug_name", ""))),
+                generic_name=item.get("genericName", item.get("generic_name")),
+                category=item.get("category"),
+                price=item.get("price", item.get("unitPrice")),
+                in_stock=item.get("inStock", item.get("in_stock", True)),
+            )
+            for item in (items if isinstance(items, list) else [])
+        ]
 
-    # ── Order Submission ─────────────────────────────────────────
+    # ── Order/Fulfilment Submission ──────────────────────────────
 
     async def submit_order(self, payload: dict) -> WellaHealthOrderResponse:
-        """Submit an acute medication order to WellaHealth."""
+        """
+        Submit an acute medication fulfilment to WellaHealth.
+        POST /fulfilments
+
+        Payload:
+        {
+            "partnerCode": "WHPXTest10123",
+            "memberName": "John Doe",
+            "memberNumber": "CIF12345",
+            "address": "123 Main St, Ikeja, Lagos",
+            "medications": [
+                {"name": "Amoxicillin 500mg", "quantity": 15},
+                ...
+            ],
+            "reference": "RX-20260409-A3F2B1"
+        }
+        """
         if self._mock_mode:
             logger.info("WellaHealth submit_order: mock mode")
             return WellaHealthOrderResponse(
@@ -160,46 +180,67 @@ class WellaHealthClient:
                 raw_response={"mock": True},
             )
 
-        # Add partner code to payload
-        payload["partner_code"] = self.partner_code
+        # Build WellaHealth-specific payload
+        wh_payload = {
+            "partnerCode": self.partner_code,
+            "memberName": payload.get("member_name", ""),
+            "memberNumber": payload.get("enrollee_id", ""),
+            "address": payload.get("delivery_address", ""),
+            "medications": [
+                {
+                    "name": f"{med.get('drug_name', '')} {med.get('strength', '')}".strip(),
+                    "quantity": med.get("quantity", 1),
+                }
+                for med in payload.get("medications", [])
+            ],
+            "reference": payload.get("reference", ""),
+        }
 
-        # Try common order endpoint patterns
-        for path in ["/orders", "/order", "/prescription", "/prescriptions"]:
-            data = await self._request("POST", path, json_data=payload)
-            if data is not None:
-                # Extract order ID from response (handle various shapes)
-                order_id = (
-                    data.get("order_id") or data.get("orderId") or
-                    data.get("id") or data.get("Id") or
-                    data.get("data", {}).get("id") if isinstance(data.get("data"), dict) else None
-                )
-                return WellaHealthOrderResponse(
-                    success=True,
-                    order_id=str(order_id) if order_id else None,
-                    reference=payload.get("reference"),
-                    status=data.get("status", "submitted"),
-                    message=data.get("message", "Order submitted to WellaHealth"),
-                    raw_response=data,
-                )
+        data = await self._request("POST", "/fulfilments", json_data=wh_payload)
+        if data is not None:
+            order_id = (
+                data.get("id") or data.get("Id") or
+                data.get("orderId") or data.get("order_id") or
+                data.get("fulfilmentId") or
+                (data.get("data", {}).get("id") if isinstance(data.get("data"), dict) else None)
+            )
+            return WellaHealthOrderResponse(
+                success=True,
+                order_id=str(order_id) if order_id else None,
+                reference=payload.get("reference"),
+                status=data.get("status", "submitted"),
+                message=data.get("message", "Order submitted to WellaHealth"),
+                raw_response=data,
+            )
 
         return WellaHealthOrderResponse(
             success=False,
-            message="Failed to submit order to WellaHealth after retries",
+            message="Failed to submit fulfilment to WellaHealth after retries",
         )
 
-    # ── Order Status ─────────────────────────────────────────────
+    # ── Fulfilment Status ────────────────────────────────────────
+
+    async def get_fulfilments(self, page: int = 1, page_size: int = 50) -> dict:
+        """
+        List fulfilments from WellaHealth.
+        GET /fulfilments?pageIndex={page}&pageSize={page_size}
+        """
+        if self._mock_mode:
+            return {"data": [], "mock": True}
+
+        data = await self._request(
+            "GET", "/fulfilments",
+            params={"pageIndex": page, "pageSize": page_size},
+        )
+        return data or {"data": []}
 
     async def get_order_status(self, order_id: str) -> dict:
-        """Check fulfilment status of a WellaHealth order."""
+        """Check fulfilment status by ID."""
         if self._mock_mode:
             return {"order_id": order_id, "status": "pending", "mock": True}
 
-        for path in [f"/orders/{order_id}", f"/orders/{order_id}/status", f"/order/{order_id}"]:
-            data = await self._request("GET", path)
-            if data:
-                return data
-
-        return {"order_id": order_id, "status": "unknown", "error": "Could not fetch status"}
+        data = await self._request("GET", f"/fulfilments/{order_id}")
+        return data or {"order_id": order_id, "status": "unknown"}
 
 
 # Module-level singleton

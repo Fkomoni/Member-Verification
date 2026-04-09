@@ -28,7 +28,7 @@ class Settings(BaseSettings):
     PROGNOSIS_PASSWORD: str = ""
 
     # WellaHealth API (acute medication fulfilment)
-    WELLAHEALTH_BASE_URL: str = "https://staging.wellahealth.com/public/v1"
+    WELLAHEALTH_BASE_URL: str = "https://staging.wellahealth.com/v1"
     WELLAHEALTH_PARTNER_CODE: str = ""
     WELLAHEALTH_CLIENT_ID: str = ""
     WELLAHEALTH_CLIENT_SECRET: str = ""

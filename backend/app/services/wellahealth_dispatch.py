@@ -22,39 +22,33 @@ logger = logging.getLogger(__name__)
 
 
 def _build_wellahealth_payload(request: MedicationRequest, items: list[MedicationRequestItem]) -> dict:
-    """Build the payload for WellaHealth order submission."""
+    """
+    Build the payload for WellaHealth fulfilment submission.
+
+    WellaHealth expects: memberName, memberNumber, address, medications (name + quantity)
+    """
+    # Build geolocated address string
+    address_parts = [request.delivery_address or ""]
+    if request.delivery_landmark:
+        address_parts.append(request.delivery_landmark)
+    address_parts.extend([request.delivery_lga, request.delivery_state])
+    address = ", ".join(p for p in address_parts if p)
+
     return {
         "reference": request.reference_number,
         "enrollee_id": request.enrollee_id,
         "member_name": request.enrollee_name,
-        "member_gender": request.enrollee_gender,
-        "diagnosis": request.diagnosis,
+        "delivery_address": address,
         "medications": [
             {
                 "drug_name": item.drug_name,
-                "generic_name": item.generic_name,
-                "strength": item.strength,
+                "strength": item.strength or "",
+                "quantity": item.quantity,
                 "dosage": item.dosage_instruction,
                 "duration": item.duration,
-                "quantity": item.quantity,
-                "route": item.route,
             }
             for item in items
         ],
-        "delivery": {
-            "state": request.delivery_state,
-            "lga": request.delivery_lga,
-            "city": request.delivery_city,
-            "address": request.delivery_address,
-            "landmark": request.delivery_landmark,
-        },
-        "provider": {
-            "facility_name": request.facility_name,
-            "facility_branch": request.facility_branch,
-            "treating_doctor": request.treating_doctor,
-            "doctor_phone": request.doctor_phone,
-        },
-        "urgency": request.urgency,
     }
 
 
