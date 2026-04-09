@@ -169,6 +169,37 @@ class MedicationItemOut(BaseModel):
     model_config = {"from_attributes": True}
 
 
+# ── Classification Schemas (Phase 3) ─────────────────────────────
+
+class ClassificationResultOut(BaseModel):
+    classification_id: uuid.UUID
+    request_id: uuid.UUID
+    classification: str  # acute | chronic | mixed | review_required
+    acute_count: int
+    chronic_count: int
+    unknown_count: int
+    review_required: bool
+    confidence: float | None = None
+    reasoning: str | None = None
+    classified_by: str
+    classified_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class ClassificationSummaryOut(BaseModel):
+    """Lightweight classification info embedded in request responses."""
+    classification: str
+    acute_count: int
+    chronic_count: int
+    unknown_count: int
+    review_required: bool
+    confidence: float | None = None
+    reasoning: str | None = None
+
+    model_config = {"from_attributes": True}
+
+
 class MedicationRequestOut(BaseModel):
     request_id: uuid.UUID
     reference_number: str
@@ -191,6 +222,7 @@ class MedicationRequestOut(BaseModel):
     facility_name: str
     facility_branch: str | None = None
     items: list[MedicationItemOut] = []
+    classification: ClassificationSummaryOut | None = None
     created_at: datetime
     updated_at: datetime
 

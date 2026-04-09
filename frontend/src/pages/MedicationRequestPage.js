@@ -223,8 +223,29 @@ export default function MedicationRequestPage() {
     return map[cat] || styles.badgeUnknown;
   };
 
+  const classificationLabel = (cls) => {
+    const labels = {
+      acute: "Acute",
+      chronic: "Chronic",
+      mixed: "Mixed (Acute + Chronic)",
+      review_required: "Review Required",
+    };
+    return labels[cls] || cls;
+  };
+
+  const classificationBadgeClass = (cls) => {
+    const map = {
+      acute: styles.badgeAcute,
+      chronic: styles.badgeChronic,
+      mixed: styles.badgeMixed,
+      review_required: styles.badgeReview,
+    };
+    return map[cls] || styles.badgeUnknown;
+  };
+
   // ── Success state ───────────────────────────────
   if (success) {
+    const cls = success.classification;
     return (
       <div className={styles.page}>
         <Header provider={provider} logout={logout} />
@@ -235,17 +256,91 @@ export default function MedicationRequestPage() {
             <div className={styles.successRef}>
               Reference: <span className={styles.successRefCode}>{success.reference_number}</span>
             </div>
-            <div className={styles.successActions}>
-              <button onClick={resetForm} className={styles.submitBtn}>
-                New Request
-              </button>
-              <button
-                onClick={() => navigate("/dashboard")}
-                className={styles.cancelBtn}
-              >
-                Back to Dashboard
-              </button>
+          </div>
+
+          {cls && (
+            <div className={styles.classificationCard}>
+              <h3 className={styles.classificationCardTitle}>Classification Result</h3>
+              <div className={styles.classificationGrid}>
+                <div className={styles.classificationMainResult}>
+                  <span className={styles.classificationLabel}>Request Type</span>
+                  <span className={`${styles.classificationBadgeLg} ${classificationBadgeClass(cls.classification)}`}>
+                    {classificationLabel(cls.classification)}
+                  </span>
+                </div>
+                <div className={styles.classificationCounts}>
+                  <div className={styles.countItem}>
+                    <span className={styles.countNumber}>{cls.acute_count}</span>
+                    <span className={styles.countLabel}>Acute</span>
+                  </div>
+                  <div className={styles.countItem}>
+                    <span className={styles.countNumber}>{cls.chronic_count}</span>
+                    <span className={styles.countLabel}>Chronic</span>
+                  </div>
+                  <div className={styles.countItem}>
+                    <span className={styles.countNumber}>{cls.unknown_count}</span>
+                    <span className={styles.countLabel}>Unknown</span>
+                  </div>
+                  <div className={styles.countItem}>
+                    <span className={styles.countNumber}>{cls.confidence != null ? `${Math.round(cls.confidence * 100)}%` : "—"}</span>
+                    <span className={styles.countLabel}>Confidence</span>
+                  </div>
+                </div>
+              </div>
+              {cls.reasoning && (
+                <div className={styles.classificationReasoning}>{cls.reasoning}</div>
+              )}
+              {cls.review_required && (
+                <div className={styles.reviewFlag}>
+                  One or more medications need manual review before routing.
+                </div>
+              )}
             </div>
+          )}
+
+          {/* Per-item classification */}
+          {success.items && success.items.length > 0 && (
+            <div className={styles.classificationCard}>
+              <h3 className={styles.classificationCardTitle}>Medication Breakdown</h3>
+              <div className={styles.itemsList}>
+                {success.items.map((item, idx) => (
+                  <div key={item.item_id} className={styles.classifiedItem}>
+                    <div className={styles.classifiedItemName}>
+                      <span className={styles.classifiedItemIdx}>{idx + 1}.</span>
+                      {item.drug_name}
+                      {item.generic_name && item.generic_name !== item.drug_name && (
+                        <span className={styles.classifiedItemGeneric}> ({item.generic_name})</span>
+                      )}
+                    </div>
+                    <div className={styles.classifiedItemMeta}>
+                      <span className={`${styles.categoryBadge} ${categoryBadge(item.item_category)}`}>
+                        {item.item_category || "unclassified"}
+                      </span>
+                      {item.classification_confidence != null && (
+                        <span className={styles.confidenceText}>
+                          {Math.round(item.classification_confidence * 100)}% confidence
+                        </span>
+                      )}
+                      {item.requires_review && (
+                        <span className={styles.reviewBadge}>needs review</span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div className={styles.submitArea}>
+            <button onClick={resetForm} className={styles.submitBtn}>
+              New Request
+            </button>
+            <button
+              onClick={() => navigate("/dashboard")}
+              className={styles.cancelBtn}
+            >
+              Back to Dashboard
+            </button>
           </div>
         </main>
       </div>

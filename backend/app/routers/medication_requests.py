@@ -18,6 +18,7 @@ from sqlalchemy.orm import Session, joinedload
 from app.core.database import get_db
 from app.core.deps import get_current_provider
 from app.models.medication import (
+    ClassificationResult,
     MedicationAuditLog,
     MedicationRequest,
     MedicationRequestItem,
@@ -25,10 +26,12 @@ from app.models.medication import (
 )
 from app.models.models import Provider
 from app.schemas.medication import (
+    ClassificationResultOut,
     MedicationRequestIn,
     MedicationRequestListOut,
     MedicationRequestOut,
 )
+from app.services.classification_service import run_classification
 from app.utils.nigerian_locations import is_lagos_location
 
 logger = logging.getLogger(__name__)
@@ -122,6 +125,15 @@ def create_medication_request(
     )
     db.add(audit)
 
+    db.flush()
+
+    # ── Auto-classify ──────────────────────────────
+    try:
+        run_classification(request.request_id, db, actor=provider.email)
+    except Exception as e:
+        logger.error("Classification failed for %s: %s", ref, e)
+        # Classification failure is non-blocking — request is still created
+
     db.commit()
     db.refresh(request)
 
@@ -130,10 +142,13 @@ def create_medication_request(
         ref, provider.email, payload.enrollee_id, lagos,
     )
 
-    # Reload with items
+    # Reload with items and classification
     request = (
         db.query(MedicationRequest)
-        .options(joinedload(MedicationRequest.items))
+        .options(
+            joinedload(MedicationRequest.items),
+            joinedload(MedicationRequest.classification),
+        )
         .filter(MedicationRequest.request_id == request.request_id)
         .first()
     )
@@ -163,7 +178,10 @@ def list_medication_requests(
     total = query.count()
     requests = (
         query
-        .options(joinedload(MedicationRequest.items))
+        .options(
+            joinedload(MedicationRequest.items),
+            joinedload(MedicationRequest.classification),
+        )
         .order_by(MedicationRequest.created_at.desc())
         .offset((page - 1) * per_page)
         .limit(per_page)
@@ -189,7 +207,10 @@ def get_medication_request(
     """Get a single medication request by ID."""
     request = (
         db.query(MedicationRequest)
-        .options(joinedload(MedicationRequest.items))
+        .options(
+            joinedload(MedicationRequest.items),
+            joinedload(MedicationRequest.classification),
+        )
         .filter(
             MedicationRequest.request_id == request_id,
             MedicationRequest.provider_id == provider.provider_id,
@@ -204,3 +225,44 @@ def get_medication_request(
         )
 
     return MedicationRequestOut.model_validate(request)
+
+
+# ── Classification Detail ────────────────────────────────────────
+
+@router.get(
+    "/medication-requests/{request_id}/classification",
+    response_model=ClassificationResultOut,
+)
+def get_classification(
+    request_id: uuid.UUID,
+    db: Session = Depends(get_db),
+    provider: Provider = Depends(get_current_provider),
+):
+    """Get classification result for a medication request."""
+    # Verify provider owns this request
+    request = (
+        db.query(MedicationRequest)
+        .filter(
+            MedicationRequest.request_id == request_id,
+            MedicationRequest.provider_id == provider.provider_id,
+        )
+        .first()
+    )
+    if not request:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Medication request not found",
+        )
+
+    classification = (
+        db.query(ClassificationResult)
+        .filter(ClassificationResult.request_id == request_id)
+        .first()
+    )
+    if not classification:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Classification not yet available",
+        )
+
+    return ClassificationResultOut.model_validate(classification)
