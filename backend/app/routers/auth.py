@@ -22,39 +22,57 @@ log = logging.getLogger(__name__)
 router = APIRouter(tags=["auth"])
 
 
+def _extract_provider_record(prognosis_data: dict) -> dict:
+    """
+    Extract provider fields from Prognosis ProviderLogIn response.
+
+    Response shape:
+    {"status": 200, "result": [{ "Id": "...", "provider_id": 8325,
+      "surname": "...", "firstname": "...", "Email": "...",
+      "ProviderStatus": "ACTIVE", ... }], "ErrorMessage": ""}
+    """
+    # Result is an array — take first record
+    results = prognosis_data.get("result") or prognosis_data.get("Result") or []
+    if isinstance(results, list) and len(results) > 0:
+        rec = results[0]
+    elif isinstance(prognosis_data, dict) and "provider_id" in prognosis_data:
+        rec = prognosis_data
+    else:
+        return {}
+
+    surname = rec.get("surname") or ""
+    firstname = rec.get("firstname") or ""
+    name = f"{firstname} {surname}".strip() or surname or "Unknown Provider"
+
+    return {
+        "name": name,
+        "prognosis_provider_id": str(rec.get("provider_id") or ""),
+        "prognosis_user_id": str(rec.get("User_id") or ""),
+        "prognosis_uuid": rec.get("Id") or "",
+        "email": rec.get("Email") or "",
+        "status": rec.get("ProviderStatus") or "ACTIVE",
+        "state_id": rec.get("StateID"),
+        "city_id": rec.get("CityID"),
+    }
+
+
 def _upsert_provider(db: Session, email: str, password: str, prognosis_data: dict) -> Provider:
     """Create or update a provider record from Prognosis response data."""
     provider = db.query(Provider).filter(Provider.email == email).first()
 
-    # Extract fields from Prognosis response — adjust keys when live response is confirmed
-    # Common patterns: providerId/ProviderId, providerName/ProviderName, etc.
-    data = prognosis_data if isinstance(prognosis_data, dict) else {}
-    name = (
-        data.get("providerName") or data.get("ProviderName") or
-        data.get("name") or data.get("Name") or
-        data.get("facilityName") or data.get("FacilityName") or
-        email.split("@")[0]
-    )
-    prognosis_id = str(
-        data.get("providerId") or data.get("ProviderId") or
-        data.get("providerCode") or data.get("ProviderCode") or
-        data.get("id") or data.get("Id") or ""
-    )
-    location = (
-        data.get("location") or data.get("Location") or
-        data.get("address") or data.get("Address") or ""
-    )
+    data = _extract_provider_record(prognosis_data)
+    name = data.get("name") or email.split("@")[0]
+    prognosis_id = data.get("prognosis_provider_id") or ""
+    is_active = data.get("status", "").upper() == "ACTIVE"
 
     if provider:
         # Update existing
         provider.hashed_password = hash_password(password)
-        provider.is_active = True
+        provider.is_active = is_active
         if name:
             provider.name = name
         if prognosis_id:
             provider.prognosis_provider_id = prognosis_id
-        if location:
-            provider.location = location
     else:
         # Create new
         provider = Provider(
@@ -62,8 +80,7 @@ def _upsert_provider(db: Session, email: str, password: str, prognosis_data: dic
             email=email,
             hashed_password=hash_password(password),
             prognosis_provider_id=prognosis_id or "pending",
-            location=location or None,
-            is_active=True,
+            is_active=is_active,
         )
         db.add(provider)
 
