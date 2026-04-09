@@ -7,10 +7,13 @@ Call Center API endpoints:
   GET  /authorization/codes          – List PA codes for agent
 """
 
+import logging
 import random
 import string
 import uuid
 from datetime import datetime, timedelta, timezone
+
+log = logging.getLogger(__name__)
 
 import httpx
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -324,6 +327,29 @@ async def submit_reimbursement(
     # Submit to Prognosis AddClaim API
     claims_result = await prognosis_client.create_claim(claims_payload)
 
+    # Extract batch number from Prognosis response
+    batch_number = None
+    prognosis_status = None
+    if claims_result.get("success") and claims_result.get("data"):
+        prog_data = claims_result["data"]
+        # Try common field names for batch/claim reference
+        if isinstance(prog_data, dict):
+            batch_number = (
+                prog_data.get("BatchNumber")
+                or prog_data.get("batchNumber")
+                or prog_data.get("batch_number")
+                or prog_data.get("ClaimBatchNo")
+                or prog_data.get("claimBatchNo")
+                or prog_data.get("ReferenceNumber")
+                or prog_data.get("referenceNumber")
+                or prog_data.get("ClaimID")
+                or prog_data.get("claimId")
+                or str(prog_data.get("result", ""))[:50] if prog_data.get("result") else None
+            )
+            prognosis_status = prog_data.get("Message") or prog_data.get("message") or "Submitted"
+        elif isinstance(prog_data, str):
+            batch_number = prog_data[:50]
+
     # Mark code as USED
     auth_code.status = "USED"
 
@@ -353,10 +379,37 @@ async def submit_reimbursement(
     db.add(claim)
     db.commit()
 
+    # Send confirmation email to member + claims team
+    from app.services.email_service import send_claim_confirmation
+    member_email = body.get("member_email", "")
+    try:
+        send_claim_confirmation(
+            member_email=member_email,
+            enrollee_name=auth_code.enrollee_name,
+            enrollee_id=auth_code.enrollee_id,
+            pa_code=auth_code.code,
+            visit_type=auth_code.visit_type_name,
+            provider_name=body.get("provider_name", ""),
+            visit_date=body.get("visit_date", ""),
+            claim_amount=claim_amount,
+            approved_amount=auth_code.approved_amount,
+            bank_name=body.get("bank_name", ""),
+            account_number=body.get("account_number", ""),
+            account_name=body.get("account_name", ""),
+            reason_for_visit=body.get("reason_for_visit", ""),
+            remarks=body.get("remarks", ""),
+            reimbursement_reason=body.get("reimbursement_reason", ""),
+            batch_number=batch_number,
+            prognosis_status=prognosis_status,
+        )
+    except Exception as e:
+        log.error("Failed to send confirmation email: %s", e)
+
     return {
         "success": True,
         "message": "Reimbursement claim submitted successfully",
         "claim_id": str(claim.claim_id),
+        "batch_number": batch_number,
         "code": auth_code.code,
         "enrollee_name": auth_code.enrollee_name,
         "visit_type_name": auth_code.visit_type_name,

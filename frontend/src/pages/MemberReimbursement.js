@@ -30,6 +30,7 @@ export default function MemberReimbursement() {
   const [bankValidating, setBankValidating] = useState(false);
   const [bankValidated, setBankValidated] = useState(false);
   const [bankError, setBankError] = useState("");
+  const [memberEmail, setMemberEmail] = useState("");
 
   // File uploads
   const [receipts, setReceipts] = useState([]);
@@ -50,7 +51,7 @@ export default function MemberReimbursement() {
     setReimbursementReason(""); setProviderName(""); setVisitDate("");
     setReasonForVisit(""); setRemarks(""); setBankName(""); setBankCode("");
     setAccountNumber(""); setAccountName(""); setBankValidated(false);
-    setBankError(""); setReceipts([]);
+    setBankError(""); setMemberEmail(""); setReceipts([]);
     setMedicalReport(null); setSubmitResult(null); setError("");
   };
 
@@ -151,6 +152,7 @@ export default function MemberReimbursement() {
         account_number: accountNumber,
         account_name: accountName,
         claim_documents: claimDocuments,
+        member_email: memberEmail,
       });
       setSubmitResult(data);
     } catch (err) {
@@ -200,6 +202,12 @@ export default function MemberReimbursement() {
             <div style={{ background: "#E8F8EE", border: "2px solid #0A7C3E", borderRadius: 10, padding: "1.5rem", textAlign: "center", marginBottom: "1rem" }}>
               <div style={{ fontSize: "1.5rem", marginBottom: "0.5rem" }}>&#10004;</div>
               <div style={{ fontSize: "1.1rem", fontWeight: 700, color: "#0A7C3E", marginBottom: "0.5rem" }}>Claim Submitted Successfully</div>
+              {submitResult.batch_number && (
+                <div style={{ background: "#fff", border: "2px solid #0A7C3E", borderRadius: 8, padding: "8px 16px", display: "inline-block", marginBottom: "0.75rem" }}>
+                  <span style={{ fontSize: "0.7rem", color: "#888", textTransform: "uppercase", fontWeight: 600, display: "block" }}>Prognosis Batch Number</span>
+                  <span style={{ fontSize: "1.3rem", fontWeight: 800, color: "#0A7C3E", letterSpacing: "0.04em" }}>{submitResult.batch_number}</span>
+                </div>
+              )}
               <div style={{ fontSize: "0.9rem", color: "#444", marginBottom: "0.75rem" }}>
                 {submitResult.enrollee_name} &mdash; {submitResult.visit_type_name}
               </div>
@@ -217,6 +225,7 @@ export default function MemberReimbursement() {
                   <div style={{ fontWeight: 600, color: "#263626" }}>{submitResult.provider_name}</div>
                 </div>
               </div>
+              {memberEmail && <p style={{ fontSize: "0.82rem", color: "#666", marginTop: "0.75rem" }}>A confirmation email has been sent to <strong>{memberEmail}</strong></p>}
             </div>
             <button onClick={reset} className={sharedStyles.secondaryBtn}>Submit Another Claim</button>
           </div>
@@ -345,6 +354,13 @@ export default function MemberReimbursement() {
                 <label className={sharedStyles.label}>
                   Comments / Remarks
                   <textarea placeholder="Additional comments (optional)" value={remarks} onChange={(e) => setRemarks(e.target.value)} className={sharedStyles.input} style={{ marginTop: "0.25rem", minHeight: 60, resize: "vertical" }} />
+                </label>
+
+                {/* Email for confirmation */}
+                <label className={sharedStyles.label}>
+                  Your Email Address (for confirmation)
+                  <input type="email" placeholder="your.email@example.com" value={memberEmail} onChange={(e) => setMemberEmail(e.target.value)} className={sharedStyles.input} style={{ marginTop: "0.25rem" }} />
+                  <span style={{ fontSize: "0.72rem", color: "#888" }}>A confirmation email with your batch number will be sent here</span>
                 </label>
 
                 {/* File Uploads */}
