@@ -1,8 +1,12 @@
 """
-WellaHealth Dispatch Service — sends acute-only requests to WellaHealth API.
+WellaHealth Dispatch — sends acute-only requests via fulfilment API.
 
-Phase 6: Mock dispatch with full logging.
-Future: Connect to live WellaHealth API when credentials are provided.
+Flow:
+1. Validate address via Google Maps
+2. Search pharmacy via WellaHealth by verified location
+3. Submit fulfilment with pharmacy code, patient data, drugs
+4. Store tracking code and link
+5. Log everything
 """
 
 import json
@@ -21,33 +25,44 @@ from app.services.wellahealth_client import wellahealth_client
 logger = logging.getLogger(__name__)
 
 
-def _build_wellahealth_payload(request: MedicationRequest, items: list[MedicationRequestItem]) -> dict:
-    """
-    Build the payload for WellaHealth fulfilment submission.
-
-    WellaHealth expects: memberName, memberNumber, address, medications (name + quantity)
-    """
-    # Build geolocated address string
-    address_parts = [request.delivery_address or ""]
-    if request.delivery_landmark:
-        address_parts.append(request.delivery_landmark)
-    address_parts.extend([request.delivery_lga, request.delivery_state])
-    address = ", ".join(p for p in address_parts if p)
+def _build_fulfilment_payload(
+    request: MedicationRequest,
+    items: list[MedicationRequestItem],
+    pharmacy_code: str = "",
+    verified_address: str = "",
+) -> dict:
+    """Build the WellaHealth fulfilment payload."""
+    # Split enrollee name into first/last
+    name_parts = (request.enrollee_name or "Unknown").split(" ", 1)
+    first_name = name_parts[0]
+    last_name = name_parts[1] if len(name_parts) > 1 else ""
 
     return {
-        "reference": request.reference_number,
-        "enrollee_id": request.enrollee_id,
-        "member_name": request.enrollee_name,
-        "delivery_address": address,
-        "medications": [
+        "refId": request.reference_number,
+        "pharmacyCode": pharmacy_code,
+        "fulfilmentService": "Acute",
+        "diagnosis": request.diagnosis or "",
+        "notes": f"From Leadway Rx Portal. Provider: {request.facility_name}",
+        "isDelivery": True,
+        "patientData": {
+            "firstName": first_name,
+            "lastName": last_name,
+            "hmoId": request.enrollee_id,
+            "phoneNumber": request.member_phone or "",
+            "gender": request.enrollee_gender or "",
+            "dateOfBirth": str(request.enrollee_dob) if request.enrollee_dob else "",
+            "address": verified_address or request.delivery_address or "",
+        },
+        "drugs": [
             {
-                "drug_name": item.drug_name,
+                "refId": str(i + 1),
+                "name": item.drug_name,
+                "dose": item.dosage_instruction or "",
                 "strength": item.strength or "",
-                "quantity": item.quantity,
-                "dosage": item.dosage_instruction,
-                "duration": item.duration,
+                "frequency": item.route or "",  # frequency stored in route field for now
+                "duration": item.duration or "",
             }
-            for item in items
+            for i, item in enumerate(items)
         ],
     }
 
@@ -56,13 +71,10 @@ def dispatch_to_wellahealth(
     request_id: str,
     db: Session,
     actor: str = "system",
+    pharmacy_code: str = "",
+    verified_address: str = "",
 ) -> WellaHealthApiLog:
-    """
-    Dispatch an acute medication request to WellaHealth.
-
-    Currently mock. When WellaHealth API credentials are provided,
-    the wellahealth_client will handle the actual HTTP call.
-    """
+    """Dispatch an acute medication request to WellaHealth fulfilment API."""
     request = (
         db.query(MedicationRequest)
         .filter(MedicationRequest.request_id == request_id)
@@ -77,42 +89,49 @@ def dispatch_to_wellahealth(
         .all()
     )
 
-    payload = _build_wellahealth_payload(request, items)
+    payload = _build_fulfilment_payload(request, items, pharmacy_code, verified_address)
 
-    # TODO: WELLAHEALTH_INTEGRATION — Replace mock with live call
-    # response = await wellahealth_client.submit_order(payload)
-    mock_success = True
-    mock_response = {"order_id": "MOCK-WH-" + request.reference_number, "status": "pending"}
+    # Log the API call (mock or live)
+    import asyncio
+    try:
+        loop = asyncio.get_event_loop()
+        if loop.is_running():
+            import concurrent.futures
+            with concurrent.futures.ThreadPoolExecutor() as pool:
+                result = pool.submit(asyncio.run, wellahealth_client.submit_fulfilment(payload)).result()
+        else:
+            result = asyncio.run(wellahealth_client.submit_fulfilment(payload))
+    except Exception as e:
+        logger.error("WellaHealth fulfilment call failed: %s", e)
+        result = {"success": False, "error": str(e)}
 
-    # Log the API call
+    success = result.get("success", False)
+    tracking_code = result.get("trackingCode") or result.get("tracking_code") or ""
+    tracking_link = result.get("trackingLink") or result.get("tracking_link") or ""
+
     api_log = WellaHealthApiLog(
         request_id=request_id,
-        endpoint="/orders",
+        endpoint="/v1/fulfilments",
         method="POST",
         request_payload=json.dumps(payload),
-        response_code=200 if mock_success else 500,
-        response_body=json.dumps(mock_response),
-        external_reference=mock_response.get("order_id"),
-        success=mock_success,
+        response_code=200 if success else 500,
+        response_body=json.dumps(result),
+        external_reference=tracking_code,
+        success=success,
         retry_count=0,
-        error_message=None,
+        error_message=result.get("error") if not success else None,
     )
     db.add(api_log)
 
-    # Audit
-    audit = MedicationAuditLog(
+    db.add(MedicationAuditLog(
         event_type="wellahealth_dispatched",
         request_id=request_id,
         actor=actor,
-        detail=f"Dispatched to WellaHealth. Mock mode. Ref: {mock_response.get('order_id')}",
-    )
-    db.add(audit)
+        detail=f"Fulfilment {'sent' if success else 'FAILED'}. Tracking: {tracking_code}. Pharmacy: {pharmacy_code}",
+    ))
 
     db.flush()
-
-    logger.info(
-        "WellaHealth dispatch: request=%s, ref=%s, mock=True",
-        request_id, request.reference_number,
-    )
+    logger.info("WellaHealth dispatch: request=%s, success=%s, tracking=%s",
+                request_id, success, tracking_code)
 
     return api_log

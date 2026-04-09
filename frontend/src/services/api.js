@@ -88,6 +88,9 @@ export const searchMedications = (query, limit = 15) =>
 export const validateAddress = (address, state) =>
   api.get("/lookup/validate-address", { params: { address, state } });
 
+export const searchPharmacies = (state, lga, area) =>
+  api.get("/lookup/pharmacies", { params: { state, lga, area } });
+
 // ── Drug Master ──────────────────────────────────
 export const searchDrugs = (query) =>
   api.get("/drugs/search", { params: { q: query } });

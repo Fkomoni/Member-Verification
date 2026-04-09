@@ -149,7 +149,71 @@ class WellaHealthClient:
             for item in (items if isinstance(items, list) else [])
         ]
 
-    # ── Order/Fulfilment Submission ──────────────────────────────
+    # ── Pharmacy Search ───────────────────────────────────────────
+
+    async def search_pharmacies(
+        self, state_name: str, lga_name: str = "", area_name: str = "",
+    ) -> list[dict]:
+        """
+        Search for pharmacies near a location.
+        GET /v1/Pharmacies/search?stateName=...&lgaName=...&areaName=...
+        """
+        if self._mock_mode:
+            return [{"pharmacyCode": "MOCK-PHARM-001", "pharmacyName": "Mock Pharmacy", "mock": True}]
+
+        params = {"stateName": state_name}
+        if lga_name:
+            params["lgaName"] = lga_name
+        if area_name:
+            params["areaName"] = area_name
+
+        data = await self._request("GET", "/Pharmacies/search", params=params)
+        if not data:
+            return []
+
+        items = data.get("data", data) if isinstance(data, dict) else data
+        return items if isinstance(items, list) else []
+
+    # ── Fulfilment Submission ────────────────────────────────────
+
+    async def submit_fulfilment(self, payload: dict) -> dict:
+        """
+        Submit an acute medication fulfilment.
+        POST /v1/fulfilments
+
+        Payload format:
+        {
+            "refId": "RX-12345",
+            "pharmacyCode": "WHPTest1002",
+            "fulfilmentService": "Acute",
+            "diagnosis": "Malaria",
+            "notes": "From Leadway Portal",
+            "isDelivery": true,
+            "patientData": {
+                "firstName": "John", "lastName": "Doe",
+                "hmoId": "123456", "phoneNumber": "2348012345678",
+                "gender": "Male", "dateOfBirth": "1990-01-01",
+                "address": "Lekki Phase 1, Lagos"
+            },
+            "drugs": [
+                {"refId": "1", "name": "Coartem", "dose": "Tab bd 3/7",
+                 "strength": "20/120mg", "frequency": "bd", "duration": "3/7"}
+            ]
+        }
+        """
+        if self._mock_mode:
+            return {
+                "success": True, "mock": True,
+                "trackingCode": "MOCK-TRK-" + payload.get("refId", ""),
+                "trackingLink": "",
+            }
+
+        data = await self._request("POST", "/fulfilments", json_data=payload)
+        if data is not None:
+            return {"success": True, **data}
+        return {"success": False, "error": "Fulfilment submission failed"}
+
+    # ── Legacy methods (kept for compatibility) ──────────────────
 
     async def submit_order(self, payload: dict) -> WellaHealthOrderResponse:
         """

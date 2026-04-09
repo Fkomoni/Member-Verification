@@ -263,6 +263,20 @@ def search_medications(
     }
 
 
+# ── Pharmacy Search (WellaHealth) ────────────────────────────────
+
+@router.get("/lookup/pharmacies")
+async def search_pharmacies(
+    state: str = Query(..., min_length=1),
+    lga: str = Query(""),
+    area: str = Query(""),
+    _provider=Depends(get_current_provider),
+):
+    """Search WellaHealth pharmacies by location."""
+    results = await wellahealth_client.search_pharmacies(state, lga, area)
+    return {"pharmacies": results, "total": len(results)}
+
+
 # ── Google Maps Address Validation ───────────────────────────────
 
 @router.get("/lookup/validate-address")

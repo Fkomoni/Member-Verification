@@ -373,6 +373,15 @@
   color: #0A7C3E;
 }
 
+/* ── Pharmacy Selection ───────────────────────── */
+.pharmacyList { display: flex; flex-direction: column; gap: 0.4rem; }
+.pharmacyItem { padding: 0.6rem 0.75rem; background: #FAFBFC; border: 1.5px solid #eee; border-radius: 8px; cursor: pointer; transition: all 0.15s; }
+.pharmacyItem:hover { border-color: #C61531; background: #FFF5F5; }
+.pharmacySelected { border-color: #0A7C3E; background: #E8F8EE; }
+.pharmacyName { font-size: 0.85rem; font-weight: 700; color: #263626; }
+.pharmacyAddr { font-size: 0.75rem; color: #777; margin-top: 0.1rem; }
+.pharmacyCode { font-size: 0.7rem; color: #999; margin-top: 0.1rem; }
+
 .selectedDrugInfo {
   margin-top: 0.3rem;
   font-size: 0.75rem;

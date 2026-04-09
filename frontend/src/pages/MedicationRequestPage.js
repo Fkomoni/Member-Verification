@@ -8,6 +8,7 @@ import {
   getStates,
   createMedicationRequest,
   validateAddress,
+  searchPharmacies,
 } from "../services/api";
 import logo from "../assets/logos/leadway-logo.png.jpeg";
 import styles from "./MedicationRequestPage.module.css";
@@ -41,8 +42,11 @@ export default function MedicationRequestPage() {
   const [providerNotes, setProviderNotes] = useState("");
   const [deliveryState, setDeliveryState] = useState("");
   const [deliveryAddress, setDeliveryAddress] = useState("");
-  const [addressValidation, setAddressValidation] = useState(null); // Google result
+  const [addressValidation, setAddressValidation] = useState(null);
   const [addressValidating, setAddressValidating] = useState(false);
+  const [pharmacies, setPharmacies] = useState([]);
+  const [selectedPharmacy, setSelectedPharmacy] = useState(null);
+  const [pharmacyLoading, setPharmacyLoading] = useState(false);
   const [urgency, setUrgency] = useState("routine");
   const [medications, setMedications] = useState([{ ...EMPTY_MED }]);
 
@@ -130,12 +134,26 @@ export default function MedicationRequestPage() {
     if (!deliveryAddress.trim()) return;
     setAddressValidating(true);
     setAddressValidation(null);
+    setPharmacies([]);
+    setSelectedPharmacy(null);
     try {
       const { data } = await validateAddress(deliveryAddress.trim(), deliveryState);
       setAddressValidation(data);
-      if (data.validated && data.state) {
-        // Auto-set state from Google if not already set
-        if (!deliveryState) setDeliveryState(data.state);
+      if (data.validated) {
+        if (data.state && !deliveryState) setDeliveryState(data.state);
+        // Auto-search pharmacies near verified address
+        setPharmacyLoading(true);
+        try {
+          const state = data.state || deliveryState;
+          const lga = data.lga || "";
+          const { data: pharmData } = await searchPharmacies(state, lga, "");
+          setPharmacies(pharmData.pharmacies || []);
+          // Auto-select first pharmacy if only one
+          if (pharmData.pharmacies?.length === 1) {
+            setSelectedPharmacy(pharmData.pharmacies[0]);
+          }
+        } catch { setPharmacies([]); }
+        setPharmacyLoading(false);
       }
     } catch { setAddressValidation({ validated: false, reason: "Validation failed" }); }
     setAddressValidating(false);
@@ -206,6 +224,7 @@ export default function MedicationRequestPage() {
     setMemberPhone(""); setAltPhone(""); setMemberEmail("");
     setDiagnosis(""); setDiagnosisSearch(""); setTreatingDoctor("");
     setProviderNotes(""); setDeliveryState(""); setDeliveryAddress("");
+    setAddressValidation(null); setPharmacies([]); setSelectedPharmacy(null);
     setUrgency("routine"); setMedications([{ ...EMPTY_MED }]); setError("");
   };
 
@@ -471,6 +490,33 @@ export default function MedicationRequestPage() {
                 )}
               </div>
             </div>
+          </div>
+
+            {/* Pharmacy Selection */}
+            {pharmacyLoading && <div className={styles.enrolleeMeta}>Searching pharmacies...</div>}
+            {pharmacies.length > 0 && (
+              <div className={styles.formRowFull}>
+                <div className={styles.field}>
+                  <label className={styles.label}>Nearest Pharmacy</label>
+                  <div className={styles.pharmacyList}>
+                    {pharmacies.slice(0, 5).map((p, i) => {
+                      const code = p.pharmacyCode || p.PharmacyCode || p.code || "";
+                      const name = p.pharmacyName || p.PharmacyName || p.name || `Pharmacy ${i + 1}`;
+                      const addr = p.address || p.Address || "";
+                      const isSelected = selectedPharmacy && (selectedPharmacy.pharmacyCode || selectedPharmacy.code) === code;
+                      return (
+                        <div key={i} className={`${styles.pharmacyItem} ${isSelected ? styles.pharmacySelected : ""}`}
+                          onClick={() => setSelectedPharmacy(p)}>
+                          <div className={styles.pharmacyName}>{name}</div>
+                          {addr && <div className={styles.pharmacyAddr}>{addr}</div>}
+                          <div className={styles.pharmacyCode}>Code: {code}</div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* ── 5. Additional ──────────────────── */}
