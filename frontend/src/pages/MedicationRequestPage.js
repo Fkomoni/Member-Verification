@@ -8,6 +8,7 @@ import {
   searchDrugs,
   getStates,
   createMedicationRequest,
+  validateAddress,
 } from "../services/api";
 import logo from "../assets/logos/leadway-logo.png.jpeg";
 import styles from "./MedicationRequestPage.module.css";
@@ -39,6 +40,8 @@ export default function MedicationRequestPage() {
   const [providerNotes, setProviderNotes] = useState("");
   const [deliveryState, setDeliveryState] = useState("");
   const [deliveryAddress, setDeliveryAddress] = useState("");
+  const [addressValidation, setAddressValidation] = useState(null); // Google result
+  const [addressValidating, setAddressValidating] = useState(false);
   const [urgency, setUrgency] = useState("routine");
   const [medications, setMedications] = useState([{ ...EMPTY_MED }]);
 
@@ -68,8 +71,13 @@ export default function MedicationRequestPage() {
     setEnrolleeData(null);
     try {
       const { data } = await lookupEnrollee(enrolleeId.trim());
-      if (data.found) setEnrolleeData(data);
-      else setEnrolleeLookupError("Enrollee not found");
+      if (data.found) {
+        setEnrolleeData(data);
+        if (data.phone) setMemberPhone(data.phone);
+        if (data.email) setMemberEmail(data.email);
+      } else {
+        setEnrolleeLookupError("Enrollee not found");
+      }
     } catch (err) {
       setEnrolleeLookupError(err.response?.data?.detail || "Lookup failed");
     } finally {
@@ -111,6 +119,22 @@ export default function MedicationRequestPage() {
     setMedications(updated);
     setActiveSearch(null);
     setDrugResults([]);
+  };
+
+  // ── Address validation ───────────────────────────
+  const handleValidateAddress = async () => {
+    if (!deliveryAddress.trim()) return;
+    setAddressValidating(true);
+    setAddressValidation(null);
+    try {
+      const { data } = await validateAddress(deliveryAddress.trim(), deliveryState);
+      setAddressValidation(data);
+      if (data.validated && data.state) {
+        // Auto-set state from Google if not already set
+        if (!deliveryState) setDeliveryState(data.state);
+      }
+    } catch { setAddressValidation({ validated: false, reason: "Validation failed" }); }
+    setAddressValidating(false);
   };
 
   const addMedLine = () => setMedications([...medications, { ...EMPTY_MED }]);
@@ -388,8 +412,24 @@ export default function MedicationRequestPage() {
             <div className={styles.formRowFull}>
               <div className={styles.field}>
                 <label className={styles.label}>Delivery Address <span className={styles.required}>*</span></label>
-                <textarea className={styles.textarea} value={deliveryAddress} onChange={(e) => setDeliveryAddress(e.target.value)}
-                  placeholder="Enter full delivery address (will be verified on Google Maps)" rows={2} />
+                <div className={styles.lookupRow}>
+                  <textarea className={styles.textarea} style={{flex: 1}} value={deliveryAddress} onChange={(e) => { setDeliveryAddress(e.target.value); setAddressValidation(null); }}
+                    placeholder="Enter full delivery address" rows={2} />
+                  <button type="button" className={styles.lookupBtn} onClick={handleValidateAddress}
+                    disabled={addressValidating || !deliveryAddress.trim()} style={{alignSelf: "flex-start", marginTop: "2px"}}>
+                    {addressValidating ? "Verifying..." : "Verify"}
+                  </button>
+                </div>
+                {addressValidation && addressValidation.validated && (
+                  <div className={styles.addressValid}>
+                    <strong>Verified:</strong> {addressValidation.formatted_address}
+                    {addressValidation.state && <> &middot; State: {addressValidation.state}</>}
+                    {addressValidation.is_lagos !== null && <> &middot; {addressValidation.is_lagos ? "Lagos" : "Outside Lagos"}</>}
+                  </div>
+                )}
+                {addressValidation && !addressValidation.validated && (
+                  <div className={styles.fieldError}>Address could not be verified: {addressValidation.reason}</div>
+                )}
               </div>
             </div>
           </div>

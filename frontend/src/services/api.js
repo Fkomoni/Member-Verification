@@ -69,6 +69,9 @@ export const getDiagnoses = () =>
 export const searchDrugTariff = (query, page = 1, pageSize = 50) =>
   api.get("/lookup/drugs", { params: { q: query, page, page_size: pageSize } });
 
+export const validateAddress = (address, state) =>
+  api.get("/lookup/validate-address", { params: { address, state } });
+
 // ── Drug Master ──────────────────────────────────
 export const searchDrugs = (query) =>
   api.get("/drugs/search", { params: { q: query } });

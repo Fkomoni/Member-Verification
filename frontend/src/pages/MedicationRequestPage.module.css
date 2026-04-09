@@ -336,6 +336,17 @@
 .tagRemove:hover { color: var(--lw-crimson, #C61531); }
 
 /* ── Drug source tag ─────────────────────────── */
+/* ── Address Validation ───────────────────────── */
+.addressValid {
+  margin-top: 0.4rem;
+  padding: 0.5rem 0.75rem;
+  background: #E8F8EE;
+  border: 1px solid #B5E8C9;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  color: #0A7C3E;
+}
+
 .sourceTag {
   display: inline-block;
   padding: 0.05rem 0.3rem;
