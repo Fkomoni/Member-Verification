@@ -27,6 +27,17 @@ class Settings(BaseSettings):
     PROGNOSIS_USERNAME: str = ""
     PROGNOSIS_PASSWORD: str = ""
 
+    # WellaHealth API (acute medication fulfilment)
+    WELLAHEALTH_BASE_URL: str = ""
+    WELLAHEALTH_API_KEY: str = ""
+
+    # Google Maps / Geolocation API
+    GOOGLE_MAPS_API_KEY: str = ""
+
+    # Leadway WhatsApp routing numbers
+    WHATSAPP_LAGOS_NUMBER: str = ""
+    WHATSAPP_OUTSIDE_LAGOS_NUMBER: str = ""
+
     model_config = {"env_file": ".env"}
 
 
