@@ -234,6 +234,119 @@
   min-height: 70px;
 }
 
+/* ── Enrollee Lookup ─────────────────────────── */
+.lookupRow {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.lookupRow .input {
+  flex: 1;
+}
+
+.lookupBtn {
+  padding: 0.6rem 1.25rem;
+  background: var(--lw-crimson, #C61531);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  font-family: var(--font-primary);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.lookupBtn:hover { background: #A11028; }
+.lookupBtn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.enrolleeConfirmed {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.85rem 1rem;
+  background: #E8F8EE;
+  border: 1px solid #B5E8C9;
+  border-radius: 10px;
+  margin-bottom: 0.85rem;
+}
+
+.enrolleeInfo { flex: 1; }
+
+.enrolleeNameBig {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #0A7C3E;
+}
+
+.enrolleeMeta {
+  font-size: 0.78rem;
+  color: #555;
+  margin-top: 0.15rem;
+}
+
+.changeBtn {
+  padding: 0.35rem 0.85rem;
+  background: transparent;
+  color: var(--lw-crimson, #C61531);
+  border: 1.5px solid var(--lw-crimson, #C61531);
+  border-radius: 6px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: var(--font-primary);
+}
+
+.changeBtn:hover { background: #FFF0F0; }
+
+.facilityAuto {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0;
+}
+
+.facilityValue {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--lw-dark, #263626);
+}
+
+/* ── Diagnosis / Tag ─────────────────────────── */
+.selectedTag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-top: 0.35rem;
+  padding: 0.3rem 0.65rem;
+  background: #E6F0FF;
+  color: #1A2B6D;
+  border-radius: 6px;
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.tagRemove {
+  cursor: pointer;
+  font-size: 1rem;
+  color: #999;
+  margin-left: 0.2rem;
+}
+
+.tagRemove:hover { color: var(--lw-crimson, #C61531); }
+
+/* ── Drug source tag ─────────────────────────── */
+.sourceTag {
+  display: inline-block;
+  padding: 0.05rem 0.3rem;
+  border-radius: 4px;
+  font-size: 0.6rem;
+  font-weight: 700;
+  background: #F0F0F0;
+  color: #999;
+  margin-left: 0.3rem;
+}
+
 /* ── Medication Lines ────────────────────────── */
 .medLine {
   background: #FAFBFC;

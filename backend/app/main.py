@@ -10,7 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.core.database import Base, engine
 from app.models import medication as medication_models  # noqa: F401 — register models
-from app.routers import admin_review, auth, biometrics, claims, drug_master, medication_requests, members, reports, visits
+from app.routers import admin_review, auth, biometrics, claims, drug_master, lookups, medication_requests, members, reports, visits
 
 logging.basicConfig(
     level=logging.INFO,
@@ -49,6 +49,7 @@ app.include_router(drug_master.router, prefix=PREFIX)
 app.include_router(medication_requests.router, prefix=PREFIX)
 app.include_router(admin_review.router, prefix=PREFIX)
 app.include_router(reports.router, prefix=PREFIX)
+app.include_router(lookups.router, prefix=PREFIX)
 
 
 @app.on_event("startup")

@@ -59,6 +59,16 @@ export const validateClaim = (verificationToken, timestamp, providerId) =>
 export const getClaimsStatus = (enrolleeId) =>
   api.post("/claims-status", { enrollee_id: enrolleeId });
 
+// ── Lookups ──────────────────────────────────────
+export const lookupEnrollee = (enrolleeId) =>
+  api.get("/lookup/enrollee", { params: { enrollee_id: enrolleeId } });
+
+export const getDiagnoses = () =>
+  api.get("/lookup/diagnoses");
+
+export const searchDrugTariff = (query, page = 1, pageSize = 50) =>
+  api.get("/lookup/drugs", { params: { q: query, page, page_size: pageSize } });
+
 // ── Drug Master ──────────────────────────────────
 export const searchDrugs = (query) =>
   api.get("/drugs/search", { params: { q: query } });
