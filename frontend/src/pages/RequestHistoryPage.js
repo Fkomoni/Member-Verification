@@ -94,7 +94,6 @@ export default function RequestHistoryPage() {
       </header>
 
       <nav className={styles.navBar}>
-        
         <Link to="/medication-request" className={styles.navLink}>New Rx Request</Link>
         <Link to="/medication-requests" className={styles.navLinkActive}>Request History</Link>
       </nav>

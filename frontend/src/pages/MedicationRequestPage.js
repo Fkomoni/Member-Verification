@@ -274,7 +274,7 @@ export default function MedicationRequestPage() {
             <h2 className={styles.sectionTitle}><span className={styles.sectionTitleIcon}>1.</span> Enrollee Information</h2>
             {!enrolleeData ? (
               <div className={styles.field}>
-                <label className={styles.label}>Enrollee ID (CIF) <span className={styles.required}>*</span></label>
+                <label className={styles.label}>Enrollee ID <span className={styles.required}>*</span></label>
                 <div className={styles.lookupRow}>
                   <input className={styles.input} value={enrolleeId} onChange={(e) => setEnrolleeId(e.target.value)}
                     placeholder="Enter CIF number" onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), handleEnrolleeLookup())} />
@@ -289,7 +289,12 @@ export default function MedicationRequestPage() {
               <div className={styles.enrolleeConfirmed}>
                 <div className={styles.enrolleeInfo}>
                   <div className={styles.enrolleeNameBig}>{enrolleeData.name}</div>
-                  <div className={styles.enrolleeMeta}>CIF: {enrolleeId}{enrolleeData.gender && <> &middot; {enrolleeData.gender}</>}{enrolleeData.plan && <> &middot; {enrolleeData.plan}</>}</div>
+                  <div className={styles.enrolleeMeta}>
+                  ID: {enrolleeId}
+                  {enrolleeData.gender && <> &middot; {enrolleeData.gender}</>}
+                  {enrolleeData.plan && <> &middot; Scheme: {enrolleeData.plan}</>}
+                  {enrolleeData.status && <> &middot; {enrolleeData.status}</>}
+                </div>
                 </div>
                 <button type="button" className={styles.changeBtn} onClick={clearEnrollee}>Change</button>
               </div>
@@ -491,8 +496,6 @@ function NavBar({ active }) {
     <nav className={styles.navBar}>
       <Link to="/medication-request" className={active === "new-request" ? styles.navLinkActive : styles.navLink}>New Rx Request</Link>
       <Link to="/medication-requests" className={active === "history" ? styles.navLinkActive : styles.navLink}>Request History</Link>
-      <Link to="/admin/review" className={active === "admin" ? styles.navLinkActive : styles.navLink}>Review Queue</Link>
-      <Link to="/reports" className={active === "reports" ? styles.navLinkActive : styles.navLink}>Reports</Link>
     </nav>
   );
 }

@@ -53,37 +53,64 @@ async def lookup_enrollee(
 
         if resp.status_code == 200:
             data = resp.json()
+            logger.info("Enrollee lookup raw response: %s", str(data)[:500])
+
             # Handle various response shapes
+            rec = None
             if isinstance(data, list) and len(data) > 0:
                 rec = data[0]
-            elif isinstance(data, dict) and data.get("result"):
-                result = data["result"]
-                rec = result[0] if isinstance(result, list) and len(result) > 0 else result
             elif isinstance(data, dict):
-                rec = data
-            else:
+                # Try nested result/data fields
+                for key in ("result", "Result", "data", "Data"):
+                    nested = data.get(key)
+                    if isinstance(nested, list) and len(nested) > 0:
+                        rec = nested[0]
+                        break
+                    elif isinstance(nested, dict):
+                        rec = nested
+                        break
+                if rec is None:
+                    rec = data  # Use root dict directly
+
+            if not rec or (isinstance(rec, dict) and not rec):
                 raise HTTPException(404, "Enrollee not found")
 
-            # Extract name from various possible field names
-            name = (
-                rec.get("MemberName") or rec.get("memberName") or
-                rec.get("Name") or rec.get("name") or
-                rec.get("FullName") or rec.get("fullName") or
-                ((rec.get("Surname", "") or rec.get("surname", "")) + " " +
-                 (rec.get("Firstname", "") or rec.get("firstname", "") or
-                  rec.get("FirstName", "") or rec.get("OtherNames", ""))).strip() or
-                "Unknown"
-            )
+            # Log the record keys for debugging
+            if isinstance(rec, dict):
+                logger.info("Enrollee record keys: %s", list(rec.keys()))
+
+            # Extract name — try every possible field pattern
+            name_parts = []
+            for key in ("Surname", "surname", "LastName", "lastName", "last_name"):
+                if rec.get(key):
+                    name_parts.append(str(rec[key]).strip())
+                    break
+            for key in ("Firstname", "firstname", "FirstName", "firstName", "first_name", "OtherNames", "otherNames"):
+                if rec.get(key):
+                    name_parts.append(str(rec[key]).strip())
+                    break
+
+            name = " ".join(name_parts) if name_parts else None
+            if not name:
+                for key in ("MemberName", "memberName", "Name", "name", "FullName", "fullName", "EnrolleeName", "enrolleeName"):
+                    if rec.get(key):
+                        name = str(rec[key]).strip()
+                        break
+            if not name:
+                name = "Member " + enrollee_id
 
             return {
                 "found": True,
                 "enrollee_id": enrollee_id,
                 "name": name,
-                "gender": rec.get("Gender") or rec.get("gender") or rec.get("Sex"),
-                "dob": rec.get("DateOfBirth") or rec.get("dob") or rec.get("DOB"),
-                "plan": rec.get("PlanName") or rec.get("planName") or rec.get("Plan"),
-                "status": rec.get("Status") or rec.get("status"),
-                "phone": rec.get("Phone") or rec.get("phone") or rec.get("MobilePhone"),
+                "gender": rec.get("Gender") or rec.get("gender") or rec.get("Sex") or rec.get("sex"),
+                "dob": rec.get("DateOfBirth") or rec.get("dateOfBirth") or rec.get("dob") or rec.get("DOB"),
+                "plan": (rec.get("PlanName") or rec.get("planName") or rec.get("Plan") or
+                         rec.get("plan") or rec.get("SchemeName") or rec.get("schemeName") or
+                         rec.get("CompanyName") or rec.get("companyName")),
+                "status": rec.get("Status") or rec.get("status") or rec.get("EnrolleeStatus"),
+                "phone": (rec.get("Phone") or rec.get("phone") or rec.get("MobilePhone") or
+                          rec.get("mobilePhone") or rec.get("Telephone") or rec.get("telephone")),
                 "email": rec.get("Email") or rec.get("email"),
                 "raw": rec,
             }
