@@ -225,28 +225,35 @@ def classify_request(
             acute_count += either_count
         either_count = 0  # resolved
 
+    # Resolve "unknown" items: unknown drugs route to Leadway WhatsApp
+    # (Leadway ops team handles unclassified meds directly).
+    # They count as chronic for routing, but items stay flagged for review.
+    if unknown_count > 0:
+        chronic_count += unknown_count
+
     # Determine request-level classification
-    total_classified = acute_count + chronic_count
     has_unknown = unknown_count > 0
 
-    if has_unknown:
-        classification = "review_required"
-        reasoning = (
-            f"{unknown_count} medication(s) could not be classified. "
-            "Manual review required before routing."
-        )
-    elif acute_count > 0 and chronic_count > 0:
+    if acute_count > 0 and chronic_count > 0:
         classification = "mixed"
         reasoning = (
             f"Request contains {acute_count} acute and {chronic_count} chronic medication(s). "
-            "Mixed requests route to Leadway WhatsApp."
         )
+        if has_unknown:
+            reasoning += (
+                f"({unknown_count} unclassified medication(s) included — "
+                "routed to Leadway for manual handling.) "
+            )
+        reasoning += "Mixed requests route to Leadway WhatsApp."
     elif chronic_count > 0:
         classification = "chronic"
-        reasoning = (
-            f"All {chronic_count} medication(s) are chronic. "
-            "Routes to Leadway WhatsApp."
-        )
+        reasoning = f"All {chronic_count} medication(s) are chronic. "
+        if has_unknown:
+            reasoning += (
+                f"({unknown_count} unclassified medication(s) included — "
+                "routed to Leadway for manual handling.) "
+            )
+        reasoning += "Routes to Leadway WhatsApp."
     elif acute_count > 0:
         classification = "acute"
         reasoning = (
@@ -254,8 +261,9 @@ def classify_request(
             "Routes to WellaHealth API."
         )
     else:
-        classification = "review_required"
-        reasoning = "No classifiable medications found. Manual review required."
+        # No items at all (shouldn't happen, but safe fallback)
+        classification = "chronic"
+        reasoning = "No classifiable medications found. Routed to Leadway WhatsApp for manual handling."
 
     # If any individual item requires review, flag the whole request
     review_required = has_unknown or any_review
