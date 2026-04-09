@@ -57,7 +57,7 @@ async def authenticate_provider(email: str, password: str) -> dict | None:
         "Authorization": f"Bearer {system_token}",
         "Content-Type": "application/json",
     }
-    payload = {"email": email, "password": password}
+    payload = {"Email": email, "Password": password}
 
     try:
         async with httpx.AsyncClient(timeout=_TIMEOUT, verify=False) as client:
@@ -65,8 +65,19 @@ async def authenticate_provider(email: str, password: str) -> dict | None:
 
         if resp.status_code == 200:
             data = resp.json()
-            log.info("Prognosis provider login success for %s", email)
-            return data
+            # Check if response indicates success
+            # Response shape: {"status": 200, "result": [...], "ErrorMessage": ""}
+            result = data.get("result") or data.get("Result") or []
+            error_msg = data.get("ErrorMessage") or data.get("errorMessage") or ""
+            if isinstance(result, list) and len(result) > 0 and not error_msg:
+                log.info("Prognosis provider login success for %s", email)
+                return data
+            elif error_msg:
+                log.warning("Prognosis provider login error for %s: %s", email, error_msg)
+                return None
+            else:
+                log.warning("Prognosis provider login: empty result for %s", email)
+                return None
         elif resp.status_code == 401:
             # Maybe system token expired — retry once
             from app.services.prognosis_client import _prognosis_token_expiry
