@@ -373,6 +373,13 @@
   color: #0A7C3E;
 }
 
+.selectedDrugInfo {
+  margin-top: 0.3rem;
+  font-size: 0.75rem;
+  color: #0A7C3E;
+  font-weight: 500;
+}
+
 .sourceTag {
   display: inline-block;
   padding: 0.05rem 0.3rem;

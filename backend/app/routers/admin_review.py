@@ -39,6 +39,7 @@ from app.schemas.medication import MedicationRequestListOut, MedicationRequestOu
 from app.services.classification_service import run_classification
 from app.services.routing_service import run_routing
 from app.services.ai_normalization import run_ai_normalization
+from app.services.tariff_sync import run_tariff_sync
 from app.services.wellahealth_dispatch import dispatch_to_wellahealth
 from app.services.whatsapp_dispatch import dispatch_to_whatsapp
 
@@ -332,6 +333,18 @@ def rerun_normalization(
 
     db.commit()
     return {"message": f"Normalization complete. {updated} item(s) updated.", "updated": updated}
+
+
+# ── Tariff Sync ──────────────────────────────────────────────────
+
+@router.post("/admin/sync-tariff")
+async def sync_tariff(
+    db: Session = Depends(get_db),
+    _provider=Depends(get_current_provider),
+):
+    """Sync WellaHealth drug tariff into local drug_master table."""
+    result = await run_tariff_sync(db)
+    return result
 
 
 # ── Get Audit Trail ──────────────────────────────────────────────

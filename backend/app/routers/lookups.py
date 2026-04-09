@@ -213,6 +213,56 @@ async def search_drug_tariff(
         q_lower = q.lower()
         drugs = [d for d in drugs if q_lower in d.name.lower()]
 
+# ── Medication Search (local DB — synced from WellaHealth tariff) ─
+
+@router.get("/medications/search")
+def search_medications(
+    q: str = Query(..., min_length=2, description="Search drug name"),
+    limit: int = Query(15, ge=1, le=50),
+    db: Session = Depends(get_db),
+    _provider=Depends(get_current_provider),
+):
+    """
+    Fast typeahead search against local drug_master (synced from WellaHealth tariff).
+    Searches drug_name_display, generic_name, and brand_name.
+    """
+    from sqlalchemy import or_
+    from app.models.medication import DrugMaster
+    search_term = f"%{q.strip().lower()}%"
+
+    results = (
+        db.query(DrugMaster)
+        .filter(
+            DrugMaster.is_active.is_(True),
+            or_(
+                func.lower(func.coalesce(DrugMaster.drug_name_display, "")).like(search_term),
+                func.lower(DrugMaster.generic_name).like(search_term),
+                func.lower(func.coalesce(DrugMaster.brand_name, "")).like(search_term),
+            ),
+        )
+        .order_by(DrugMaster.drug_name_display)
+        .limit(limit)
+        .all()
+    )
+
+    return {
+        "results": [
+            {
+                "drug_id": str(r.drug_id),
+                "drug_name": r.drug_name_display or r.generic_name,
+                "generic_name": r.generic_name,
+                "brand_name": r.brand_name,
+                "strength": r.strength,
+                "dosage_form": r.dosage_form,
+                "category": r.category,
+            }
+            for r in results
+        ],
+        "total": len(results),
+        "query": q,
+    }
+
+
 # ── Google Maps Address Validation ───────────────────────────────
 
 @router.get("/lookup/validate-address")

@@ -53,11 +53,28 @@ app.include_router(lookups.router, prefix=PREFIX)
 
 
 @app.on_event("startup")
-def on_startup():
-    """Create new tables (medication module) on startup. Existing tables are untouched."""
+async def on_startup():
+    """Create tables and sync tariff on startup."""
     logger.info("Creating database tables (if not exist)...")
     Base.metadata.create_all(bind=engine)
     logger.info("Database tables ready.")
+
+    # Auto-sync WellaHealth tariff if drug_master has few records
+    try:
+        from app.core.database import SessionLocal
+        from app.models.medication import DrugMaster
+        from app.services.tariff_sync import run_tariff_sync
+        db = SessionLocal()
+        count = db.query(DrugMaster).filter(DrugMaster.source == "wellahealth").count()
+        if count < 100:
+            logger.info("Drug master has %d WellaHealth records — starting tariff sync...", count)
+            result = await run_tariff_sync(db)
+            logger.info("Tariff sync result: %s", result)
+        else:
+            logger.info("Drug master has %d WellaHealth records — skipping sync", count)
+        db.close()
+    except Exception as e:
+        logger.error("Startup tariff sync failed (non-blocking): %s", e)
 
 
 @app.get("/health")

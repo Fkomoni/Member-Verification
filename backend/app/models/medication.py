@@ -103,7 +103,18 @@ class DrugMaster(Base):
         comment="Flag for high-risk or ambiguous medications",
     )
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
-    # Track data source for future WellaHealth sync
+    # WellaHealth tariff fields
+    brand_name: Mapped[str | None] = mapped_column(
+        String(300), nullable=True, index=True,
+    )
+    drug_name_display: Mapped[str | None] = mapped_column(
+        String(400), nullable=True, index=True,
+        comment="Full display name e.g. 'PARACETAMOL 500MG TABLET'",
+    )
+    dosage_form: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    strength: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    drug_class: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    # Track data source
     source: Mapped[str] = mapped_column(
         String(50), default="seed",
         comment="seed | wellahealth | manual | ai_suggested",

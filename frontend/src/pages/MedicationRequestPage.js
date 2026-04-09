@@ -4,8 +4,7 @@ import { useAuth } from "../context/AuthContext";
 import {
   lookupEnrollee,
   getDiagnoses,
-  searchDrugTariff,
-  searchDrugs,
+  searchMedications,
   getStates,
   createMedicationRequest,
   validateAddress,
@@ -15,7 +14,8 @@ import styles from "./MedicationRequestPage.module.css";
 
 const EMPTY_MED = {
   drug_name: "", generic_name: "", matched_drug_id: null,
-  strength: "", dosage_instruction: "", duration: "", quantity: "", route: "oral",
+  strength: "", dosage_form: "", dosage_instruction: "", duration: "",
+  quantity: "", frequency: "", med_notes: "",
 };
 
 export default function MedicationRequestPage() {
@@ -94,35 +94,32 @@ export default function MedicationRequestPage() {
 
   const clearEnrollee = () => { setEnrolleeData(null); setEnrolleeId(""); setEnrolleeLookupError(""); };
 
-  // ── Drug search ─────────────────────────────────
+  // ── Drug search (local DB — synced from WellaHealth tariff) ──
   const handleDrugSearch = useCallback((index, value) => {
     const updated = [...medications];
-    updated[index] = { ...updated[index], drug_name: value, matched_drug_id: null, generic_name: "" };
+    updated[index] = { ...updated[index], drug_name: value, matched_drug_id: null, generic_name: "", strength: "", dosage_form: "" };
     setMedications(updated);
     if (searchTimeout.current) clearTimeout(searchTimeout.current);
     if (value.length < 2) { setDrugResults([]); setActiveSearch(null); return; }
     setActiveSearch(index);
     searchTimeout.current = setTimeout(async () => {
       try {
-        const [tariffRes, localRes] = await Promise.allSettled([
-          searchDrugTariff(value), searchDrugs(value),
-        ]);
-        const results = [];
-        if (tariffRes.status === "fulfilled" && tariffRes.value.data.drugs)
-          tariffRes.value.data.drugs.slice(0, 10).forEach(d => results.push({ drug_id: d.id || null, name: d.name, price: d.price, source: "wellahealth" }));
-        if (localRes.status === "fulfilled" && localRes.value.data.results)
-          localRes.value.data.results.slice(0, 5).forEach(d => {
-            if (!results.some(r => r.name.toLowerCase() === d.generic_name.toLowerCase()))
-              results.push({ drug_id: d.drug_id, name: d.generic_name, category: d.category, source: "drug_master" });
-          });
-        setDrugResults(results);
+        const { data } = await searchMedications(value);
+        setDrugResults(data.results || []);
       } catch { setDrugResults([]); }
-    }, 300);
+    }, 250);
   }, [medications]);
 
   const selectDrug = (index, drug) => {
     const updated = [...medications];
-    updated[index] = { ...updated[index], drug_name: drug.name, generic_name: drug.name, matched_drug_id: drug.drug_id || null };
+    updated[index] = {
+      ...updated[index],
+      drug_name: drug.drug_name || drug.generic_name,
+      generic_name: drug.generic_name || "",
+      matched_drug_id: drug.drug_id || null,
+      strength: drug.strength || "",
+      dosage_form: drug.dosage_form || "",
+    };
     setMedications(updated);
     setActiveSearch(null);
     setDrugResults([]);
@@ -372,7 +369,7 @@ export default function MedicationRequestPage() {
                   <span className={styles.medLineNumber}>Medication {idx + 1}</span>
                   {medications.length > 1 && <button type="button" className={styles.removeMedBtn} onClick={() => removeMedLine(idx)}>&times;</button>}
                 </div>
-                <div className={styles.formRow}>
+                <div className={styles.formRowFull}>
                   <div className={styles.field}>
                     <label className={styles.label}>Drug Name <span className={styles.required}>*</span></label>
                     <div className={styles.autocompleteWrap}>
@@ -380,38 +377,57 @@ export default function MedicationRequestPage() {
                         onChange={(e) => handleDrugSearch(idx, e.target.value)}
                         onFocus={() => med.drug_name.length >= 2 && setActiveSearch(idx)}
                         onBlur={() => setTimeout(() => setActiveSearch(null), 200)}
-                        placeholder="Search drugs..." />
+                        placeholder="Type to search medications..." />
                       {activeSearch === idx && drugResults.length > 0 && (
                         <div className={styles.autocompleteDropdown}>
                           {drugResults.map((drug, i) => (
                             <div key={i} className={styles.autocompleteItem} onMouseDown={() => selectDrug(idx, drug)}>
-                              <span className={styles.autocompleteName}>{drug.name}</span>
-                              {drug.price && <span className={styles.autocompleteMeta}>₦{Number(drug.price).toLocaleString()}</span>}
-                              {drug.category && <span className={`${styles.categoryBadge} ${categoryBadge(drug.category)}`}>{drug.category}</span>}
-                              <span className={styles.sourceTag}>{drug.source === "wellahealth" ? "WH" : "Local"}</span>
+                              <span className={styles.autocompleteName}>{drug.drug_name || drug.generic_name}</span>
+                              {drug.strength && <span className={styles.autocompleteMeta}>{drug.strength}</span>}
+                              {drug.dosage_form && <span className={styles.autocompleteMeta}>{drug.dosage_form}</span>}
+                              {drug.brand_name && <span className={styles.autocompleteMeta}>({drug.brand_name})</span>}
                             </div>
                           ))}
                         </div>
                       )}
                     </div>
+                    {med.generic_name && med.generic_name !== med.drug_name && (
+                      <div className={styles.selectedDrugInfo}>Generic: {med.generic_name}{med.strength && ` | ${med.strength}`}{med.dosage_form && ` | ${med.dosage_form}`}</div>
+                    )}
+                  </div>
+                </div>
+                <div className={styles.formRow}>
+                  <div className={styles.field}>
+                    <label className={styles.label}>Dosage <span className={styles.required}>*</span></label>
+                    <input className={styles.input} value={med.dosage_instruction} onChange={(e) => updateMed(idx, "dosage_instruction", e.target.value)} placeholder="e.g. 1 tab twice daily" />
                   </div>
                   <div className={styles.field}>
-                    <label className={styles.label}>Strength</label>
-                    <input className={styles.input} value={med.strength} onChange={(e) => updateMed(idx, "strength", e.target.value)} placeholder="e.g. 500mg" />
+                    <label className={styles.label}>Frequency <span className={styles.required}>*</span></label>
+                    <select className={styles.select} value={med.frequency} onChange={(e) => updateMed(idx, "frequency", e.target.value)}>
+                      <option value="">Select</option>
+                      <option value="OD">Once daily (OD)</option>
+                      <option value="BD">Twice daily (BD)</option>
+                      <option value="TDS">Three times daily (TDS)</option>
+                      <option value="QDS">Four times daily (QDS)</option>
+                      <option value="STAT">Single dose (STAT)</option>
+                      <option value="PRN">As needed (PRN)</option>
+                      <option value="Nocte">At night (Nocte)</option>
+                      <option value="Other">Other</option>
+                    </select>
                   </div>
                 </div>
                 <div className={styles.formRowThree}>
-                  <div className={styles.field}>
-                    <label className={styles.label}>Dosage <span className={styles.required}>*</span></label>
-                    <input className={styles.input} value={med.dosage_instruction} onChange={(e) => updateMed(idx, "dosage_instruction", e.target.value)} placeholder="e.g. 1 tab BD" />
-                  </div>
                   <div className={styles.field}>
                     <label className={styles.label}>Duration <span className={styles.required}>*</span></label>
                     <input className={styles.input} value={med.duration} onChange={(e) => updateMed(idx, "duration", e.target.value)} placeholder="e.g. 5 days" />
                   </div>
                   <div className={styles.field}>
                     <label className={styles.label}>Quantity <span className={styles.required}>*</span></label>
-                    <input className={styles.input} value={med.quantity} onChange={(e) => updateMed(idx, "quantity", e.target.value)} placeholder="e.g. 10" />
+                    <input className={styles.input} value={med.quantity} onChange={(e) => updateMed(idx, "quantity", e.target.value)} placeholder="e.g. 10 tablets" />
+                  </div>
+                  <div className={styles.field}>
+                    <label className={styles.label}>Notes</label>
+                    <input className={styles.input} value={med.med_notes} onChange={(e) => updateMed(idx, "med_notes", e.target.value)} placeholder="Optional" />
                   </div>
                 </div>
               </div>
