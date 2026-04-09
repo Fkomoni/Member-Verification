@@ -171,6 +171,8 @@ class MedicationRequest(Base):
     enrollee_name: Mapped[str] = mapped_column(String(200), nullable=False)
     enrollee_dob: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     enrollee_gender: Mapped[str | None] = mapped_column(String(10), nullable=True)
+    member_phone: Mapped[str | None] = mapped_column(String(30), nullable=True)
+    member_email: Mapped[str | None] = mapped_column(String(200), nullable=True)
 
     # Clinical info
     diagnosis: Mapped[str] = mapped_column(Text, nullable=False)

@@ -123,8 +123,10 @@ class MedicationRequestIn(BaseModel):
     enrollee_name: str = Field(..., min_length=1, max_length=200)
     enrollee_dob: datetime | None = None
     enrollee_gender: str | None = None
+    member_phone: str = Field(..., min_length=1, max_length=30)
+    member_email: str | None = None
     diagnosis: str = Field(..., min_length=1)
-    treating_doctor: str = Field(..., min_length=1, max_length=200)
+    treating_doctor: str = Field(default="Not specified", max_length=200)
     doctor_phone: str | None = None
     provider_notes: str | None = None
 
@@ -218,6 +220,8 @@ class MedicationRequestOut(BaseModel):
     enrollee_name: str
     enrollee_dob: datetime | None = None
     enrollee_gender: str | None = None
+    member_phone: str | None = None
+    member_email: str | None = None
     diagnosis: str
     treating_doctor: str
     doctor_phone: str | None = None

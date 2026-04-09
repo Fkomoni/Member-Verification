@@ -50,7 +50,7 @@ export default function ReportsPage() {
       </header>
 
       <nav className={styles.navBar}>
-        <Link to="/dashboard" className={styles.navLink}>Verification</Link>
+        
         <Link to="/medication-request" className={styles.navLink}>New Rx Request</Link>
         <Link to="/medication-requests" className={styles.navLink}>Request History</Link>
         <Link to="/admin/review" className={styles.navLink}>Review Queue</Link>

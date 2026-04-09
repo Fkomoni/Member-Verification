@@ -2,7 +2,6 @@ import React from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { useAuth } from "./context/AuthContext";
 import LoginPage from "./pages/LoginPage";
-import DashboardPage from "./pages/DashboardPage";
 import MedicationRequestPage from "./pages/MedicationRequestPage";
 import RequestHistoryPage from "./pages/RequestHistoryPage";
 import AdminReviewPage from "./pages/AdminReviewPage";
@@ -18,46 +17,23 @@ export default function App() {
     <Routes>
       <Route path="/login" element={<LoginPage />} />
       <Route
-        path="/dashboard"
-        element={
-          <PrivateRoute>
-            <DashboardPage />
-          </PrivateRoute>
-        }
-      />
-      <Route
         path="/medication-request"
-        element={
-          <PrivateRoute>
-            <MedicationRequestPage />
-          </PrivateRoute>
-        }
-      />
-      <Route
-        path="/reports"
-        element={
-          <PrivateRoute>
-            <ReportsPage />
-          </PrivateRoute>
-        }
-      />
-      <Route
-        path="/admin/review"
-        element={
-          <PrivateRoute>
-            <AdminReviewPage />
-          </PrivateRoute>
-        }
+        element={<PrivateRoute><MedicationRequestPage /></PrivateRoute>}
       />
       <Route
         path="/medication-requests"
-        element={
-          <PrivateRoute>
-            <RequestHistoryPage />
-          </PrivateRoute>
-        }
+        element={<PrivateRoute><RequestHistoryPage /></PrivateRoute>}
       />
-      <Route path="*" element={<Navigate to="/dashboard" replace />} />
+      <Route
+        path="/admin/review"
+        element={<PrivateRoute><AdminReviewPage /></PrivateRoute>}
+      />
+      <Route
+        path="/reports"
+        element={<PrivateRoute><ReportsPage /></PrivateRoute>}
+      />
+      {/* Default: redirect to medication request form */}
+      <Route path="*" element={<Navigate to="/medication-request" replace />} />
     </Routes>
   );
 }

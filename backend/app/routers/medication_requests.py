@@ -75,6 +75,8 @@ def create_medication_request(
         enrollee_name=payload.enrollee_name,
         enrollee_dob=payload.enrollee_dob,
         enrollee_gender=payload.enrollee_gender,
+        member_phone=payload.member_phone,
+        member_email=payload.member_email,
         diagnosis=payload.diagnosis,
         treating_doctor=payload.treating_doctor,
         doctor_phone=payload.doctor_phone,
