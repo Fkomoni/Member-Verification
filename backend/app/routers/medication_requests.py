@@ -33,6 +33,8 @@ from app.schemas.medication import (
 )
 from app.services.classification_service import run_classification
 from app.services.routing_service import run_routing
+from app.services.wellahealth_dispatch import dispatch_to_wellahealth
+from app.services.whatsapp_dispatch import dispatch_to_whatsapp
 from app.utils.nigerian_locations import is_lagos_location
 
 logger = logging.getLogger(__name__)
@@ -137,11 +139,23 @@ def create_medication_request(
         logger.error("Classification failed for %s: %s", ref, e)
 
     # ── Auto-route (only if classification succeeded) ─
+    routing_dest = None
     if classification_ok:
         try:
-            run_routing(request.request_id, db, actor=provider.email)
+            routing_record = run_routing(request.request_id, db, actor=provider.email)
+            routing_dest = routing_record.destination
         except Exception as e:
             logger.error("Routing failed for %s: %s", ref, e)
+
+    # ── Auto-dispatch based on routing destination ────
+    if routing_dest:
+        try:
+            if routing_dest == "wellahealth":
+                dispatch_to_wellahealth(request.request_id, db, actor=provider.email)
+            elif routing_dest in ("whatsapp_lagos", "whatsapp_outside_lagos"):
+                dispatch_to_whatsapp(request.request_id, db, routing_dest, actor=provider.email)
+        except Exception as e:
+            logger.error("Dispatch failed for %s: %s", ref, e)
 
     db.commit()
     db.refresh(request)
