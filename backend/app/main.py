@@ -94,54 +94,49 @@ async def on_startup():
     logger.info("Database tables ready.")
 
     # ── Auto-seed drug master from built-in seed data ─────────────
-    # This ensures paracetamol and all common Nigerian drugs are
-    # pre-classified (acute/chronic) even before WellaHealth tariff syncs.
+    # Runs every startup — idempotent (skips drugs that already exist).
+    # Ensures paracetamol and all common Nigerian drugs are always
+    # pre-classified (acute/chronic) from the very first boot.
     try:
-        from sqlalchemy import text as sql_text
+        from sqlalchemy import func
         from app.core.database import SessionLocal
-        from app.models.medication import DrugMaster
+        from app.models.medication import DrugAlias, DrugMaster
         from app.services.drug_master_seed import get_seed_drugs
 
         db = SessionLocal()
         try:
-            seed_count = db.query(DrugMaster).filter(DrugMaster.source == "seed").count()
-            if seed_count < 10:
-                logger.info("Drug master has %d seed records — running seed...", seed_count)
-                from sqlalchemy import func
-                from app.models.medication import DrugAlias
-                seed_data = get_seed_drugs()
-                created = 0
-                for entry in seed_data:
-                    existing = db.query(DrugMaster).filter(
-                        func.lower(DrugMaster.generic_name) == entry["generic_name"].lower()
-                    ).first()
-                    if existing:
-                        continue
-                    drug = DrugMaster(
-                        generic_name=entry["generic_name"],
-                        category=entry["category"],
-                        common_brand_names=entry.get("common_brand_names"),
-                        therapeutic_class=entry.get("therapeutic_class"),
-                        requires_review=entry.get("requires_review", False),
-                        source="seed",
-                    )
-                    db.add(drug)
-                    db.flush()
-                    for alias_name in entry.get("aliases", []):
-                        db.add(DrugAlias(
-                            drug_id=drug.drug_id,
-                            alias_name=alias_name,
-                            alias_type="brand",
-                        ))
-                    created += 1
-                db.commit()
-                logger.info("Drug master seed complete: %d drugs added", created)
-            else:
-                logger.info("Drug master has %d seed records — skipping seed", seed_count)
+            seed_data = get_seed_drugs()
+            created = 0
+            for entry in seed_data:
+                existing = db.query(DrugMaster).filter(
+                    func.lower(DrugMaster.generic_name) == entry["generic_name"].lower()
+                ).first()
+                if existing:
+                    continue
+                drug = DrugMaster(
+                    generic_name=entry["generic_name"],
+                    category=entry["category"],
+                    common_brand_names=entry.get("common_brand_names"),
+                    therapeutic_class=entry.get("therapeutic_class"),
+                    requires_review=entry.get("requires_review", False),
+                    source="seed",
+                )
+                db.add(drug)
+                db.flush()
+                for alias_name in entry.get("aliases", []):
+                    db.add(DrugAlias(
+                        drug_id=drug.drug_id,
+                        alias_name=alias_name,
+                        alias_type="brand",
+                    ))
+                created += 1
+            db.commit()
+            total = db.query(DrugMaster).count()
+            logger.info("Drug master seed: %d new drugs added, %d total in database", created, total)
         finally:
             db.close()
     except Exception as e:
-        logger.error("Drug master seed failed (non-blocking): %s", e)
+        logger.error("Drug master seed failed (non-blocking): %s", e, exc_info=True)
 
     # ── Auto-sync WellaHealth tariff if drug_master has few searchable records ─
     try:
@@ -172,3 +167,61 @@ async def on_startup():
 @app.get("/health")
 def health_check():
     return {"status": "ok", "version": settings.APP_VERSION}
+
+
+@app.post("/admin/seed-drugs")
+def force_seed_drugs():
+    """
+    Manually seed the drug master with pre-classified Nigerian medications.
+    Idempotent — safe to call multiple times, skips drugs that already exist.
+    Call this once after a fresh deploy if the startup seed didn't run.
+    """
+    from sqlalchemy import func
+    from app.core.database import SessionLocal
+    from app.models.medication import DrugAlias, DrugMaster
+    from app.services.drug_master_seed import get_seed_drugs
+
+    db = SessionLocal()
+    try:
+        seed_data = get_seed_drugs()
+        created = 0
+        skipped = 0
+        for entry in seed_data:
+            existing = db.query(DrugMaster).filter(
+                func.lower(DrugMaster.generic_name) == entry["generic_name"].lower()
+            ).first()
+            if existing:
+                skipped += 1
+                continue
+            drug = DrugMaster(
+                generic_name=entry["generic_name"],
+                category=entry["category"],
+                common_brand_names=entry.get("common_brand_names"),
+                therapeutic_class=entry.get("therapeutic_class"),
+                requires_review=entry.get("requires_review", False),
+                source="seed",
+            )
+            db.add(drug)
+            db.flush()
+            for alias_name in entry.get("aliases", []):
+                db.add(DrugAlias(
+                    drug_id=drug.drug_id,
+                    alias_name=alias_name,
+                    alias_type="brand",
+                ))
+            created += 1
+        db.commit()
+        total = db.query(DrugMaster).count()
+        logger.info("Manual seed: created=%d, skipped=%d, total=%d", created, skipped, total)
+        return {
+            "message": "Drug master seeded",
+            "created": created,
+            "skipped": skipped,
+            "total_in_db": total,
+        }
+    except Exception as e:
+        db.rollback()
+        logger.error("Manual seed failed: %s", e, exc_info=True)
+        return {"error": str(e)}
+    finally:
+        db.close()
