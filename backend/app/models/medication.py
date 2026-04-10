@@ -211,6 +211,11 @@ class MedicationRequest(Base):
     )
     facility_name: Mapped[str] = mapped_column(String(300), nullable=False)
     facility_branch: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    # WellaHealth pharmacy code selected at submission (from /v1/Pharmacies/search)
+    pharmacy_code: Mapped[str | None] = mapped_column(
+        String(100), nullable=True,
+        comment="WellaHealth pharmacyCode — stored for fulfilment and audit",
+    )
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc),
