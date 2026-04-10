@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import {
@@ -65,7 +65,11 @@ export default function MedicationRequestPage() {
 
   useEffect(() => {
     getStates().then(({ data }) => setStates(data.states)).catch(() => {});
-    getDiagnoses().then(({ data }) => setDiagnosisList(data.diagnoses || [])).catch(() => {});
+    getDiagnoses().then(({ data }) => {
+      console.log("Diagnoses loaded:", data);
+      const list = data.diagnoses || data.result || data.data || data || [];
+      setDiagnosisList(Array.isArray(list) ? list : []);
+    }).catch((e) => console.error("Diagnosis load failed:", e));
   }, []);
 
   // ── Enrollee Lookup ─────────────────────────────
@@ -99,20 +103,22 @@ export default function MedicationRequestPage() {
   const clearEnrollee = () => { setEnrolleeData(null); setEnrolleeId(""); setEnrolleeLookupError(""); };
 
   // ── Drug search (local DB — synced from WellaHealth tariff) ──
-  const handleDrugSearch = useCallback((index, value) => {
+  const handleDrugSearch = (index, value) => {
     const updated = [...medications];
     updated[index] = { ...updated[index], drug_name: value, matched_drug_id: null, generic_name: "", strength: "", dosage_form: "" };
     setMedications(updated);
     if (searchTimeout.current) clearTimeout(searchTimeout.current);
     if (value.length < 2) { setDrugResults([]); setActiveSearch(null); return; }
     setActiveSearch(index);
-    searchTimeout.current = setTimeout(async () => {
-      try {
-        const { data } = await searchMedications(value);
-        setDrugResults(data.results || []);
-      } catch { setDrugResults([]); }
-    }, 250);
-  }, [medications]);
+    searchTimeout.current = setTimeout(() => {
+      searchMedications(value)
+        .then(({ data }) => {
+          console.log("Drug search results:", data);
+          setDrugResults(data.results || []);
+        })
+        .catch(() => setDrugResults([]));
+    }, 300);
+  };
 
   const selectDrug = (index, drug) => {
     const updated = [...medications];

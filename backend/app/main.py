@@ -79,6 +79,11 @@ async def on_startup():
                         conn.execute(text(f"ALTER TABLE medication_requests ADD COLUMN IF NOT EXISTS {col} {col_type}"))
                 except Exception:
                     pass
+            # Make delivery_lga nullable
+            try:
+                conn.execute(text("ALTER TABLE medication_requests ALTER COLUMN delivery_lga DROP NOT NULL"))
+            except Exception:
+                pass
             conn.commit()
     except Exception as e:
         logger.warning("Column migration non-critical: %s", e)

@@ -132,7 +132,7 @@ class MedicationRequestIn(BaseModel):
 
     # Delivery location
     delivery_state: str = Field(..., min_length=1, max_length=100)
-    delivery_lga: str = Field(..., min_length=1, max_length=100)
+    delivery_lga: str | None = None
     delivery_city: str | None = None
     delivery_address: str | None = None
     delivery_landmark: str | None = None

@@ -193,7 +193,7 @@ class MedicationRequest(Base):
 
     # Delivery location (structured)
     delivery_state: Mapped[str] = mapped_column(String(100), nullable=False)
-    delivery_lga: Mapped[str] = mapped_column(String(100), nullable=False)
+    delivery_lga: Mapped[str | None] = mapped_column(String(100), nullable=True)
     delivery_city: Mapped[str | None] = mapped_column(String(100), nullable=True)
     delivery_address: Mapped[str | None] = mapped_column(Text, nullable=True)
     delivery_landmark: Mapped[str | None] = mapped_column(String(300), nullable=True)
