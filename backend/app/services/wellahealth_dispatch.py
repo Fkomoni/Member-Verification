@@ -167,7 +167,7 @@ def _build_fulfilment_payload(
         "fulfilmentService": "Acute",
         "diagnosis": request.diagnosis or "",
         "notes": f"From Leadway Rx Portal. Provider: {request.facility_name}",
-        "isDelivery": True,
+        "isDelivery": False,
         "patientData": {
             "firstName": first_name,
             "lastName": last_name,

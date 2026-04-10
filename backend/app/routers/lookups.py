@@ -235,22 +235,37 @@ def search_medications(
     # ILIKE search — works on PostgreSQL.
     # Seed drugs (source='seed') are prioritized because they have accurate
     # acute/chronic classification. WellaHealth tariff drugs default to 'unknown'.
+    # Use a subquery with DISTINCT ON to deduplicate across the aliases JOIN,
+    # then outer ORDER BY ranks classified drugs first.
     results = db.execute(
         text("""
-            SELECT drug_id, drug_name_display, generic_name, brand_name,
-                   strength, dosage_form, drug_class, category
-            FROM drug_master
-            WHERE is_active = true
-              AND (
-                drug_name_display ILIKE :q
-                OR generic_name ILIKE :q
-                OR brand_name ILIKE :q
-                OR common_brand_names ILIKE :q
-              )
+            SELECT * FROM (
+                SELECT DISTINCT ON (dm.drug_id)
+                    dm.drug_id,
+                    COALESCE(dm.drug_name_display, dm.generic_name) AS display_name,
+                    dm.generic_name,
+                    dm.brand_name,
+                    dm.strength,
+                    dm.dosage_form,
+                    dm.drug_class,
+                    dm.category,
+                    dm.common_brand_names
+                FROM drug_master dm
+                LEFT JOIN drug_aliases da ON da.drug_id = dm.drug_id
+                WHERE dm.is_active = true
+                  AND (
+                    dm.drug_name_display ILIKE :q
+                    OR dm.generic_name   ILIKE :q
+                    OR dm.brand_name     ILIKE :q
+                    OR dm.common_brand_names ILIKE :q
+                    OR da.alias_name     ILIKE :q
+                  )
+                ORDER BY dm.drug_id
+            ) sub
             ORDER BY
-              CASE WHEN category != 'unknown' THEN 0 ELSE 1 END,
-              CASE WHEN drug_name_display IS NOT NULL THEN 0 ELSE 1 END,
-              COALESCE(drug_name_display, generic_name)
+                CASE WHEN category != 'unknown' THEN 0 ELSE 1 END,
+                CASE WHEN display_name IS NOT NULL THEN 0 ELSE 1 END,
+                COALESCE(display_name, generic_name)
             LIMIT :lim
         """),
         {"q": search_term, "lim": limit},
@@ -266,6 +281,8 @@ def search_medications(
                 "strength": r[4] or "",
                 "dosage_form": r[5] or "",
                 "category": r[7] or "unknown",
+                # brand_hint lets the frontend show "Artemether/Lumefantrine (Coartem, Lonart)"
+                "brand_hint": r[8] or "",
             }
             for r in results
         ],

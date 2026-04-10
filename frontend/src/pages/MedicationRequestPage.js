@@ -308,6 +308,12 @@ export default function MedicationRequestPage() {
                 <span className={styles.routingLabel}>Destination</span>
                 <span className={styles.routingBadge}>{routeLabel(success.routing.destination)}</span>
               </div>
+              {success.pharmacy_code && (
+                <div className={styles.routingDestination} style={{marginTop:"8px"}}>
+                  <span className={styles.routingLabel}>Pharmacy Code</span>
+                  <span className={styles.routingBadge} style={{fontFamily:"monospace"}}>{success.pharmacy_code}</span>
+                </div>
+              )}
               {success.routing.reasoning && <div className={styles.classificationReasoning}>{success.routing.reasoning}</div>}
             </div>
           )}
@@ -442,6 +448,7 @@ export default function MedicationRequestPage() {
                               {drug.strength && <span className={styles.autocompleteMeta}>{drug.strength}</span>}
                               {drug.dosage_form && <span className={styles.autocompleteMeta}>{drug.dosage_form}</span>}
                               {drug.brand_name && <span className={styles.autocompleteMeta}>({drug.brand_name})</span>}
+                              {drug.brand_hint && !drug.brand_name && <span className={styles.autocompleteMeta} style={{color:"#6b7280"}}>also: {drug.brand_hint.split(",").slice(0,2).join(", ")}</span>}
                             </div>
                           ))}
                         </div>
