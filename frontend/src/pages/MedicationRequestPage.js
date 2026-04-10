@@ -270,7 +270,7 @@ export default function MedicationRequestPage() {
 
   // ── Form ────────────────────────────────────────
   const [diagnosis, setDiagnosis] = useState("");
-  const [diagnosisSearch, setDiagnosisSearch] = useState("");
+  const [showDiagnosisDropdown, setShowDiagnosisDropdown] = useState(false);
   const [treatingDoctor, setTreatingDoctor] = useState("");
   const [providerNotes, setProviderNotes] = useState("");
   const [deliveryState, setDeliveryState] = useState("");
@@ -425,8 +425,8 @@ export default function MedicationRequestPage() {
   const removeMedLine = (i) => { if (medications.length > 1) setMedications(medications.filter((_, idx) => idx !== i)); };
   const updateMed = (i, field, value) => { const u = [...medications]; u[i] = { ...u[i], [field]: value }; setMedications(u); };
 
-  const filteredDiagnoses = diagnosisSearch.length >= 2
-    ? NIGERIAN_DIAGNOSES.filter(d => d.toLowerCase().includes(diagnosisSearch.toLowerCase())).slice(0, 15)
+  const filteredDiagnoses = diagnosis.length >= 2
+    ? NIGERIAN_DIAGNOSES.filter(d => d.toLowerCase().includes(diagnosis.toLowerCase())).slice(0, 15)
     : [];
 
   // ── Submit ──────────────────────────────────────
@@ -491,7 +491,7 @@ export default function MedicationRequestPage() {
   const resetForm = () => {
     setSuccess(null); setEnrolleeId(""); setEnrolleeData(null);
     setMemberPhone(""); setAltPhone(""); setMemberEmail("");
-    setDiagnosis(""); setDiagnosisSearch(""); setTreatingDoctor("");
+    setDiagnosis(""); setTreatingDoctor("");
     setProviderNotes(""); setDeliveryState(""); setDeliveryAddress("");
     setAddressValidation(null); setDeliveryCoords(null); setPharmacies([]); setSelectedPharmacy(null);
     setUrgency("routine"); setMedications([{ ...EMPTY_MED }]); setError("");
@@ -631,20 +631,21 @@ export default function MedicationRequestPage() {
               <div className={styles.field}>
                 <label className={styles.label}>Diagnosis <span className={styles.required}>*</span></label>
                 <div className={styles.autocompleteWrap}>
-                  <input className={styles.input} value={diagnosis || diagnosisSearch}
-                    onChange={(e) => { setDiagnosisSearch(e.target.value); setDiagnosis(""); }}
-                    placeholder="Type to search diagnoses..." />
-                  {!diagnosis && filteredDiagnoses.length > 0 && (
+                  <input className={styles.input} value={diagnosis}
+                    onChange={(e) => { setDiagnosis(e.target.value); setShowDiagnosisDropdown(true); }}
+                    onFocus={() => diagnosis.length >= 2 && setShowDiagnosisDropdown(true)}
+                    onBlur={() => setTimeout(() => setShowDiagnosisDropdown(false), 200)}
+                    placeholder="Type diagnosis (e.g. Malaria, Typhoid...)" />
+                  {showDiagnosisDropdown && filteredDiagnoses.length > 0 && (
                     <div className={styles.autocompleteDropdown}>
                       {filteredDiagnoses.map((d, i) => (
-                        <div key={i} className={styles.autocompleteItem} onMouseDown={() => { setDiagnosis(d); setDiagnosisSearch(""); }}>
+                        <div key={i} className={styles.autocompleteItem} onMouseDown={() => { setDiagnosis(d); setShowDiagnosisDropdown(false); }}>
                           <span className={styles.autocompleteName}>{d}</span>
                         </div>
                       ))}
                     </div>
                   )}
                 </div>
-                {diagnosis && <div className={styles.selectedTag}>{diagnosis} <span onClick={() => setDiagnosis("")} className={styles.tagRemove}>&times;</span></div>}
               </div>
               <div className={styles.field}>
                 <label className={styles.label}>Treating Doctor (optional)</label>
