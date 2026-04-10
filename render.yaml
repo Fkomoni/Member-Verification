@@ -11,28 +11,72 @@ services:
     buildCommand: pip install -r requirements.txt
     startCommand: gunicorn app.main:app -w 4 -k uvicorn.workers.UvicornWorker -b 0.0.0.0:$PORT
     envVars:
+      # ── Database ───────────────────────────────
       - key: DATABASE_URL
         fromDatabase:
           name: member-verification-db
           property: connectionString
+
+      # ── Security ───────────────────────────────
       - key: SECRET_KEY
         generateValue: true
       - key: BIOMETRIC_ENCRYPTION_KEY
-        sync: false  # set manually in Render dashboard
-      - key: PROGNOSIS_BASE_URL
-        value: https://prognosis-api.leadwayhealth.com
-      - key: PROGNOSIS_USERNAME
-        sync: false  # set manually
-      - key: PROGNOSIS_PASSWORD
-        sync: false  # set manually
-      - key: FUTRONIC_SDK_AVAILABLE
-        value: "false"  # scanner runs on workstation, not server
-      - key: REQUIRE_LFD
-        value: "true"
+        sync: false  # generate with: python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
+
+      # ── Python runtime ──────────────────────────
       - key: PYTHON_VERSION
         value: "3.11.9"
       - key: PYTHONPATH
         value: /opt/render/project/src/backend
+
+      # ── Futronic fingerprint scanner ────────────
+      # Scanner runs on clinic workstations, NOT on the server
+      - key: FUTRONIC_SDK_AVAILABLE
+        value: "false"
+      - key: REQUIRE_LFD
+        value: "true"
+
+      # ── Prognosis (Leadway core system) ─────────
+      - key: PROGNOSIS_BASE_URL
+        value: https://prognosis-api.leadwayhealth.com
+      - key: PROGNOSIS_USERNAME
+        sync: false  # set in Render dashboard
+      - key: PROGNOSIS_PASSWORD
+        sync: false  # set in Render dashboard
+
+      # ── WellaHealth API (acute medication fulfilment) ─
+      - key: WELLAHEALTH_BASE_URL
+        value: https://staging.wellahealth.com/v1  # switch to prod URL when ready
+      - key: WELLAHEALTH_PARTNER_CODE
+        sync: false  # set in Render dashboard — e.g. WHPLeadway001
+      - key: WELLAHEALTH_CLIENT_ID
+        sync: false  # set in Render dashboard
+      - key: WELLAHEALTH_CLIENT_SECRET
+        sync: false  # set in Render dashboard
+
+      # ── Google Maps (address validation) ────────
+      # Optional — pharmacy search & drug autopopulate work without this.
+      # When set, address verification becomes Google-validated.
+      - key: GOOGLE_MAPS_API_KEY
+        sync: false  # set in Render dashboard
+
+      # ── WhatsApp routing (chronic/mixed requests) ─
+      - key: WHATSAPP_LAGOS_NUMBER
+        sync: false  # Leadway WhatsApp number for Lagos members
+      - key: WHATSAPP_OUTSIDE_LAGOS_NUMBER
+        sync: false  # Leadway WhatsApp number for outside-Lagos members
+      - key: WHATSAPP_WEBHOOK_URL
+        sync: false  # Existing Leadway WhatsApp bot webhook endpoint
+      - key: WHATSAPP_VERIFY_TOKEN
+        sync: false  # WhatsApp webhook verify token
+      - key: WHATSAPP_APP_SECRET
+        sync: false  # Meta App secret for webhook signature verification
+
+      # ── Anthropic / Claude (AI drug classification) ─
+      # Optional — enables AI classification for unrecognised drug names.
+      # Falls back to fuzzy string matching when not set.
+      - key: ANTHROPIC_API_KEY
+        sync: false  # set in Render dashboard
 
   # ── Frontend ─────────────────────────────────────
   - type: web

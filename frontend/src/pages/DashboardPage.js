@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import ScannerStatus from "../components/ScannerStatus";
 import MemberSearch from "../components/MemberSearch";
@@ -6,6 +7,7 @@ import MemberCard from "../components/MemberCard";
 import BiometricCapture from "../components/BiometricCapture";
 import FingerprintValidation from "../components/FingerprintValidation";
 import VerificationResult from "../components/VerificationResult";
+import logo from "../assets/logos/leadway-logo.png.jpeg";
 import styles from "./DashboardPage.module.css";
 
 export default function DashboardPage() {
@@ -23,23 +25,11 @@ export default function DashboardPage() {
       {/* ── Header ─────────────────────────────────── */}
       <header className={styles.header}>
         <div className={styles.headerLeft}>
-          <div className={styles.headerLogo}>
-            <svg viewBox="0 0 40 40" width="32" height="32">
-              <circle cx="20" cy="20" r="18" fill="url(#hdrGrad)" />
-              <defs>
-                <linearGradient id="hdrGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#F15A24" />
-                  <stop offset="100%" stopColor="#FFCE07" />
-                </linearGradient>
-              </defs>
-            </svg>
-            <div>
-              <span className={styles.headerBrand}>LEADWAY</span>
-              <span className={styles.headerBrandHealth}> Health</span>
-            </div>
-          </div>
+          <Link to="/dashboard" className={styles.headerLogo}>
+            <img src={logo} alt="Leadway Health" className={styles.headerLogoImg} />
+          </Link>
           <span className={styles.headerDivider} />
-          <span className={styles.headerPortal}>Verification Portal</span>
+          <span className={styles.headerPortal}>Provider Portal</span>
         </div>
         <div className={styles.headerRight}>
           <span className={styles.providerName}>{provider?.provider_name}</span>
@@ -48,6 +38,13 @@ export default function DashboardPage() {
           </button>
         </div>
       </header>
+
+      {/* ── Navigation ─────────────────────────────── */}
+      <nav className={styles.navBar}>
+        <Link to="/dashboard" className={styles.navLinkActive}>Verification</Link>
+        <Link to="/medication-request" className={styles.navLink}>New Rx Request</Link>
+        <Link to="/medication-requests" className={styles.navLink}>Request History</Link>
+      </nav>
 
       {/* ── Main Content ───────────────────────────── */}
       <main className={styles.main}>

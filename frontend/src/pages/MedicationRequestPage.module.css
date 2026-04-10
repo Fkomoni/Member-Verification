@@ -1,0 +1,889 @@
+/* ══════════════════════════════════════════════════
+   Leadway Health — New Medication Request Form
+   Brand: Crimson #C61531 / Orange #F15A24 / Dark #263626
+   Font: Poppins (web fallback for Leadway Book)
+   ══════════════════════════════════════════════════ */
+
+.page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--lw-light-grey, #F4F5F7);
+}
+
+/* ── Header ───────────────────────────────────── */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 2rem;
+  background: #fff;
+  border-bottom: 3px solid var(--lw-crimson, #C61531);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+}
+
+.headerLeft {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.headerLogo {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+}
+
+.headerLogoImg {
+  height: 36px;
+  width: auto;
+}
+
+.headerDivider {
+  width: 1px;
+  height: 24px;
+  background: #ddd;
+}
+
+.headerPortal {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #666;
+}
+
+.headerRight {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.providerName {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #444;
+}
+
+.logoutBtn {
+  background: transparent;
+  color: var(--lw-crimson, #C61531);
+  border: 1.5px solid var(--lw-crimson, #C61531);
+  padding: 0.35rem 1rem;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.logoutBtn:hover {
+  background: var(--lw-crimson, #C61531);
+  color: #fff;
+}
+
+/* ── Navigation Tabs ─────────────────────────── */
+.navBar {
+  display: flex;
+  gap: 0;
+  background: #fff;
+  border-bottom: 1px solid #eee;
+  padding: 0 2rem;
+}
+
+.navLink {
+  padding: 0.75rem 1.25rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #777;
+  text-decoration: none;
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s;
+}
+
+.navLink:hover {
+  color: var(--lw-crimson, #C61531);
+}
+
+.navLinkActive {
+  composes: navLink;
+  color: var(--lw-crimson, #C61531);
+  border-bottom-color: var(--lw-crimson, #C61531);
+}
+
+/* ── Main Content ────────────────────────────── */
+.main {
+  flex: 1;
+  padding: 1.5rem 2rem;
+  max-width: 860px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.pageTitle {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--lw-dark, #263626);
+  margin-bottom: 0.25rem;
+}
+
+.pageSubtitle {
+  font-size: 0.88rem;
+  color: #777;
+  margin-bottom: 1.5rem;
+}
+
+/* ── Form Sections ───────────────────────────── */
+.section {
+  background: #fff;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 1.25rem;
+  box-shadow: 0 1px 8px rgba(0, 0, 0, 0.05);
+  border: 1px solid #eee;
+  overflow: visible;
+}
+
+.sectionTitle {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--lw-dark, #263626);
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.sectionTitleIcon {
+  margin-right: 0.4rem;
+  color: var(--lw-crimson, #C61531);
+}
+
+/* ── Form Grid ───────────────────────────────── */
+.formRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem 1.25rem;
+  margin-bottom: 0.25rem;
+}
+
+.formRowThree {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 0.75rem 1.25rem;
+  margin-bottom: 0.25rem;
+}
+
+.formRowFull {
+  margin-bottom: 0.25rem;
+}
+
+.field {
+  margin-bottom: 0.85rem;
+}
+
+.label {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #555;
+  margin-bottom: 0.3rem;
+  letter-spacing: 0.01em;
+}
+
+.required {
+  color: var(--lw-crimson, #C61531);
+  margin-left: 2px;
+}
+
+.input {
+  display: block;
+  width: 100%;
+  padding: 0.6rem 0.75rem;
+  border: 1.5px solid #ddd;
+  border-radius: 8px;
+  font-size: 0.88rem;
+  font-family: var(--font-primary);
+  transition: border-color 0.2s, box-shadow 0.2s;
+  background: #fff;
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--lw-crimson, #C61531);
+  box-shadow: 0 0 0 3px rgba(198, 21, 49, 0.08);
+}
+
+.input::placeholder {
+  color: #bbb;
+}
+
+.inputError {
+  composes: input;
+  border-color: var(--lw-crimson, #C61531);
+}
+
+.select {
+  composes: input;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23666' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  padding-right: 2rem;
+}
+
+.textarea {
+  composes: input;
+  resize: vertical;
+  min-height: 70px;
+}
+
+/* ── Enrollee Lookup ─────────────────────────── */
+.lookupRow {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.lookupRow .input {
+  flex: 1;
+}
+
+.lookupBtn {
+  padding: 0.6rem 1.25rem;
+  background: var(--lw-crimson, #C61531);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  font-family: var(--font-primary);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.lookupBtn:hover { background: #A11028; }
+.lookupBtn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.enrolleeConfirmed {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.85rem 1rem;
+  background: #E8F8EE;
+  border: 1px solid #B5E8C9;
+  border-radius: 10px;
+  margin-bottom: 0.85rem;
+}
+
+.enrolleeInfo { flex: 1; }
+
+.enrolleeNameBig {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #0A7C3E;
+}
+
+.enrolleeMeta {
+  font-size: 0.78rem;
+  color: #555;
+  margin-top: 0.15rem;
+}
+
+.enrolleeDetails {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 1rem;
+  margin-top: 0.4rem;
+}
+
+.enrolleeDetail {
+  font-size: 0.78rem;
+  color: #555;
+}
+
+.enrolleeDetail strong {
+  color: #333;
+}
+
+.statusActive {
+  color: #0A7C3E;
+  font-weight: 700;
+}
+
+.statusInactive {
+  color: #C61531;
+  font-weight: 700;
+}
+
+.changeBtn {
+  padding: 0.35rem 0.85rem;
+  background: transparent;
+  color: var(--lw-crimson, #C61531);
+  border: 1.5px solid var(--lw-crimson, #C61531);
+  border-radius: 6px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: var(--font-primary);
+}
+
+.changeBtn:hover { background: #FFF0F0; }
+
+.facilityAuto {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0;
+}
+
+.facilityValue {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--lw-dark, #263626);
+}
+
+/* ── Diagnosis / Tag ─────────────────────────── */
+.selectedTag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-top: 0.35rem;
+  padding: 0.3rem 0.65rem;
+  background: #E6F0FF;
+  color: #1A2B6D;
+  border-radius: 6px;
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.tagRemove {
+  cursor: pointer;
+  font-size: 1rem;
+  color: #999;
+  margin-left: 0.2rem;
+}
+
+.tagRemove:hover { color: var(--lw-crimson, #C61531); }
+
+/* ── Drug source tag ─────────────────────────── */
+/* ── Address Validation ───────────────────────── */
+.addressValid {
+  margin-top: 0.4rem;
+  padding: 0.5rem 0.75rem;
+  background: #E8F8EE;
+  border: 1px solid #B5E8C9;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  color: #0A7C3E;
+}
+
+/* ── Pharmacy Selection ───────────────────────── */
+.pharmacyList { display: flex; flex-direction: column; gap: 0.4rem; }
+.pharmacyItem { padding: 0.6rem 0.75rem; background: #FAFBFC; border: 1.5px solid #eee; border-radius: 8px; cursor: pointer; transition: all 0.15s; }
+.pharmacyItem:hover { border-color: #C61531; background: #FFF5F5; }
+.pharmacySelected { border-color: #0A7C3E; background: #E8F8EE; }
+.pharmacyName { font-size: 0.85rem; font-weight: 700; color: #263626; }
+.pharmacyAddr { font-size: 0.75rem; color: #777; margin-top: 0.1rem; }
+.pharmacyCode { font-size: 0.7rem; color: #999; margin-top: 0.1rem; }
+
+.selectedDrugInfo {
+  margin-top: 0.3rem;
+  font-size: 0.75rem;
+  color: #0A7C3E;
+  font-weight: 500;
+}
+
+.sourceTag {
+  display: inline-block;
+  padding: 0.05rem 0.3rem;
+  border-radius: 4px;
+  font-size: 0.6rem;
+  font-weight: 700;
+  background: #F0F0F0;
+  color: #999;
+  margin-left: 0.3rem;
+}
+
+/* ── Medication Lines ────────────────────────── */
+.medLine {
+  background: #FAFBFC;
+  border: 1px solid #eee;
+  border-radius: 10px;
+  padding: 1rem 1rem 0.5rem;
+  margin-bottom: 0.75rem;
+  position: relative;
+}
+
+.medLineHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.medLineNumber {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--lw-crimson, #C61531);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.removeMedBtn {
+  background: none;
+  border: none;
+  color: #bbb;
+  font-size: 1.2rem;
+  padding: 0.2rem 0.4rem;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.removeMedBtn:hover {
+  color: var(--lw-crimson, #C61531);
+  background: #FFF0F0;
+}
+
+.addMedBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.55rem 1rem;
+  background: #FFF0F0;
+  color: var(--lw-crimson, #C61531);
+  border: 1.5px dashed var(--lw-crimson, #C61531);
+  border-radius: 8px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  font-family: var(--font-primary);
+  transition: all 0.2s;
+  margin-top: 0.25rem;
+}
+
+.addMedBtn:hover {
+  background: #FFE0E0;
+}
+
+/* ── Drug Autocomplete ───────────────────────── */
+.autocompleteWrap {
+  position: relative;
+}
+
+.autocompleteDropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+  z-index: 50;
+  max-height: 220px;
+  overflow-y: auto;
+  margin-top: 2px;
+}
+
+.autocompleteItem {
+  padding: 0.55rem 0.75rem;
+  cursor: pointer;
+  border-bottom: 1px solid #f5f5f5;
+  transition: background 0.15s;
+}
+
+.autocompleteItem:last-child {
+  border-bottom: none;
+}
+
+.autocompleteItem:hover {
+  background: #FFF5F5;
+}
+
+.autocompleteName {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--lw-dark, #263626);
+}
+
+.autocompleteMeta {
+  font-size: 0.72rem;
+  color: #999;
+  margin-top: 1px;
+}
+
+.categoryBadge {
+  display: inline-block;
+  padding: 0.1rem 0.45rem;
+  border-radius: 10px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  margin-left: 0.4rem;
+}
+
+.badgeAcute {
+  background: #E8F8EE;
+  color: #0A7C3E;
+}
+
+.badgeChronic {
+  background: #FFF0F0;
+  color: var(--lw-crimson, #C61531);
+}
+
+.badgeEither {
+  background: #FFF8E6;
+  color: #8B6914;
+}
+
+.badgeUnknown {
+  background: #F0F0F0;
+  color: #666;
+}
+
+/* ── Submit Area ─────────────────────────────── */
+.submitArea {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.25rem 1.5rem;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 1px 8px rgba(0, 0, 0, 0.05);
+  border: 1px solid #eee;
+  margin-bottom: 2rem;
+}
+
+.submitBtn {
+  padding: 0.75rem 2.5rem;
+  background: var(--lw-crimson, #C61531);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  font-family: var(--font-primary);
+  letter-spacing: 0.02em;
+  transition: background 0.2s;
+}
+
+.submitBtn:hover {
+  background: #A11028;
+}
+
+.submitBtn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.cancelBtn {
+  padding: 0.7rem 1.5rem;
+  background: transparent;
+  color: #777;
+  border: 1.5px solid #ddd;
+  border-radius: 8px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  font-family: var(--font-primary);
+  transition: all 0.2s;
+}
+
+.cancelBtn:hover {
+  border-color: #999;
+  color: #444;
+}
+
+/* ── Success Banner ──────────────────────────── */
+.successBanner {
+  background: #E8F8EE;
+  border: 1px solid #B5E8C9;
+  border-radius: 12px;
+  padding: 1.5rem;
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.successTitle {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #0A7C3E;
+  margin-bottom: 0.35rem;
+}
+
+.successRef {
+  font-size: 0.92rem;
+  color: #444;
+}
+
+.successRefCode {
+  font-weight: 700;
+  color: var(--lw-dark, #263626);
+}
+
+.successActions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: center;
+  margin-top: 1rem;
+}
+
+/* ── Classification Results ───────────────────── */
+.classificationCard {
+  background: #fff;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 1.25rem;
+  box-shadow: 0 1px 8px rgba(0, 0, 0, 0.05);
+  border: 1px solid #eee;
+}
+
+.classificationCardTitle {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--lw-dark, #263626);
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.classificationGrid {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  margin-bottom: 0.75rem;
+}
+
+.classificationMainResult {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.classificationLabel {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #999;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.classificationBadgeLg {
+  display: inline-block;
+  padding: 0.35rem 0.85rem;
+  border-radius: 8px;
+  font-size: 0.88rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.classificationCounts {
+  display: flex;
+  gap: 1.25rem;
+}
+
+.countItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 50px;
+}
+
+.countNumber {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--lw-dark, #263626);
+}
+
+.countLabel {
+  font-size: 0.68rem;
+  color: #999;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.classificationReasoning {
+  font-size: 0.82rem;
+  color: #666;
+  line-height: 1.5;
+  padding: 0.6rem 0.75rem;
+  background: #FAFBFC;
+  border-radius: 8px;
+  border-left: 3px solid var(--lw-crimson, #C61531);
+  margin-top: 0.5rem;
+}
+
+.reviewFlag {
+  margin-top: 0.75rem;
+  padding: 0.55rem 0.75rem;
+  background: #FFF8E6;
+  color: #8B6914;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  border: 1px solid #F5DFA0;
+}
+
+/* ── Per-item classification ─────────────────── */
+.itemsList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.classifiedItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.6rem 0.75rem;
+  background: #FAFBFC;
+  border-radius: 8px;
+  border: 1px solid #f0f0f0;
+}
+
+.classifiedItemName {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--lw-dark, #263626);
+}
+
+.classifiedItemIdx {
+  color: var(--lw-crimson, #C61531);
+  margin-right: 0.35rem;
+  font-weight: 700;
+}
+
+.classifiedItemGeneric {
+  color: #999;
+  font-weight: 400;
+  font-size: 0.82rem;
+}
+
+.classifiedItemMeta {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.confidenceText {
+  font-size: 0.7rem;
+  color: #999;
+  font-weight: 500;
+}
+
+.reviewBadge {
+  display: inline-block;
+  padding: 0.1rem 0.4rem;
+  border-radius: 10px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  background: #FFF8E6;
+  color: #8B6914;
+  border: 1px solid #F5DFA0;
+}
+
+/* ── Routing Card ────────────────────────────── */
+.routingCard {
+  background: #fff;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 1.25rem;
+  box-shadow: 0 1px 8px rgba(0, 0, 0, 0.05);
+  border: 1px solid #eee;
+  border-left: 4px solid var(--lw-crimson, #C61531);
+}
+
+.routingDestination {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  margin-bottom: 0.75rem;
+}
+
+.routingLabel {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #999;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.routingBadge {
+  display: inline-block;
+  padding: 0.4rem 0.85rem;
+  border-radius: 8px;
+  font-size: 0.92rem;
+  font-weight: 700;
+  background: #F4F5F7;
+  color: var(--lw-dark, #263626);
+  border: 1px solid #e0e0e0;
+  width: fit-content;
+}
+
+.routingStatusRow {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+  font-size: 0.82rem;
+}
+
+.routingStatusLabel {
+  color: #999;
+  font-weight: 600;
+}
+
+.routingStatusValue {
+  font-weight: 700;
+  color: var(--lw-dark, #263626);
+  text-transform: capitalize;
+}
+
+/* ── Classification badge colors ─────────────── */
+.badgeMixed {
+  background: #FFF0F0;
+  color: var(--lw-orange, #F15A24);
+}
+
+.badgeReview {
+  background: #FFF8E6;
+  color: #8B6914;
+}
+
+/* ── Error ────────────────────────────────────── */
+.errorBanner {
+  background: #FFF0F0;
+  color: var(--lw-crimson, #C61531);
+  padding: 0.65rem 0.85rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  font-size: 0.85rem;
+  border-left: 3px solid var(--lw-crimson, #C61531);
+}
+
+.fieldError {
+  font-size: 0.72rem;
+  color: var(--lw-crimson, #C61531);
+  margin-top: 0.2rem;
+}
+
+/* ── Responsive ──────────────────────────────── */
+@media (max-width: 768px) {
+  .header {
+    padding: 0.75rem 1rem;
+  }
+  .main {
+    padding: 1rem;
+  }
+  .formRow,
+  .formRowThree {
+    grid-template-columns: 1fr;
+  }
+  .submitArea {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+  .submitBtn, .cancelBtn {
+    width: 100%;
+    text-align: center;
+  }
+}

@@ -13,6 +13,19 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+// Auto-redirect to login on 401 (expired token)
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response && error.response.status === 401) {
+      localStorage.removeItem("access_token");
+      localStorage.removeItem("provider");
+      window.location.href = "/login";
+    }
+    return Promise.reject(error);
+  }
+);
+
 // ── Auth ──────────────────────────────────────────
 export const login = (email, password) =>
   api.post("/login", { email, password });
@@ -58,5 +71,44 @@ export const validateClaim = (verificationToken, timestamp, providerId) =>
 // ── Claims Status ────────────────────────────────
 export const getClaimsStatus = (enrolleeId) =>
   api.post("/claims-status", { enrollee_id: enrolleeId });
+
+// ── Lookups ──────────────────────────────────────
+export const lookupEnrollee = (enrolleeId) =>
+  api.get("/lookup/enrollee", { params: { enrollee_id: enrolleeId } });
+
+export const getDiagnoses = () =>
+  api.get("/lookup/diagnoses");
+
+export const searchDrugTariff = (query, page = 1, pageSize = 50) =>
+  api.get("/lookup/drugs", { params: { q: query, page, page_size: pageSize } });
+
+export const searchMedications = (query, limit = 15) =>
+  api.get("/medications/search", { params: { q: query, limit } });
+
+export const validateAddress = (address, state) =>
+  api.get("/lookup/validate-address", { params: { address, state } });
+
+export const searchPharmacies = (state, lga, area) =>
+  api.get("/lookup/pharmacies", { params: { state, lga, area } });
+
+// ── Drug Master ──────────────────────────────────
+export const searchDrugs = (query) =>
+  api.get("/drugs/search", { params: { q: query } });
+
+export const getStates = () =>
+  api.get("/locations/states");
+
+export const getLgas = (state) =>
+  api.get("/locations/lgas", { params: { state } });
+
+// ── Medication Requests ──────────────────────────
+export const createMedicationRequest = (payload) =>
+  api.post("/medication-requests", payload);
+
+export const listMedicationRequests = (page = 1, perPage = 20, status) =>
+  api.get("/medication-requests", { params: { page, per_page: perPage, status } });
+
+export const getMedicationRequest = (requestId) =>
+  api.get(`/medication-requests/${requestId}`);
 
 export default api;

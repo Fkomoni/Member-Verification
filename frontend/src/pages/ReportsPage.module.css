@@ -1,0 +1,49 @@
+.page { min-height: 100vh; display: flex; flex-direction: column; background: var(--lw-light-grey, #F4F5F7); }
+.header { display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 2rem; background: #fff; border-bottom: 3px solid #C61531; box-shadow: 0 1px 4px rgba(0,0,0,.06); }
+.headerLeft { display: flex; align-items: center; gap: 0.75rem; }
+.headerLogo { display: flex; align-items: center; gap: 0.5rem; text-decoration: none; }
+.headerLogoImg { height: 36px; width: auto; }
+.headerDivider { width: 1px; height: 24px; background: #ddd; }
+.headerPortal { font-size: 0.85rem; font-weight: 600; color: #666; }
+.headerRight { display: flex; align-items: center; gap: 1rem; }
+.providerName { font-size: 0.85rem; font-weight: 600; color: #444; }
+.logoutBtn { background: transparent; color: #C61531; border: 1.5px solid #C61531; padding: 0.35rem 1rem; border-radius: 6px; font-size: 0.8rem; font-weight: 600; cursor: pointer; }
+.logoutBtn:hover { background: #C61531; color: #fff; }
+.navBar { display: flex; gap: 0; background: #fff; border-bottom: 1px solid #eee; padding: 0 2rem; }
+.navLink { padding: 0.75rem 1.25rem; font-size: 0.85rem; font-weight: 600; color: #777; text-decoration: none; border-bottom: 2px solid transparent; }
+.navLink:hover { color: #C61531; }
+.navLinkActive { composes: navLink; color: #C61531; border-bottom-color: #C61531; }
+.main { flex: 1; padding: 1.5rem 2rem; max-width: 1200px; margin: 0 auto; width: 100%; }
+
+.titleRow { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
+.pageTitle { font-size: 1.35rem; font-weight: 700; color: #263626; }
+.periodSelect { padding: 0.5rem 0.75rem; border: 1.5px solid #ddd; border-radius: 8px; font-size: 0.85rem; font-family: var(--font-primary); background: #fff; }
+.loading { text-align: center; padding: 3rem; color: #999; }
+
+/* Metric cards */
+.metricsRow { display: grid; grid-template-columns: repeat(6, 1fr); gap: 1rem; margin-bottom: 1.5rem; }
+.metricCard { background: #fff; border-radius: 12px; padding: 1.25rem 1rem; text-align: center; box-shadow: 0 1px 6px rgba(0,0,0,.04); border: 1px solid #eee; }
+.metricValue { font-size: 1.75rem; font-weight: 800; color: #263626; }
+.metricLabel { font-size: 0.72rem; font-weight: 600; color: #999; text-transform: uppercase; letter-spacing: 0.04em; margin-top: 0.2rem; }
+
+/* Chart cards */
+.chartsGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; }
+.chartCard { background: #fff; border-radius: 12px; padding: 1.25rem; box-shadow: 0 1px 6px rgba(0,0,0,.04); border: 1px solid #eee; }
+.chartTitle { font-size: 0.92rem; font-weight: 700; color: #263626; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid #f0f0f0; }
+.noData { color: #bbb; font-size: 0.85rem; text-align: center; padding: 1rem; }
+
+/* Bar chart rows */
+.barRow { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.55rem; }
+.barLabel { font-size: 0.78rem; font-weight: 600; color: #555; min-width: 140px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.barTrack { flex: 1; height: 18px; background: #F4F5F7; border-radius: 4px; overflow: hidden; }
+.barFill { height: 100%; background: linear-gradient(90deg, #C61531, #F15A24); border-radius: 4px; min-width: 4px; transition: width 0.3s; }
+.barCount { font-size: 0.78rem; font-weight: 700; color: #263626; min-width: 30px; text-align: right; }
+.drugCat { display: inline-block; margin-left: 0.35rem; font-size: 0.6rem; font-weight: 700; padding: 0.05rem 0.3rem; border-radius: 6px; background: #F0F0F0; color: #666; text-transform: uppercase; vertical-align: middle; }
+
+@media (max-width: 900px) {
+  .metricsRow { grid-template-columns: repeat(3, 1fr); }
+  .chartsGrid { grid-template-columns: 1fr; }
+}
+@media (max-width: 600px) {
+  .metricsRow { grid-template-columns: repeat(2, 1fr); }
+}
