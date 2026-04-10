@@ -85,6 +85,15 @@ services:
     rootDir: frontend
     buildCommand: npm install && CI=false npm run build
     staticPublishPath: build
+    headers:
+      # Never cache index.html so browsers always get the latest bundle hashes
+      - path: /index.html
+        name: Cache-Control
+        value: no-cache, no-store, must-revalidate
+      # Cache JS/CSS bundles for 1 year — safe because CRA uses content hashes
+      - path: /static/*
+        name: Cache-Control
+        value: public, max-age=31536000, immutable
     routes:
       - type: rewrite
         source: /*
