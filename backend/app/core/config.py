@@ -12,7 +12,7 @@ class Settings(BaseSettings):
     # JWT
     SECRET_KEY: str = "CHANGE-THIS-TO-A-SECURE-RANDOM-KEY"
     ALGORITHM: str = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 480  # 8 hours
 
     # Encryption key for biometric templates (Fernet, 32-byte base64)
     BIOMETRIC_ENCRYPTION_KEY: str = "CHANGE-THIS-GENERATE-WITH-Fernet.generate_key()"
@@ -26,6 +26,27 @@ class Settings(BaseSettings):
     PROGNOSIS_BASE_URL: str = "https://prognosis-api.leadwayhealth.com"
     PROGNOSIS_USERNAME: str = ""
     PROGNOSIS_PASSWORD: str = ""
+
+    # WellaHealth API (acute medication fulfilment)
+    WELLAHEALTH_BASE_URL: str = "https://staging.wellahealth.com/v1"
+    WELLAHEALTH_PARTNER_CODE: str = ""
+    WELLAHEALTH_CLIENT_ID: str = ""
+    WELLAHEALTH_CLIENT_SECRET: str = ""
+
+    # Google Maps / Geolocation API
+    GOOGLE_MAPS_API_KEY: str = ""
+
+    # Leadway WhatsApp routing numbers
+    WHATSAPP_LAGOS_NUMBER: str = ""
+    WHATSAPP_OUTSIDE_LAGOS_NUMBER: str = ""
+
+    # WhatsApp Bot Webhook (existing Leadway bot)
+    WHATSAPP_WEBHOOK_URL: str = ""
+    WHATSAPP_VERIFY_TOKEN: str = ""
+    WHATSAPP_APP_SECRET: str = ""
+
+    # Anthropic API (LangChain AI drug classification)
+    ANTHROPIC_API_KEY: str = ""
 
     model_config = {"env_file": ".env"}
 

@@ -1,0 +1,82 @@
+.page { min-height: 100vh; display: flex; flex-direction: column; background: var(--lw-light-grey, #F4F5F7); }
+.header { display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 2rem; background: #fff; border-bottom: 3px solid #C61531; box-shadow: 0 1px 4px rgba(0,0,0,.06); }
+.headerLeft { display: flex; align-items: center; gap: 0.75rem; }
+.headerLogo { display: flex; align-items: center; gap: 0.5rem; text-decoration: none; }
+.headerLogoImg { height: 36px; width: auto; }
+.headerDivider { width: 1px; height: 24px; background: #ddd; }
+.headerPortal { font-size: 0.85rem; font-weight: 600; color: #666; }
+.headerRight { display: flex; align-items: center; gap: 1rem; }
+.providerName { font-size: 0.85rem; font-weight: 600; color: #444; }
+.logoutBtn { background: transparent; color: #C61531; border: 1.5px solid #C61531; padding: 0.35rem 1rem; border-radius: 6px; font-size: 0.8rem; font-weight: 600; cursor: pointer; }
+.logoutBtn:hover { background: #C61531; color: #fff; }
+.navBar { display: flex; gap: 0; background: #fff; border-bottom: 1px solid #eee; padding: 0 2rem; }
+.navLink { padding: 0.75rem 1.25rem; font-size: 0.85rem; font-weight: 600; color: #777; text-decoration: none; border-bottom: 2px solid transparent; }
+.navLink:hover { color: #C61531; }
+.navLinkActive { composes: navLink; color: #C61531; border-bottom-color: #C61531; }
+.main { flex: 1; padding: 1rem 2rem; }
+
+/* Layout: split panel */
+.layout { display: grid; grid-template-columns: 360px 1fr; gap: 1.25rem; min-height: calc(100vh - 140px); }
+
+/* Queue panel */
+.queuePanel { background: #fff; border-radius: 12px; border: 1px solid #eee; box-shadow: 0 1px 6px rgba(0,0,0,.04); overflow: hidden; display: flex; flex-direction: column; }
+.queueHeader { display: flex; justify-content: space-between; align-items: center; padding: 0.85rem 1rem; border-bottom: 1px solid #eee; }
+.queueTitle { font-size: 0.95rem; font-weight: 700; color: #263626; }
+.filterSelect { padding: 0.35rem 0.6rem; border: 1.5px solid #ddd; border-radius: 6px; font-size: 0.78rem; font-family: var(--font-primary); }
+.queueItem { padding: 0.75rem 1rem; border-bottom: 1px solid #f5f5f5; cursor: pointer; transition: background 0.15s; }
+.queueItem:hover { background: #FAFBFC; }
+.queueItemActive { background: #FFF5F5; border-left: 3px solid #C61531; }
+.queueItemRef { font-weight: 700; font-size: 0.82rem; color: #263626; }
+.queueItemMeta { font-size: 0.75rem; color: #999; margin-top: 0.15rem; }
+.queueItemStatus { display: flex; gap: 0.4rem; margin-top: 0.3rem; }
+.statusTag { font-size: 0.65rem; font-weight: 700; padding: 0.1rem 0.4rem; border-radius: 8px; background: #FFF8E6; color: #8B6914; text-transform: capitalize; }
+.clsTag { font-size: 0.65rem; font-weight: 700; padding: 0.1rem 0.4rem; border-radius: 8px; background: #F0F0F0; color: #666; text-transform: uppercase; }
+.emptyState { padding: 2rem; text-align: center; color: #999; font-size: 0.88rem; }
+.pagination { display: flex; justify-content: center; align-items: center; gap: 0.75rem; padding: 0.75rem; border-top: 1px solid #eee; }
+.pageBtn { padding: 0.3rem 0.75rem; border: 1px solid #ddd; border-radius: 4px; background: #fff; font-size: 0.78rem; cursor: pointer; }
+.pageBtn:disabled { opacity: 0.4; }
+.pageInfo { font-size: 0.78rem; color: #777; }
+
+/* Detail panel */
+.detailPanel { background: #fff; border-radius: 12px; border: 1px solid #eee; box-shadow: 0 1px 6px rgba(0,0,0,.04); padding: 1.25rem; overflow-y: auto; max-height: calc(100vh - 160px); }
+.detailTitle { font-size: 1.1rem; font-weight: 700; color: #263626; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 2px solid #C61531; }
+.detailGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem 1.5rem; margin-bottom: 1rem; }
+.dl { display: block; font-size: 0.68rem; font-weight: 600; color: #999; text-transform: uppercase; letter-spacing: 0.04em; }
+.dv { font-size: 0.85rem; font-weight: 600; color: #263626; }
+.subTitle { font-size: 0.82rem; font-weight: 700; color: #C61531; margin: 1rem 0 0.5rem; text-transform: uppercase; letter-spacing: 0.04em; }
+
+/* Medications */
+.medItem { display: flex; align-items: center; gap: 0.4rem; padding: 0.4rem 0.5rem; background: #FAFBFC; border-radius: 6px; margin-bottom: 0.35rem; font-size: 0.82rem; flex-wrap: wrap; }
+.medIdx { font-weight: 700; color: #C61531; }
+.medName { font-weight: 600; color: #263626; }
+.medDose { color: #777; font-size: 0.78rem; }
+.medCat { font-size: 0.65rem; font-weight: 700; padding: 0.1rem 0.35rem; border-radius: 8px; background: #F0F0F0; color: #666; text-transform: uppercase; }
+.reviewFlag { font-size: 0.6rem; font-weight: 700; padding: 0.1rem 0.3rem; border-radius: 8px; background: #FFF8E6; color: #8B6914; }
+
+/* Actions */
+.actionRow { display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.5rem; flex-wrap: wrap; }
+.actionLabel { font-size: 0.75rem; font-weight: 600; color: #666; min-width: 140px; }
+.actionBtn { padding: 0.3rem 0.7rem; border: 1.5px solid #C61531; border-radius: 6px; background: #fff; color: #C61531; font-size: 0.75rem; font-weight: 700; cursor: pointer; text-transform: capitalize; font-family: var(--font-primary); }
+.actionBtn:hover { background: #C61531; color: #fff; }
+.actionBtn:disabled { opacity: 0.4; }
+.actionBtnAlt { composes: actionBtn; border-color: #999; color: #666; }
+.actionBtnAlt:hover { background: #666; color: #fff; }
+
+/* Comments */
+.commentRow { display: flex; gap: 0.5rem; margin-bottom: 0.75rem; }
+.commentInput { flex: 1; padding: 0.45rem 0.65rem; border: 1.5px solid #ddd; border-radius: 6px; font-size: 0.82rem; font-family: var(--font-primary); }
+.commentInput:focus { outline: none; border-color: #C61531; }
+.commentBtn { padding: 0.45rem 0.85rem; background: #C61531; color: #fff; border: none; border-radius: 6px; font-size: 0.82rem; font-weight: 700; cursor: pointer; font-family: var(--font-primary); }
+.commentBtn:disabled { opacity: 0.4; }
+
+/* Audit trail */
+.auditList { max-height: 300px; overflow-y: auto; }
+.auditItem { padding: 0.45rem 0.5rem; border-bottom: 1px solid #f5f5f5; }
+.auditType { display: inline-block; font-size: 0.68rem; font-weight: 700; color: #C61531; text-transform: uppercase; margin-right: 0.4rem; }
+.auditDetail { font-size: 0.78rem; color: #555; }
+.auditTime { display: block; font-size: 0.68rem; color: #bbb; margin-top: 0.1rem; }
+
+@media (max-width: 900px) {
+  .layout { grid-template-columns: 1fr; }
+  .detailPanel { max-height: none; }
+}

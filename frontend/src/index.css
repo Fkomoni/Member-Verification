@@ -1,7 +1,10 @@
 /*
  * Leadway Health — De Novo Design System
  * Brand colors extracted from the Leadway Health Mini Manual v3
+ * Typography: Poppins (closest Google Font match to Leadway Book)
  */
+
+@import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400;1,600&display=swap');
 
 :root {
   /* Primary brand colors */
@@ -22,8 +25,8 @@
   --lw-danger: #C61531;
   --lw-info: #1A2B6D;
 
-  /* Typography — fallback to system sans-serif (Leadway font is custom/proprietary) */
-  --font-primary: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  /* Typography — Poppins as web fallback for Leadway Book (proprietary) */
+  --font-primary: "Poppins", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
 }
 
 *,
