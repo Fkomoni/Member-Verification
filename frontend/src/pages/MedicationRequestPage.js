@@ -3,7 +3,6 @@ import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import {
   lookupEnrollee,
-  getDiagnoses,
   searchMedications,
   getStates,
   createMedicationRequest,
@@ -22,6 +21,231 @@ const haversineKm = (lat1, lon1, lat2, lon2) => {
     Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon / 2) ** 2;
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 };
+
+/** Top 200 most common Nigerian diagnoses (hardcoded — no API required). */
+const NIGERIAN_DIAGNOSES = [
+  "Malaria",
+  "Uncomplicated Malaria",
+  "Severe Malaria",
+  "Typhoid Fever",
+  "Upper Respiratory Tract Infection (URTI)",
+  "Lower Respiratory Tract Infection (LRTI)",
+  "Pneumonia",
+  "Bronchopneumonia",
+  "Asthma",
+  "Hypertension",
+  "Diabetes Mellitus Type 2",
+  "Diabetes Mellitus Type 1",
+  "Urinary Tract Infection (UTI)",
+  "Gastroenteritis",
+  "Peptic Ulcer Disease",
+  "Gastro-Oesophageal Reflux Disease (GERD)",
+  "Anaemia",
+  "Sickle Cell Disease",
+  "Sickle Cell Crisis",
+  "Tuberculosis (TB)",
+  "Pulmonary Tuberculosis",
+  "HIV/AIDS",
+  "Hepatitis B",
+  "Hepatitis C",
+  "Malaria in Pregnancy",
+  "Preeclampsia",
+  "Eclampsia",
+  "Sepsis",
+  "Meningitis",
+  "Bacterial Meningitis",
+  "Viral Meningitis",
+  "Epilepsy / Seizure Disorder",
+  "Febrile Seizures",
+  "Stroke (Cerebrovascular Accident)",
+  "Ischaemic Stroke",
+  "Haemorrhagic Stroke",
+  "Heart Failure",
+  "Congestive Heart Failure",
+  "Myocardial Infarction",
+  "Angina Pectoris",
+  "Acute Coronary Syndrome",
+  "Atrial Fibrillation",
+  "Deep Vein Thrombosis (DVT)",
+  "Pulmonary Embolism",
+  "Kidney Disease / Chronic Kidney Disease (CKD)",
+  "Acute Kidney Injury (AKI)",
+  "Nephrotic Syndrome",
+  "Nephritic Syndrome",
+  "Liver Cirrhosis",
+  "Acute Hepatitis",
+  "Jaundice",
+  "Neonatal Jaundice",
+  "Cholecystitis",
+  "Cholelithiasis (Gallstones)",
+  "Pancreatitis",
+  "Appendicitis",
+  "Intestinal Obstruction",
+  "Hernia",
+  "Inguinal Hernia",
+  "Fibroid (Uterine Leiomyoma)",
+  "Ovarian Cyst",
+  "Polycystic Ovary Syndrome (PCOS)",
+  "Pelvic Inflammatory Disease (PID)",
+  "Sexually Transmitted Infection (STI)",
+  "Gonorrhoea",
+  "Syphilis",
+  "Chlamydia",
+  "Vaginal Candidiasis",
+  "Trichomoniasis",
+  "Ectopic Pregnancy",
+  "Threatened Abortion",
+  "Incomplete Abortion",
+  "Anaemia in Pregnancy",
+  "Gestational Diabetes",
+  "Postpartum Haemorrhage",
+  "Caesarean Section",
+  "Neonatal Sepsis",
+  "Neonatal Pneumonia",
+  "Low Birth Weight",
+  "Protein-Energy Malnutrition",
+  "Kwashiorkor",
+  "Marasmus",
+  "Vitamin A Deficiency",
+  "Iron Deficiency Anaemia",
+  "Folate Deficiency",
+  "Skin Infection",
+  "Cellulitis",
+  "Wound Infection",
+  "Abscess",
+  "Scabies",
+  "Tinea Capitis (Ringworm)",
+  "Tinea Corporis",
+  "Tinea Pedis (Athlete's Foot)",
+  "Eczema / Atopic Dermatitis",
+  "Psoriasis",
+  "Urticaria (Hives)",
+  "Allergic Reaction",
+  "Conjunctivitis",
+  "Allergic Conjunctivitis",
+  "Trachoma",
+  "Glaucoma",
+  "Cataract",
+  "Otitis Media",
+  "Otitis Externa",
+  "Tonsillitis",
+  "Pharyngitis",
+  "Sinusitis",
+  "Rhinitis",
+  "Allergic Rhinitis",
+  "Dental Caries",
+  "Periodontal Disease",
+  "Oral Candidiasis (Thrush)",
+  "Diarrhoea",
+  "Acute Watery Diarrhoea",
+  "Bloody Diarrhoea / Dysentery",
+  "Cholera",
+  "Salmonella Infection",
+  "Shigellosis",
+  "Amoebiasis",
+  "Giardiasis",
+  "Worm Infestation / Helminthiasis",
+  "Ascariasis",
+  "Hookworm Infection",
+  "Schistosomiasis",
+  "Filariasis / Lymphatic Filariasis",
+  "Onchocerciasis (River Blindness)",
+  "Guinea Worm Disease (Dracunculiasis)",
+  "Lassa Fever",
+  "Dengue Fever",
+  "Yellow Fever",
+  "Rabies",
+  "Chickenpox (Varicella)",
+  "Measles",
+  "Mumps",
+  "Rubella",
+  "Meningococcal Disease",
+  "Diphtheria",
+  "Pertussis (Whooping Cough)",
+  "Tetanus",
+  "Neonatal Tetanus",
+  "Poliomyelitis",
+  "COVID-19",
+  "Influenza",
+  "Viral Fever",
+  "Dengue Haemorrhagic Fever",
+  "Monkeypox",
+  "Osteoarthritis",
+  "Rheumatoid Arthritis",
+  "Gout",
+  "Back Pain / Low Back Pain",
+  "Neck Pain / Cervical Spondylosis",
+  "Fracture",
+  "Dislocation",
+  "Sprain / Strain",
+  "Soft Tissue Injury",
+  "Burns",
+  "Road Traffic Accident (RTA)",
+  "Head Injury / Traumatic Brain Injury",
+  "Anxiety Disorder",
+  "Depression",
+  "Schizophrenia",
+  "Bipolar Disorder",
+  "Substance Use Disorder",
+  "Alcohol Use Disorder",
+  "Dementia",
+  "Attention Deficit Hyperactivity Disorder (ADHD)",
+  "Autism Spectrum Disorder",
+  "Intellectual Disability",
+  "Thyroid Disease",
+  "Hypothyroidism",
+  "Hyperthyroidism",
+  "Goitre",
+  "Obesity",
+  "Dyslipidaemia",
+  "Metabolic Syndrome",
+  "Prostate Enlargement (BPH)",
+  "Prostate Cancer",
+  "Cervical Cancer",
+  "Breast Cancer",
+  "Colorectal Cancer",
+  "Liver Cancer (HCC)",
+  "Kaposi's Sarcoma",
+  "Leukaemia",
+  "Lymphoma",
+  "Multiple Myeloma",
+  "Pre-diabetes / Impaired Glucose Tolerance",
+  "Hypertensive Heart Disease",
+  "Hypertensive Nephropathy",
+  "Diabetic Nephropathy",
+  "Diabetic Retinopathy",
+  "Diabetic Neuropathy",
+  "Peripheral Vascular Disease",
+  "Varicose Veins",
+  "Haemorrhoids (Piles)",
+  "Anal Fissure",
+  "Rectal Prolapse",
+  "Inflammatory Bowel Disease (IBD)",
+  "Crohn's Disease",
+  "Ulcerative Colitis",
+  "Irritable Bowel Syndrome (IBS)",
+  "Constipation",
+  "Acute Abdomen",
+  "Peritonitis",
+  "Intussusception",
+  "Herpes Simplex",
+  "Herpes Zoster (Shingles)",
+  "Impetigo",
+  "Vitiligo",
+  "Alopecia",
+  "Acne Vulgaris",
+  "Pilonidal Cyst",
+  "Hydrocele",
+  "Varicocele",
+  "Undescended Testis",
+  "Urinary Retention",
+  "Urolithiasis (Kidney Stones)",
+  "Renal Colic",
+  "Enuresis (Bedwetting)",
+  "Childhood Fever",
+  "Febrile Illness NOS",
+  "Pain NOS",
+];
 
 const EMPTY_MED = {
   drug_name: "", generic_name: "", matched_drug_id: null,
@@ -46,7 +270,6 @@ export default function MedicationRequestPage() {
 
   // ── Form ────────────────────────────────────────
   const [diagnosis, setDiagnosis] = useState("");
-  const [diagnosisList, setDiagnosisList] = useState([]);
   const [diagnosisSearch, setDiagnosisSearch] = useState("");
   const [treatingDoctor, setTreatingDoctor] = useState("");
   const [providerNotes, setProviderNotes] = useState("");
@@ -76,11 +299,6 @@ export default function MedicationRequestPage() {
 
   useEffect(() => {
     getStates().then(({ data }) => setStates(data.states)).catch(() => {});
-    getDiagnoses().then(({ data }) => {
-      console.log("Diagnoses loaded:", data);
-      const list = data.diagnoses || data.result || data.data || data || [];
-      setDiagnosisList(Array.isArray(list) ? list : []);
-    }).catch((e) => console.error("Diagnosis load failed:", e));
   }, []);
 
   // ── Auto-search pharmacies when state is selected ────────────
@@ -207,17 +425,8 @@ export default function MedicationRequestPage() {
   const removeMedLine = (i) => { if (medications.length > 1) setMedications(medications.filter((_, idx) => idx !== i)); };
   const updateMed = (i, field, value) => { const u = [...medications]; u[i] = { ...u[i], [field]: value }; setMedications(u); };
 
-  const getDiagName = (d) => {
-    if (typeof d === "string") return d;
-    return d.name || d.Name || d.description || d.Description ||
-           d.DiagnosisName || d.diagnosisName || d.diagnosis ||
-           d.DiagnosisDescription || d.Value || d.value ||
-           d.Text || d.text || d.Label || d.label ||
-           JSON.stringify(d);
-  };
-
   const filteredDiagnoses = diagnosisSearch.length >= 2
-    ? diagnosisList.filter(d => getDiagName(d).toLowerCase().includes(diagnosisSearch.toLowerCase())).slice(0, 15)
+    ? NIGERIAN_DIAGNOSES.filter(d => d.toLowerCase().includes(diagnosisSearch.toLowerCase())).slice(0, 15)
     : [];
 
   // ── Submit ──────────────────────────────────────
@@ -428,8 +637,8 @@ export default function MedicationRequestPage() {
                   {!diagnosis && filteredDiagnoses.length > 0 && (
                     <div className={styles.autocompleteDropdown}>
                       {filteredDiagnoses.map((d, i) => (
-                        <div key={i} className={styles.autocompleteItem} onMouseDown={() => { setDiagnosis(getDiagName(d)); setDiagnosisSearch(""); }}>
-                          <span className={styles.autocompleteName}>{getDiagName(d)}</span>
+                        <div key={i} className={styles.autocompleteItem} onMouseDown={() => { setDiagnosis(d); setDiagnosisSearch(""); }}>
+                          <span className={styles.autocompleteName}>{d}</span>
                         </div>
                       ))}
                     </div>
