@@ -271,7 +271,7 @@ class MedicationRequestItem(Base):
         String(100), nullable=False,
         comment="e.g. 5 days, 30 days, ongoing",
     )
-    quantity: Mapped[str] = mapped_column(String(100), nullable=False)
+    quantity: Mapped[str | None] = mapped_column(String(100), nullable=True)
     route: Mapped[str | None] = mapped_column(
         String(50), nullable=True,
         comment="e.g. oral, IV, topical",

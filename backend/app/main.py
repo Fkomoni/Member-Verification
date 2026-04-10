@@ -88,6 +88,11 @@ async def on_startup():
                 conn.execute(text("ALTER TABLE medication_requests ALTER COLUMN delivery_lga DROP NOT NULL"))
             except Exception:
                 pass
+            # Make quantity nullable (WellaHealth format doesn't require quantity)
+            try:
+                conn.execute(text("ALTER TABLE medication_request_items ALTER COLUMN quantity DROP NOT NULL"))
+            except Exception:
+                pass
             # Add pharmacy_code column for WellaHealth fulfilment tracking
             try:
                 conn.execute(text("ALTER TABLE medication_requests ADD COLUMN IF NOT EXISTS pharmacy_code VARCHAR(100)"))

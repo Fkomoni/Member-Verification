@@ -16,7 +16,7 @@ import styles from "./MedicationRequestPage.module.css";
 const EMPTY_MED = {
   drug_name: "", generic_name: "", matched_drug_id: null,
   strength: "", dosage_form: "", dosage_instruction: "", duration: "",
-  quantity: "", frequency: "", med_notes: "",
+  frequency: "", med_notes: "",
 };
 
 export default function MedicationRequestPage() {
@@ -210,9 +210,10 @@ export default function MedicationRequestPage() {
     for (let i = 0; i < medications.length; i++) {
       const m = medications[i];
       if (!m.drug_name.trim()) return setError(`Medication ${i + 1}: drug name is required`);
-      if (!m.dosage_instruction.trim()) return setError(`Medication ${i + 1}: dosage is required`);
+      if (!m.strength.trim()) return setError(`Medication ${i + 1}: strength/mg is required`);
+      if (!m.dosage_instruction.trim()) return setError(`Medication ${i + 1}: dose is required`);
+      if (!m.frequency) return setError(`Medication ${i + 1}: frequency is required`);
       if (!m.duration.trim()) return setError(`Medication ${i + 1}: duration is required`);
-      if (!m.quantity.trim()) return setError(`Medication ${i + 1}: quantity is required`);
     }
 
     setSubmitting(true);
@@ -240,10 +241,9 @@ export default function MedicationRequestPage() {
           drug_name: m.drug_name.trim(),
           generic_name: m.generic_name || null,
           matched_drug_id: m.matched_drug_id || null,
-          strength: m.strength || null,
+          strength: m.strength.trim() || null,
           dosage_instruction: m.dosage_instruction.trim(),
           duration: m.duration.trim(),
-          quantity: m.quantity.trim(),
           // route field stores the dosing frequency (OD/BD/TDS/QDS/STAT/PRN)
           // WellaHealth dispatch reads item.route as the "frequency" field
           route: m.frequency || null,
@@ -459,11 +459,22 @@ export default function MedicationRequestPage() {
                     )}
                   </div>
                 </div>
+                {/* WellaHealth format: name → strength | dose → frequency | duration | notes */}
                 <div className={styles.formRow}>
                   <div className={styles.field}>
-                    <label className={styles.label}>Dosage <span className={styles.required}>*</span></label>
-                    <input className={styles.input} value={med.dosage_instruction} onChange={(e) => updateMed(idx, "dosage_instruction", e.target.value)} placeholder="e.g. 1 tab twice daily" />
+                    <label className={styles.label}>Strength / mg <span className={styles.required}>*</span></label>
+                    <input className={styles.input} value={med.strength}
+                      onChange={(e) => updateMed(idx, "strength", e.target.value)}
+                      placeholder="e.g. 500mg" />
                   </div>
+                  <div className={styles.field}>
+                    <label className={styles.label}>Dose <span className={styles.required}>*</span></label>
+                    <input className={styles.input} value={med.dosage_instruction}
+                      onChange={(e) => updateMed(idx, "dosage_instruction", e.target.value)}
+                      placeholder="e.g. 1 tab" />
+                  </div>
+                </div>
+                <div className={styles.formRowThree}>
                   <div className={styles.field}>
                     <label className={styles.label}>Frequency <span className={styles.required}>*</span></label>
                     <select className={styles.select} value={med.frequency} onChange={(e) => updateMed(idx, "frequency", e.target.value)}>
@@ -478,19 +489,17 @@ export default function MedicationRequestPage() {
                       <option value="Other">Other</option>
                     </select>
                   </div>
-                </div>
-                <div className={styles.formRowThree}>
                   <div className={styles.field}>
                     <label className={styles.label}>Duration <span className={styles.required}>*</span></label>
-                    <input className={styles.input} value={med.duration} onChange={(e) => updateMed(idx, "duration", e.target.value)} placeholder="e.g. 5 days" />
-                  </div>
-                  <div className={styles.field}>
-                    <label className={styles.label}>Quantity <span className={styles.required}>*</span></label>
-                    <input className={styles.input} value={med.quantity} onChange={(e) => updateMed(idx, "quantity", e.target.value)} placeholder="e.g. 10 tablets" />
+                    <input className={styles.input} value={med.duration}
+                      onChange={(e) => updateMed(idx, "duration", e.target.value)}
+                      placeholder="e.g. 5 days" />
                   </div>
                   <div className={styles.field}>
                     <label className={styles.label}>Notes</label>
-                    <input className={styles.input} value={med.med_notes} onChange={(e) => updateMed(idx, "med_notes", e.target.value)} placeholder="Optional" />
+                    <input className={styles.input} value={med.med_notes}
+                      onChange={(e) => updateMed(idx, "med_notes", e.target.value)}
+                      placeholder="Optional" />
                   </div>
                 </div>
               </div>
@@ -537,6 +546,11 @@ export default function MedicationRequestPage() {
 
             {/* Pharmacy Selection */}
             {pharmacyLoading && <div className={styles.enrolleeMeta}>Searching pharmacies...</div>}
+            {!pharmacyLoading && deliveryState && pharmacies.length === 0 && (
+              <div className={styles.enrolleeMeta} style={{color:"#b45309",marginTop:"8px"}}>
+                No WellaHealth pharmacies found for {deliveryState}. You can still submit — the pharmacy will be assigned during fulfilment.
+              </div>
+            )}
             {pharmacies.length > 0 && (
               <div className={styles.formRowFull}>
                 <div className={styles.field}>
