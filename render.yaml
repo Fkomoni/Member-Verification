@@ -4,7 +4,7 @@
 services:
   # ── Backend API ──────────────────────────────────
   - type: web
-    name: member-verification-api
+    name: leadway-rx-api
     runtime: python
     region: oregon
     rootDir: backend
@@ -80,7 +80,7 @@ services:
 
   # ── Frontend ─────────────────────────────────────
   - type: web
-    name: member-verification-portal
+    name: leadway-rx-portal
     runtime: static
     rootDir: frontend
     buildCommand: npm install && npm run build
@@ -91,7 +91,7 @@ services:
         destination: /index.html
     envVars:
       - key: REACT_APP_API_URL
-        value: https://member-verification-api.onrender.com/api/v1
+        value: https://leadway-rx-api.onrender.com/api/v1
 
 # ── Database ─────────────────────────────────────
 databases:
