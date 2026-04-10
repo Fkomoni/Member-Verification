@@ -113,7 +113,7 @@ class MedicationItemIn(BaseModel):
     strength: str | None = None
     dosage_instruction: str = Field(..., min_length=1)
     duration: str = Field(..., min_length=1, max_length=100)
-    quantity: str = Field(..., min_length=1, max_length=100)
+    quantity: str | None = None
     route: str | None = None
 
 
