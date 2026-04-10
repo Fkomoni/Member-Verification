@@ -298,31 +298,54 @@ async def search_pharmacies(
     state: str = Query(..., min_length=1),
     lga: str = Query(""),
     area: str = Query(""),
+    lat: float | None = Query(None, description="Delivery latitude for proximity fallback"),
+    lng: float | None = Query(None, description="Delivery longitude for proximity fallback"),
     _provider=Depends(get_current_provider),
 ):
     """
     Search WellaHealth pharmacies by location.
-    If a narrowed LGA search returns no results, automatically retries at
-    state level so the provider always sees options when they exist.
-    """
-    results = await wellahealth_client.search_pharmacies(state, lga, area)
-    fallback_used = False
 
-    # LGA search came back empty — retry at state level
+    Fallback chain when an LGA search returns no results:
+      1. Try the 3 geographically nearest LGAs (requires lat/lng)
+      2. Fall back to full state search
+    """
+    from app.utils.lga_coordinates import find_nearest_lgas
+
+    results = await wellahealth_client.search_pharmacies(state, lga, area)
+    lga_searched = lga
+    fallback_to_state = False
+
     if not results and lga:
-        results = await wellahealth_client.search_pharmacies(state, "", area)
-        fallback_used = bool(results)
-        if fallback_used:
-            logger.info(
-                "Pharmacy search: LGA '%s' returned no results for state '%s' — showing all state results",
-                lga, state,
-            )
+        # ── Try nearby LGAs first (if we have delivery coordinates) ──
+        if lat is not None and lng is not None:
+            nearby_lgas = find_nearest_lgas(state, lat, lng, exclude_lga=lga, limit=3)
+            for nearby_lga in nearby_lgas:
+                logger.info(
+                    "Pharmacy search: '%s' empty — trying nearby LGA '%s' for state '%s'",
+                    lga, nearby_lga, state,
+                )
+                results = await wellahealth_client.search_pharmacies(state, nearby_lga, "")
+                if results:
+                    lga_searched = nearby_lga
+                    logger.info("Pharmacy search: found %d pharmacies in nearby LGA '%s'", len(results), nearby_lga)
+                    break
+
+        # ── Final fallback: full state search ──────────────────────
+        if not results:
+            results = await wellahealth_client.search_pharmacies(state, "", "")
+            fallback_to_state = bool(results)
+            lga_searched = ""
+            if fallback_to_state:
+                logger.info(
+                    "Pharmacy search: no nearby LGA results — showing all %d pharmacies in %s",
+                    len(results), state,
+                )
 
     return {
         "pharmacies": results,
         "total": len(results),
-        "lga_searched": lga if not fallback_used else "",
-        "fallback_to_state": fallback_used,
+        "lga_searched": lga_searched,
+        "fallback_to_state": fallback_to_state,
     }
 
 
