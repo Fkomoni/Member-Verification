@@ -548,6 +548,37 @@ export default function MedicationRequestPage() {
               {success.routing.reasoning && <div className={styles.classificationReasoning}>{success.routing.reasoning}</div>}
             </div>
           )}
+          {/* WellaHealth dispatch result */}
+          {success.routing?.destination === "wellahealth" && (
+            <div className={styles.routingCard} style={{borderLeft: success.wellahealth_dispatched === true ? "4px solid #16a34a" : success.wellahealth_dispatched === false ? "4px solid #dc2626" : "4px solid #d1d5db"}}>
+              <h3 className={styles.classificationCardTitle}>WellaHealth Dispatch</h3>
+              {success.wellahealth_dispatched === true && (
+                <>
+                  <div className={styles.routingDestination}>
+                    <span className={styles.routingLabel}>Status</span>
+                    <span className={styles.routingBadge} style={{background:"#dcfce7",color:"#16a34a"}}>Sent successfully</span>
+                  </div>
+                  {success.wellahealth_tracking_code && (
+                    <div className={styles.routingDestination} style={{marginTop:"8px"}}>
+                      <span className={styles.routingLabel}>Tracking Code</span>
+                      <span className={styles.routingBadge} style={{fontFamily:"monospace"}}>{success.wellahealth_tracking_code}</span>
+                    </div>
+                  )}
+                </>
+              )}
+              {success.wellahealth_dispatched === false && (
+                <div className={styles.routingDestination}>
+                  <span className={styles.routingLabel}>Status</span>
+                  <span className={styles.routingBadge} style={{background:"#fee2e2",color:"#dc2626"}}>
+                    Dispatch failed — {success.wellahealth_error || "check Render logs"}
+                  </span>
+                </div>
+              )}
+              {success.wellahealth_dispatched == null && (
+                <div className={styles.classificationReasoning}>Dispatching to WellaHealth... check logs for result.</div>
+              )}
+            </div>
+          )}
           <div className={styles.submitArea}>
             <button onClick={resetForm} className={styles.submitBtn}>New Request</button>
             <button onClick={() => navigate("/medication-requests")} className={styles.cancelBtn}>View All Requests</button>

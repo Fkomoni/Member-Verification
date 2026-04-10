@@ -244,6 +244,10 @@ class MedicationRequestOut(BaseModel):
     routing: RoutingSummaryOut | None = None
     created_at: datetime
     updated_at: datetime
+    # WellaHealth dispatch result — populated on creation if routed to WellaHealth
+    wellahealth_tracking_code: str | None = None
+    wellahealth_dispatched: bool | None = None
+    wellahealth_error: str | None = None
 
     model_config = {"from_attributes": True}
 

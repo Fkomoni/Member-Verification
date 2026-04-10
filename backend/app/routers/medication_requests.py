@@ -23,6 +23,7 @@ from app.models.medication import (
     MedicationRequest,
     MedicationRequestItem,
     RequestStatusHistory,
+    WellaHealthApiLog,
 )
 from app.models.models import Provider
 from app.schemas.medication import (
@@ -184,7 +185,22 @@ def create_medication_request(
         .first()
     )
 
-    return MedicationRequestOut.model_validate(request)
+    out = MedicationRequestOut.model_validate(request)
+
+    # Attach WellaHealth dispatch result if routed there
+    if routing_dest == "wellahealth":
+        wh_log = (
+            db.query(WellaHealthApiLog)
+            .filter(WellaHealthApiLog.request_id == request.request_id)
+            .order_by(WellaHealthApiLog.created_at.desc())
+            .first()
+        )
+        if wh_log:
+            out.wellahealth_dispatched = wh_log.success
+            out.wellahealth_tracking_code = wh_log.external_reference or None
+            out.wellahealth_error = wh_log.error_message or None
+
+    return out
 
 
 # ── List Requests (for current provider) ─────────────────────────
@@ -258,6 +274,66 @@ def get_medication_request(
         )
 
     return MedicationRequestOut.model_validate(request)
+
+
+# ── Dispatch Status ─────────────────────────────────────────────
+
+@router.get("/medication-requests/{request_id}/dispatch-status")
+def get_dispatch_status(
+    request_id: uuid.UUID,
+    db: Session = Depends(get_db),
+    provider: Provider = Depends(get_current_provider),
+):
+    """
+    Return the WellaHealth dispatch result for a medication request.
+    Shows tracking code, success/failure, and raw WellaHealth response.
+    """
+    # Verify ownership
+    request = (
+        db.query(MedicationRequest)
+        .filter(
+            MedicationRequest.request_id == request_id,
+            MedicationRequest.provider_id == provider.provider_id,
+        )
+        .first()
+    )
+    if not request:
+        raise HTTPException(status_code=404, detail="Request not found")
+
+    wh_log = (
+        db.query(WellaHealthApiLog)
+        .filter(WellaHealthApiLog.request_id == request_id)
+        .order_by(WellaHealthApiLog.created_at.desc())
+        .first()
+    )
+
+    if not wh_log:
+        return {
+            "request_id": str(request_id),
+            "reference": request.reference_number,
+            "status": request.status,
+            "wellahealth_dispatched": False,
+            "message": "No WellaHealth dispatch found — request may be routed to WhatsApp or still pending.",
+        }
+
+    import json as _json
+    try:
+        response_data = _json.loads(wh_log.response_body) if wh_log.response_body else {}
+    except Exception:
+        response_data = {"raw": wh_log.response_body}
+
+    return {
+        "request_id": str(request_id),
+        "reference": request.reference_number,
+        "status": request.status,
+        "wellahealth_dispatched": True,
+        "success": wh_log.success,
+        "tracking_code": wh_log.external_reference,
+        "error": wh_log.error_message,
+        "http_status": wh_log.response_code,
+        "wellahealth_response": response_data,
+        "dispatched_at": wh_log.created_at.isoformat(),
+    }
 
 
 # ── Classification Detail ────────────────────────────────────────
