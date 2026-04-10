@@ -90,7 +90,8 @@ export default function MedicationRequestPage() {
     setPharmacies([]);
     setSelectedPharmacy(null);
     setDeliveryCoords(null); // coords only valid after address verify
-    searchPharmacies(deliveryState, "", "")
+    // State-level search (no coords yet — address not verified)
+    searchPharmacies(deliveryState, "", "", null, null)
       .then(({ data }) => {
         const list = data.pharmacies || [];
         setPharmacies(list);
@@ -182,10 +183,15 @@ export default function MedicationRequestPage() {
           // State changed — useEffect on deliveryState triggers a fresh pharmacy search
           setDeliveryState(data.state);
         } else {
-          // Refine pharmacy search by LGA (backend falls back to state if LGA returns nothing)
+          // Refine pharmacy search by LGA, passing coordinates so the backend
+          // can try neighboring LGAs before falling back to state-level
           setPharmacyLoading(true);
+          const coordsNow = data.lat && data.lng ? { lat: data.lat, lng: data.lng } : deliveryCoords;
           try {
-            const { data: pharmData } = await searchPharmacies(resolvedState, resolvedLga, "");
+            const { data: pharmData } = await searchPharmacies(
+              resolvedState, resolvedLga, "",
+              coordsNow?.lat ?? null, coordsNow?.lng ?? null,
+            );
             const list = pharmData.pharmacies || [];
             setPharmacies(list);
             if (list.length === 1) setSelectedPharmacy(list[0]);
