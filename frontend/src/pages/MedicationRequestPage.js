@@ -169,11 +169,17 @@ export default function MedicationRequestPage() {
   const removeMedLine = (i) => { if (medications.length > 1) setMedications(medications.filter((_, idx) => idx !== i)); };
   const updateMed = (i, field, value) => { const u = [...medications]; u[i] = { ...u[i], [field]: value }; setMedications(u); };
 
+  const getDiagName = (d) => {
+    if (typeof d === "string") return d;
+    return d.name || d.Name || d.description || d.Description ||
+           d.DiagnosisName || d.diagnosisName || d.diagnosis ||
+           d.DiagnosisDescription || d.Value || d.value ||
+           d.Text || d.text || d.Label || d.label ||
+           JSON.stringify(d);
+  };
+
   const filteredDiagnoses = diagnosisSearch.length >= 2
-    ? diagnosisList.filter(d => {
-        const name = typeof d === "string" ? d : d.name || d.Name || d.description || "";
-        return name.toLowerCase().includes(diagnosisSearch.toLowerCase());
-      }).slice(0, 15)
+    ? diagnosisList.filter(d => getDiagName(d).toLowerCase().includes(diagnosisSearch.toLowerCase())).slice(0, 15)
     : [];
 
   // ── Submit ──────────────────────────────────────
@@ -367,12 +373,11 @@ export default function MedicationRequestPage() {
                     placeholder="Type to search diagnoses..." />
                   {!diagnosis && filteredDiagnoses.length > 0 && (
                     <div className={styles.autocompleteDropdown}>
-                      {filteredDiagnoses.map((d, i) => {
-                        const name = typeof d === "string" ? d : d.name || d.Name || d.description || JSON.stringify(d);
-                        return <div key={i} className={styles.autocompleteItem} onMouseDown={() => { setDiagnosis(name); setDiagnosisSearch(""); }}>
-                          <span className={styles.autocompleteName}>{name}</span>
-                        </div>;
-                      })}
+                      {filteredDiagnoses.map((d, i) => (
+                        <div key={i} className={styles.autocompleteItem} onMouseDown={() => { setDiagnosis(getDiagName(d)); setDiagnosisSearch(""); }}>
+                          <span className={styles.autocompleteName}>{getDiagName(d)}</span>
+                        </div>
+                      ))}
                     </div>
                   )}
                 </div>
