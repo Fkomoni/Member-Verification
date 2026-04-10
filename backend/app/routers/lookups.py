@@ -300,9 +300,30 @@ async def search_pharmacies(
     area: str = Query(""),
     _provider=Depends(get_current_provider),
 ):
-    """Search WellaHealth pharmacies by location."""
+    """
+    Search WellaHealth pharmacies by location.
+    If a narrowed LGA search returns no results, automatically retries at
+    state level so the provider always sees options when they exist.
+    """
     results = await wellahealth_client.search_pharmacies(state, lga, area)
-    return {"pharmacies": results, "total": len(results)}
+    fallback_used = False
+
+    # LGA search came back empty — retry at state level
+    if not results and lga:
+        results = await wellahealth_client.search_pharmacies(state, "", area)
+        fallback_used = bool(results)
+        if fallback_used:
+            logger.info(
+                "Pharmacy search: LGA '%s' returned no results for state '%s' — showing all state results",
+                lga, state,
+            )
+
+    return {
+        "pharmacies": results,
+        "total": len(results),
+        "lga_searched": lga if not fallback_used else "",
+        "fallback_to_state": fallback_used,
+    }
 
 
 # ── Google Maps Address Validation ───────────────────────────────
