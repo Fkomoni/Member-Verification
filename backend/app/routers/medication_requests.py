@@ -91,6 +91,7 @@ def create_medication_request(
         status="submitted",
         facility_name=payload.facility_name,
         facility_branch=payload.facility_branch,
+        pharmacy_code=payload.pharmacy_code or "",
     )
     db.add(request)
     db.flush()
@@ -153,7 +154,11 @@ def create_medication_request(
     if routing_dest:
         try:
             if routing_dest == "wellahealth":
-                dispatch_to_wellahealth(request.request_id, db, actor=provider.email)
+                dispatch_to_wellahealth(
+                    request.request_id, db,
+                    actor=provider.email,
+                    pharmacy_code=payload.pharmacy_code or "",
+                )
             elif routing_dest in ("whatsapp_lagos", "whatsapp_outside_lagos"):
                 dispatch_to_whatsapp(request.request_id, db, routing_dest, actor=provider.email)
         except Exception as e:

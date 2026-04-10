@@ -232,11 +232,21 @@ export default function MedicationRequestPage() {
         facility_branch: null,
         member_phone: memberPhone.trim(),
         member_email: memberEmail.trim() || null,
+        // WellaHealth pharmacy code from the selected pharmacy card
+        pharmacy_code: selectedPharmacy
+          ? (selectedPharmacy.pharmacyCode || selectedPharmacy.PharmacyCode || selectedPharmacy.code || "")
+          : "",
         medications: medications.map(m => ({
-          drug_name: m.drug_name.trim(), generic_name: m.generic_name || null,
-          matched_drug_id: m.matched_drug_id || null, strength: m.strength || null,
-          dosage_instruction: m.dosage_instruction.trim(), duration: m.duration.trim(),
-          quantity: m.quantity.trim(), route: m.route || null,
+          drug_name: m.drug_name.trim(),
+          generic_name: m.generic_name || null,
+          matched_drug_id: m.matched_drug_id || null,
+          strength: m.strength || null,
+          dosage_instruction: m.dosage_instruction.trim(),
+          duration: m.duration.trim(),
+          quantity: m.quantity.trim(),
+          // route field stores the dosing frequency (OD/BD/TDS/QDS/STAT/PRN)
+          // WellaHealth dispatch reads item.route as the "frequency" field
+          route: m.frequency || null,
         })),
       });
       setSuccess(data);
