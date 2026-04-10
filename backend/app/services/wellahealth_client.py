@@ -151,34 +151,25 @@ class WellaHealthClient:
 
     # ── Pharmacy Search ───────────────────────────────────────────
 
-    def _mock_pharmacies(self, state_name: str = "") -> list[dict]:
-        """
-        Return test pharmacy entries when real API is unavailable.
-        WHPTest1002 is the WellaHealth-confirmed test pharmacy code.
-        """
-        state_lower = (state_name or "").lower()
-        if "lagos" in state_lower:
-            return [
-                {"pharmacyCode": "WHPTest1002", "pharmacyName": "WellaHealth Test Pharmacy (VI)", "address": "Victoria Island, Lagos", "state": "Lagos"},
-                {"pharmacyCode": "WHPTest1003", "pharmacyName": "WellaHealth Test Pharmacy (Lekki)", "address": "Lekki Phase 1, Lagos", "state": "Lagos"},
-            ]
-        return [
-            {"pharmacyCode": "WHPTest1002", "pharmacyName": "WellaHealth Test Pharmacy", "address": f"{state_name}, Nigeria", "state": state_name},
-        ]
+    # ── Pharmacy Search ───────────────────────────────────────────
 
     async def search_pharmacies(
         self, state_name: str, lga_name: str = "", area_name: str = "",
     ) -> list[dict]:
         """
-        Search for pharmacies near a location.
+        Search for WellaHealth pharmacies near a location.
         GET /Pharmacies/search?stateName=...&lgaName=...&areaName=...
-        Falls back to test pharmacy entries if real API is unavailable.
+
+        Returns an empty list if credentials are not configured or if the API
+        returns no results. LGA→state fallback is handled in the API layer.
         """
         if self._mock_mode:
-            logger.info("WellaHealth pharmacy search: mock mode for state=%s", state_name)
-            return self._mock_pharmacies(state_name)
+            logger.info(
+                "WellaHealth pharmacy search: credentials not configured — returning empty list"
+            )
+            return []
 
-        params = {"stateName": state_name}
+        params: dict = {"stateName": state_name}
         if lga_name:
             params["lgaName"] = lga_name
         if area_name:
@@ -186,21 +177,22 @@ class WellaHealthClient:
 
         data = await self._request("GET", "/Pharmacies/search", params=params)
         if not data:
-            logger.warning("WellaHealth pharmacy search returned no data for state=%s — using test pharmacies", state_name)
-            return self._mock_pharmacies(state_name)
+            logger.warning(
+                "WellaHealth pharmacy search: no data returned for state=%s lga=%s",
+                state_name, lga_name,
+            )
+            return []
 
-        # Handle response shapes: {data: [...]} or [...] directly
+        # Handle response shapes: {data:[...]}, {result:[...]}, {pharmacies:[...]}, or direct list
         if isinstance(data, dict):
-            items = data.get("data") or data.get("result") or data.get("pharmacies") or data.get("items") or []
+            items = (
+                data.get("data") or data.get("result") or
+                data.get("pharmacies") or data.get("items") or []
+            )
         else:
             items = data
 
-        result = items if isinstance(items, list) else []
-        if not result:
-            logger.warning("WellaHealth pharmacy search returned empty list for state=%s — using test pharmacies", state_name)
-            return self._mock_pharmacies(state_name)
-
-        return result
+        return items if isinstance(items, list) else []
 
     # ── Fulfilment Submission ────────────────────────────────────
 

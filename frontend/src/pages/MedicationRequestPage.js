@@ -13,6 +13,16 @@ import {
 import logo from "../assets/logos/leadway-logo.png.jpeg";
 import styles from "./MedicationRequestPage.module.css";
 
+/** Haversine distance in km between two lat/lng pairs. */
+const haversineKm = (lat1, lon1, lat2, lon2) => {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = Math.sin(dLat / 2) ** 2 +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+};
+
 const EMPTY_MED = {
   drug_name: "", generic_name: "", matched_drug_id: null,
   strength: "", dosage_form: "", dosage_instruction: "", duration: "",
@@ -47,6 +57,7 @@ export default function MedicationRequestPage() {
   const [pharmacies, setPharmacies] = useState([]);
   const [selectedPharmacy, setSelectedPharmacy] = useState(null);
   const [pharmacyLoading, setPharmacyLoading] = useState(false);
+  const [deliveryCoords, setDeliveryCoords] = useState(null); // {lat, lng} from address validation
   const [urgency, setUrgency] = useState("routine");
   const [medications, setMedications] = useState([{ ...EMPTY_MED }]);
 
@@ -78,6 +89,7 @@ export default function MedicationRequestPage() {
     setPharmacyLoading(true);
     setPharmacies([]);
     setSelectedPharmacy(null);
+    setDeliveryCoords(null); // coords only valid after address verify
     searchPharmacies(deliveryState, "", "")
       .then(({ data }) => {
         const list = data.pharmacies || [];
@@ -160,16 +172,20 @@ export default function MedicationRequestPage() {
       const { data } = await validateAddress(deliveryAddress.trim(), deliveryState);
       setAddressValidation(data);
       if (data.validated) {
-        // If Google returned a more precise state, update state (triggers pharmacy re-search via useEffect)
+        // Store coordinates for proximity-based pharmacy sorting
+        if (data.lat && data.lng) setDeliveryCoords({ lat: data.lat, lng: data.lng });
+
+        const resolvedState = data.state || deliveryState;
+        const resolvedLga = data.lga || "";
+
         if (data.state && data.state !== deliveryState) {
+          // State changed — useEffect on deliveryState triggers a fresh pharmacy search
           setDeliveryState(data.state);
-        } else if (data.lga) {
-          // Narrow search by LGA if available
-          const state = data.state || deliveryState;
-          const lga = data.lga || "";
+        } else {
+          // Refine pharmacy search by LGA (backend falls back to state if LGA returns nothing)
           setPharmacyLoading(true);
           try {
-            const { data: pharmData } = await searchPharmacies(state, lga, "");
+            const { data: pharmData } = await searchPharmacies(resolvedState, resolvedLga, "");
             const list = pharmData.pharmacies || [];
             setPharmacies(list);
             if (list.length === 1) setSelectedPharmacy(list[0]);
@@ -262,7 +278,7 @@ export default function MedicationRequestPage() {
     setMemberPhone(""); setAltPhone(""); setMemberEmail("");
     setDiagnosis(""); setDiagnosisSearch(""); setTreatingDoctor("");
     setProviderNotes(""); setDeliveryState(""); setDeliveryAddress("");
-    setAddressValidation(null); setPharmacies([]); setSelectedPharmacy(null);
+    setAddressValidation(null); setDeliveryCoords(null); setPharmacies([]); setSelectedPharmacy(null);
     setUrgency("routine"); setMedications([{ ...EMPTY_MED }]); setError("");
   };
 
@@ -544,36 +560,78 @@ export default function MedicationRequestPage() {
               </div>
             </div>
 
-            {/* Pharmacy Selection */}
-            {pharmacyLoading && <div className={styles.enrolleeMeta}>Searching pharmacies...</div>}
+            {/* Pharmacy Selection — sorted by distance when address is verified */}
+            {pharmacyLoading && <div className={styles.enrolleeMeta}>Searching nearby pharmacies...</div>}
             {!pharmacyLoading && deliveryState && pharmacies.length === 0 && (
               <div className={styles.enrolleeMeta} style={{color:"#b45309",marginTop:"8px"}}>
-                No WellaHealth pharmacies found for {deliveryState}. You can still submit — the pharmacy will be assigned during fulfilment.
+                No WellaHealth pharmacies found for {deliveryState}. Verify your address to search by LGA, or the request will be routed and pharmacy assigned during fulfilment.
               </div>
             )}
-            {pharmacies.length > 0 && (
-              <div className={styles.formRowFull}>
-                <div className={styles.field}>
-                  <label className={styles.label}>Nearest Pharmacy</label>
-                  <div className={styles.pharmacyList}>
-                    {pharmacies.slice(0, 5).map((p, i) => {
-                      const code = p.pharmacyCode || p.PharmacyCode || p.code || "";
-                      const name = p.pharmacyName || p.PharmacyName || p.name || `Pharmacy ${i + 1}`;
-                      const addr = p.address || p.Address || "";
-                      const isSelected = selectedPharmacy && (selectedPharmacy.pharmacyCode || selectedPharmacy.code) === code;
-                      return (
-                        <div key={i} className={`${styles.pharmacyItem} ${isSelected ? styles.pharmacySelected : ""}`}
-                          onClick={() => setSelectedPharmacy(p)}>
-                          <div className={styles.pharmacyName}>{name}</div>
-                          {addr && <div className={styles.pharmacyAddr}>{addr}</div>}
-                          <div className={styles.pharmacyCode}>Code: {code}</div>
-                        </div>
-                      );
-                    })}
+            {pharmacies.length > 0 && (() => {
+              // Sort by distance if we have coordinates and pharmacies have lat/lng
+              const sortedPharmacies = deliveryCoords
+                ? [...pharmacies].sort((a, b) => {
+                    const aLat = a.latitude || a.lat || a.Latitude;
+                    const aLng = a.longitude || a.lng || a.Longitude;
+                    const bLat = b.latitude || b.lat || b.Latitude;
+                    const bLng = b.longitude || b.lng || b.Longitude;
+                    if (!aLat || !bLat) return 0;
+                    return haversineKm(deliveryCoords.lat, deliveryCoords.lng, aLat, aLng) -
+                           haversineKm(deliveryCoords.lat, deliveryCoords.lng, bLat, bLng);
+                  })
+                : pharmacies;
+              return (
+                <div className={styles.formRowFull}>
+                  <div className={styles.field}>
+                    <label className={styles.label}>
+                      Nearby Pharmacies ({pharmacies.length})
+                      {deliveryCoords && " — sorted by distance"}
+                    </label>
+                    <div className={styles.pharmacyList}>
+                      {sortedPharmacies.slice(0, 8).map((p, i) => {
+                        const code = p.pharmacyCode || p.PharmacyCode || p.code || "";
+                        const name = p.pharmacyName || p.PharmacyName || p.name || `Pharmacy ${i + 1}`;
+                        const addr = p.address || p.Address || p.location || "";
+                        const lgaName = p.lga || p.lgaName || p.LGA || "";
+                        const pLat = p.latitude || p.lat || p.Latitude;
+                        const pLng = p.longitude || p.lng || p.Longitude;
+                        const dist = deliveryCoords && pLat && pLng
+                          ? haversineKm(deliveryCoords.lat, deliveryCoords.lng, pLat, pLng)
+                          : null;
+                        const isSelected = selectedPharmacy &&
+                          (selectedPharmacy.pharmacyCode || selectedPharmacy.code) === code;
+                        const isNearest = i === 0 && deliveryCoords && pLat;
+                        return (
+                          <div key={i}
+                            className={`${styles.pharmacyItem} ${isSelected ? styles.pharmacySelected : ""}`}
+                            onClick={() => setSelectedPharmacy(p)}>
+                            <div className={styles.pharmacyName}>
+                              {name}
+                              {isNearest && (
+                                <span style={{fontSize:"0.7rem",background:"#059669",color:"#fff",
+                                  padding:"1px 6px",borderRadius:"4px",marginLeft:"6px",fontWeight:600}}>
+                                  Nearest
+                                </span>
+                              )}
+                            </div>
+                            {lgaName && <div className={styles.pharmacyAddr} style={{fontWeight:500}}>{lgaName}</div>}
+                            {addr && <div className={styles.pharmacyAddr}>{addr}</div>}
+                            <div className={styles.pharmacyCode}>
+                              Code: {code}
+                              {dist !== null && (
+                                <span style={{marginLeft:"8px",color:"#6b7280",fontSize:"0.75rem"}}>
+                                  ~{dist < 1 ? `${(dist * 1000).toFixed(0)}m` : `${dist.toFixed(1)}km`} away
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
                 </div>
-              </div>
-            )}
+              );
+            })()}
           </div>
 
           {/* ── 5. Additional ──────────────────── */}
