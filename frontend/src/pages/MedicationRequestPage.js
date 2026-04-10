@@ -490,7 +490,6 @@ export default function MedicationRequestPage() {
                 )}
               </div>
             </div>
-          </div>
 
             {/* Pharmacy Selection */}
             {pharmacyLoading && <div className={styles.enrolleeMeta}>Searching pharmacies...</div>}
