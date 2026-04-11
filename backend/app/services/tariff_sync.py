@@ -139,11 +139,47 @@ def sync_tariff_to_db(tariff_data: list[dict], db: Session) -> dict:
     return {"created": created, "updated": updated, "skipped": skipped, "total": len(tariff_data)}
 
 
+def classify_unknown_drugs_from_seed(db: Session) -> int:
+    """
+    Cross-reference drugs with category='unknown' against the seed data.
+    Match by generic_name (case-insensitive contains).
+    Returns the number of drugs classified.
+    """
+    from app.services.drug_master_seed import SEED_DRUGS
+
+    unknown_drugs = db.query(DrugMaster).filter(DrugMaster.category == "unknown").all()
+    if not unknown_drugs:
+        return 0
+
+    classified = 0
+    for drug in unknown_drugs:
+        drug_generic = (drug.generic_name or "").lower()
+        drug_display = (drug.drug_name_display or "").lower()
+
+        for seed in SEED_DRUGS:
+            seed_generic = seed["generic_name"].lower()
+            # Check if seed generic_name is contained in tariff drug's generic_name or display name
+            if seed_generic in drug_generic or seed_generic in drug_display:
+                drug.category = seed["category"]
+                classified += 1
+                break
+
+    if classified > 0:
+        db.commit()
+    logger.info("Seed classification: classified %d/%d unknown drugs", classified, len(unknown_drugs))
+    return classified
+
+
 async def run_tariff_sync(db: Session) -> dict:
-    """Full sync: fetch from WellaHealth + store in DB."""
+    """Full sync: fetch from WellaHealth + store in DB, then classify unknowns."""
     tariff_data = await fetch_full_tariff()
     if not tariff_data:
         return {"message": "No tariff data fetched", "created": 0, "updated": 0}
 
     result = sync_tariff_to_db(tariff_data, db)
+
+    # Cross-reference unknown drugs against seed data for classification
+    classified = classify_unknown_drugs_from_seed(db)
+    result["seed_classified"] = classified
+
     return result

@@ -75,6 +75,7 @@ class Provider(Base):
     )
     location: Mapped[str] = mapped_column(String(300), nullable=True)
     device_id: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    role: Mapped[str] = mapped_column(String(20), default="provider")
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)

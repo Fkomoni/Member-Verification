@@ -19,7 +19,7 @@ from sqlalchemy import func, case, distinct
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.core.deps import get_current_provider
+from app.core.deps import get_admin_provider
 from app.models.medication import (
     ClassificationResult,
     MedicationAuditLog,
@@ -49,7 +49,7 @@ def _date_filter(query, column, days: int | None):
 def get_summary(
     days: int | None = Query(None, description="Filter to last N days"),
     db: Session = Depends(get_db),
-    _provider=Depends(get_current_provider),
+    _provider=Depends(get_admin_provider),
 ):
     """Key metrics overview."""
     base = db.query(MedicationRequest)
@@ -104,7 +104,7 @@ def get_summary(
 def report_by_provider(
     days: int | None = Query(None),
     db: Session = Depends(get_db),
-    _provider=Depends(get_current_provider),
+    _provider=Depends(get_admin_provider),
 ):
     """Requests grouped by provider."""
     query = (
@@ -127,7 +127,7 @@ def report_by_provider(
 def report_by_facility(
     days: int | None = Query(None),
     db: Session = Depends(get_db),
-    _provider=Depends(get_current_provider),
+    _provider=Depends(get_admin_provider),
 ):
     """Requests grouped by facility name."""
     query = (
@@ -148,7 +148,7 @@ def report_by_facility(
 def report_by_classification(
     days: int | None = Query(None),
     db: Session = Depends(get_db),
-    _provider=Depends(get_current_provider),
+    _provider=Depends(get_admin_provider),
 ):
     """Acute vs chronic vs mixed volumes."""
     query = (
@@ -169,7 +169,7 @@ def report_by_classification(
 def report_by_route(
     days: int | None = Query(None),
     db: Session = Depends(get_db),
-    _provider=Depends(get_current_provider),
+    _provider=Depends(get_admin_provider),
 ):
     """WellaHealth vs WhatsApp routing volumes."""
     query = (
@@ -190,7 +190,7 @@ def report_by_route(
 def report_by_status(
     days: int | None = Query(None),
     db: Session = Depends(get_db),
-    _provider=Depends(get_current_provider),
+    _provider=Depends(get_admin_provider),
 ):
     """Request status breakdown."""
     query = (
@@ -212,7 +212,7 @@ def report_top_drugs(
     limit: int = Query(20, ge=1, le=100),
     days: int | None = Query(None),
     db: Session = Depends(get_db),
-    _provider=Depends(get_current_provider),
+    _provider=Depends(get_admin_provider),
 ):
     """Most prescribed medications."""
     query = (

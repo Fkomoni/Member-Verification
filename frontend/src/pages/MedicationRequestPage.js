@@ -108,7 +108,7 @@ export default function MedicationRequestPage() {
     updated[index] = { ...updated[index], drug_name: value, matched_drug_id: null, generic_name: "", strength: "", dosage_form: "" };
     setMedications(updated);
     if (searchTimeout.current) clearTimeout(searchTimeout.current);
-    if (value.length < 2) { setDrugResults([]); setActiveSearch(null); return; }
+    if (value.length < 3) { setDrugResults([]); setActiveSearch(null); return; }
     setActiveSearch(index);
     searchTimeout.current = setTimeout(() => {
       searchMedications(value)

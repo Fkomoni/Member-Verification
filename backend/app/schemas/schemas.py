@@ -17,6 +17,7 @@ class TokenResponse(BaseModel):
     provider_id: uuid.UUID
     provider_name: str
     prognosis_provider_id: str  # Prognosis system provider ID
+    role: str = "provider"
 
 
 # ── Member / Eligibility ─────────────────────────────────────

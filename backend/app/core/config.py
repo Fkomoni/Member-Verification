@@ -37,8 +37,8 @@ class Settings(BaseSettings):
     GOOGLE_MAPS_API_KEY: str = ""
 
     # Leadway WhatsApp routing numbers
-    WHATSAPP_LAGOS_NUMBER: str = ""
-    WHATSAPP_OUTSIDE_LAGOS_NUMBER: str = ""
+    WHATSAPP_LAGOS_NUMBER: str = "+2348188626141"
+    WHATSAPP_OUTSIDE_LAGOS_NUMBER: str = "+2348188626141"
 
     # WhatsApp Bot Webhook (existing Leadway bot)
     WHATSAPP_WEBHOOK_URL: str = ""

@@ -25,7 +25,7 @@ from sqlalchemy import or_
 from sqlalchemy.orm import Session, joinedload
 
 from app.core.database import get_db
-from app.core.deps import get_current_provider
+from app.core.deps import get_admin_provider, get_current_provider
 from app.models.medication import (
     ClassificationResult,
     MedicationAuditLog,
@@ -76,7 +76,7 @@ def get_review_queue(
     per_page: int = Query(20, ge=1, le=100),
     queue_type: str = Query("all", description="all | review | failed | pending"),
     db: Session = Depends(get_db),
-    _provider=Depends(get_current_provider),
+    _provider=Depends(get_admin_provider),
 ):
     """Get requests needing admin attention."""
     query = db.query(MedicationRequest)
@@ -119,7 +119,7 @@ def override_classification(
     request_id: uuid.UUID,
     body: OverrideClassificationIn,
     db: Session = Depends(get_db),
-    provider: Provider = Depends(get_current_provider),
+    provider: Provider = Depends(get_admin_provider),
 ):
     """Override the classification of a request and re-route."""
     allowed = {"acute", "chronic", "mixed"}
@@ -181,7 +181,7 @@ def override_routing(
     request_id: uuid.UUID,
     body: OverrideRoutingIn,
     db: Session = Depends(get_db),
-    provider: Provider = Depends(get_current_provider),
+    provider: Provider = Depends(get_admin_provider),
 ):
     """Override routing destination and dispatch."""
     allowed = {"wellahealth", "whatsapp_lagos", "whatsapp_outside_lagos"}
@@ -250,7 +250,7 @@ def update_request_status(
     request_id: uuid.UUID,
     body: UpdateStatusIn,
     db: Session = Depends(get_db),
-    provider: Provider = Depends(get_current_provider),
+    provider: Provider = Depends(get_admin_provider),
 ):
     """Update request status (complete, cancel, escalate, etc.)."""
     req = db.query(MedicationRequest).filter(MedicationRequest.request_id == request_id).first()
@@ -285,7 +285,7 @@ def add_admin_comment(
     request_id: uuid.UUID,
     body: AdminCommentIn,
     db: Session = Depends(get_db),
-    provider: Provider = Depends(get_current_provider),
+    provider: Provider = Depends(get_admin_provider),
 ):
     """Add an internal admin comment to a request."""
     req = db.query(MedicationRequest).filter(MedicationRequest.request_id == request_id).first()
@@ -310,7 +310,7 @@ def add_admin_comment(
 def rerun_normalization(
     request_id: uuid.UUID,
     db: Session = Depends(get_db),
-    provider: Provider = Depends(get_current_provider),
+    provider: Provider = Depends(get_admin_provider),
 ):
     """Re-run AI/fuzzy normalization on a request's medications, then re-classify and re-route."""
     req = db.query(MedicationRequest).filter(MedicationRequest.request_id == request_id).first()
@@ -340,7 +340,7 @@ def rerun_normalization(
 @router.post("/admin/sync-tariff")
 async def sync_tariff(
     db: Session = Depends(get_db),
-    _provider=Depends(get_current_provider),
+    _provider=Depends(get_admin_provider),
 ):
     """Sync WellaHealth drug tariff into local drug_master table."""
     result = await run_tariff_sync(db)
@@ -353,7 +353,7 @@ async def sync_tariff(
 def get_request_audit(
     request_id: uuid.UUID,
     db: Session = Depends(get_db),
-    _provider=Depends(get_current_provider),
+    _provider=Depends(get_admin_provider),
 ):
     """Get full audit trail for a request."""
     logs = (

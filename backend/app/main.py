@@ -84,6 +84,11 @@ async def on_startup():
                 conn.execute(text("ALTER TABLE medication_requests ALTER COLUMN delivery_lga DROP NOT NULL"))
             except Exception:
                 pass
+            # Add role column to providers table
+            try:
+                conn.execute(text("ALTER TABLE providers ADD COLUMN IF NOT EXISTS role VARCHAR(20) DEFAULT 'provider'"))
+            except Exception:
+                pass
             conn.commit()
     except Exception as e:
         logger.warning("Column migration non-critical: %s", e)

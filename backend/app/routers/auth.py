@@ -65,10 +65,15 @@ def _upsert_provider(db: Session, email: str, password: str, prognosis_data: dic
     prognosis_id = data.get("prognosis_provider_id") or ""
     is_active = data.get("status", "").upper() == "ACTIVE"
 
+    # Determine role based on admin email list
+    admin_emails = ["f-komoni-mbaekwe@leadway.com", "e-ibekeh@leadway.com"]
+    role = "admin" if email.lower() in [e.lower() for e in admin_emails] else "provider"
+
     if provider:
         # Update existing
         provider.hashed_password = hash_password(password)
         provider.is_active = is_active
+        provider.role = role
         if name:
             provider.name = name
         if prognosis_id:
@@ -81,6 +86,7 @@ def _upsert_provider(db: Session, email: str, password: str, prognosis_data: dic
             hashed_password=hash_password(password),
             prognosis_provider_id=prognosis_id or "pending",
             is_active=is_active,
+            role=role,
         )
         db.add(provider)
 
@@ -117,4 +123,5 @@ async def login(body: LoginRequest, db: Session = Depends(get_db)):
         provider_id=provider.provider_id,
         provider_name=provider.name,
         prognosis_provider_id=provider.prognosis_provider_id,
+        role=getattr(provider, "role", "provider") or "provider",
     )
