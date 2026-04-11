@@ -54,6 +54,7 @@ export default function MedicationRequestPage() {
 
   // ── Location ────────────────────────────────────
   const [states, setStates] = useState([]);
+  const [stateSearch, setStateSearch] = useState("");
 
   // ── Drug search ─────────────────────────────────
   const [activeSearch, setActiveSearch] = useState(null);
@@ -249,7 +250,7 @@ export default function MedicationRequestPage() {
     setSuccess(null); setEnrolleeId(""); setEnrolleeData(null);
     setMemberPhone(""); setAltPhone(""); setMemberEmail("");
     setDiagnosis(""); setDiagnosisSearch(""); setTreatingDoctor("");
-    setProviderNotes(""); setDeliveryState(""); setDeliveryAddress(""); setAddressSearch("");
+    setProviderNotes(""); setDeliveryState(""); setStateSearch(""); setDeliveryAddress(""); setAddressSearch("");
     setAddressSuggestions([]); setAddressValidation(null); setPharmacies([]); setSelectedPharmacy(null);
     setUrgency("routine"); setMedications([{ ...EMPTY_MED }]); setError("");
   };
@@ -505,10 +506,24 @@ export default function MedicationRequestPage() {
             <div className={styles.formRow}>
               <div className={styles.field}>
                 <label className={styles.label}>State <span className={styles.required}>*</span></label>
-                <select className={styles.select} value={deliveryState} onChange={(e) => setDeliveryState(e.target.value)}>
-                  <option value="">Select State</option>
-                  {states.map((s) => <option key={s.name} value={s.name}>{s.name}</option>)}
-                </select>
+                <div className={styles.autocompleteWrap}>
+                  <input className={styles.input} value={deliveryState || stateSearch}
+                    onChange={(e) => { setStateSearch(e.target.value); setDeliveryState(""); }}
+                    placeholder="Type state name..." />
+                  {!deliveryState && stateSearch.length >= 1 && (
+                    <div className={styles.autocompleteDropdown}>
+                      {states
+                        .filter(s => s.name.toLowerCase().includes(stateSearch.toLowerCase()))
+                        .map((s) => (
+                          <div key={s.name} className={styles.autocompleteItem}
+                            onMouseDown={() => { setDeliveryState(s.name); setStateSearch(""); }}>
+                            <span className={styles.autocompleteName}>{s.name}</span>
+                          </div>
+                        ))
+                      }
+                    </div>
+                  )}
+                </div>
               </div>
               <div />
             </div>

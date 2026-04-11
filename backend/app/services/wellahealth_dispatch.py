@@ -103,19 +103,40 @@ def dispatch_to_wellahealth(
 
     payload = _build_fulfilment_payload(request, items, pharmacy_code, verified_address)
 
-    # Log the API call (mock or live)
-    import asyncio
-    try:
-        loop = asyncio.get_event_loop()
-        if loop.is_running():
-            import concurrent.futures
-            with concurrent.futures.ThreadPoolExecutor() as pool:
-                result = pool.submit(asyncio.run, wellahealth_client.submit_fulfilment(payload)).result()
-        else:
-            result = asyncio.run(wellahealth_client.submit_fulfilment(payload))
-    except Exception as e:
-        logger.error("WellaHealth fulfilment call failed: %s", e)
-        result = {"success": False, "error": str(e)}
+    # Make sync HTTP call to WellaHealth (we're in a sync context)
+    import base64
+    from app.core.config import settings
+
+    result = {"success": False, "error": "Not attempted"}
+
+    if not settings.WELLAHEALTH_CLIENT_ID or not settings.WELLAHEALTH_CLIENT_SECRET:
+        # Mock mode
+        result = {
+            "success": True, "mock": True,
+            "trackingCode": "MOCK-TRK-" + request.reference_number,
+        }
+    else:
+        creds = f"{settings.WELLAHEALTH_CLIENT_ID}:{settings.WELLAHEALTH_CLIENT_SECRET}"
+        encoded = base64.b64encode(creds.encode()).decode()
+        headers = {
+            "Authorization": f"Basic {encoded}",
+            "Content-Type": "application/json",
+            "X-Partner-Code": settings.WELLAHEALTH_PARTNER_CODE,
+        }
+        url = f"{settings.WELLAHEALTH_BASE_URL.rstrip('/')}/fulfilments"
+
+        try:
+            import httpx
+            with httpx.Client(timeout=30.0) as client:
+                resp = client.post(url, json=payload, headers=headers)
+            logger.info("WellaHealth fulfilment response: %d %s", resp.status_code, resp.text[:300])
+            if resp.status_code in (200, 201):
+                result = {"success": True, **resp.json()}
+            else:
+                result = {"success": False, "error": f"HTTP {resp.status_code}: {resp.text[:200]}"}
+        except Exception as e:
+            logger.error("WellaHealth fulfilment call failed: %s", e)
+            result = {"success": False, "error": str(e)}
 
     success = result.get("success", False)
     tracking_code = result.get("trackingCode") or result.get("tracking_code") or ""
