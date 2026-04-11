@@ -383,6 +383,17 @@
 .pharmacyAddr { font-size: 0.75rem; color: #777; margin-top: 0.1rem; }
 .pharmacyCode { font-size: 0.7rem; color: #999; margin-top: 0.1rem; }
 
+.strengthTag {
+  display: inline-block;
+  padding: 0.1rem 0.4rem;
+  background: #E6F0FF;
+  color: #1A2B6D;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  margin-right: 0.3rem;
+}
+
 .selectedDrugInfo {
   margin-top: 0.3rem;
   font-size: 0.75rem;

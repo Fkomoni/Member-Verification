@@ -415,9 +415,11 @@ export default function MedicationRequestPage() {
                         <div className={styles.autocompleteDropdown}>
                           {drugResults.map((drug, i) => (
                             <div key={i} className={styles.autocompleteItem} onMouseDown={() => selectDrug(idx, drug)}>
-                              <span className={styles.autocompleteName}>{drug.drug_name || drug.generic_name}</span>
-                              {drug.strength && <span className={styles.autocompleteMeta}>{drug.strength}</span>}
-                              {drug.dosage_form && <span className={styles.autocompleteMeta}>{drug.dosage_form}</span>}
+                              <div className={styles.autocompleteName}>{drug.drug_name || drug.generic_name}</div>
+                              <div className={styles.autocompleteMeta}>
+                                {drug.strength && <span className={styles.strengthTag}>{drug.strength}</span>}
+                                {drug.dosage_form && <span>{drug.dosage_form}</span>}
+                              </div>
                             </div>
                           ))}
                         </div>
@@ -426,9 +428,10 @@ export default function MedicationRequestPage() {
                   </div>
                   <div className={styles.field}>
                     <label className={styles.label}>Strength</label>
-                    <input className={styles.input} value={med.strength} readOnly={!!med.strength && !!med.matched_drug_id}
+                    <input className={styles.input} value={med.strength}
                       onChange={(e) => updateMed(idx, "strength", e.target.value)}
-                      placeholder="Auto-filled from drug selection" style={med.strength && med.matched_drug_id ? {background: "#f0f8f0"} : {}} />
+                      placeholder="Auto-filled when you select a drug"
+                      style={med.strength ? {background: "#f0f8f0", fontWeight: 600} : {}} />
                   </div>
                 </div>
                 <div className={styles.formRowThree}>
