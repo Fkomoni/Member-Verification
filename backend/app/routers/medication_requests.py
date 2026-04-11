@@ -152,8 +152,8 @@ def create_medication_request(
             logger.error("Routing failed for %s: %s", ref, e)
 
     # ── Auto-dispatch based on routing destination ────
-    pharmacy_code = payload.pharmacy_code or ""
-    verified_address = payload.delivery_address or ""
+    pharmacy_code = getattr(payload, 'pharmacy_code', '') or ""
+    verified_address = getattr(payload, 'delivery_address', '') or ""
     if routing_dest:
         try:
             if routing_dest == "wellahealth":
@@ -164,7 +164,7 @@ def create_medication_request(
             elif routing_dest in ("whatsapp_lagos", "whatsapp_outside_lagos"):
                 dispatch_to_whatsapp(request.request_id, db, routing_dest, actor=provider.email)
         except Exception as e:
-            logger.error("Dispatch failed for %s: %s", ref, e)
+            logger.error("Dispatch failed for %s: %s", ref, e, exc_info=True)
 
     db.commit()
     db.refresh(request)
