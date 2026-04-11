@@ -111,10 +111,10 @@ class MedicationItemIn(BaseModel):
     generic_name: str | None = None
     matched_drug_id: uuid.UUID | None = None
     strength: str | None = None
-    dosage_instruction: str = Field(..., min_length=1)
-    duration: str = Field(..., min_length=1, max_length=100)
-    quantity: str = Field(..., min_length=1, max_length=100)
-    route: str | None = None
+    dosage_instruction: str | None = None  # "dose" field — e.g. "Tab bd 3/7"
+    duration: str | None = None            # e.g. "3/7", "5/7"
+    quantity: str | None = None            # optional
+    route: str | None = None               # stores frequency (od/bd/tds)
 
 
 class MedicationRequestIn(BaseModel):

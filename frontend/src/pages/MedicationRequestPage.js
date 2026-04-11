@@ -15,8 +15,7 @@ import styles from "./MedicationRequestPage.module.css";
 
 const EMPTY_MED = {
   drug_name: "", generic_name: "", matched_drug_id: null,
-  strength: "", dosage_form: "", dosage_instruction: "", duration: "",
-  quantity: "", frequency: "", med_notes: "",
+  strength: "", dose: "", frequency: "", duration: "",
 };
 
 export default function MedicationRequestPage() {
@@ -194,9 +193,10 @@ export default function MedicationRequestPage() {
     for (let i = 0; i < medications.length; i++) {
       const m = medications[i];
       if (!m.drug_name.trim()) return setError(`Medication ${i + 1}: drug name is required`);
-      if (!m.dosage_instruction.trim()) return setError(`Medication ${i + 1}: dosage is required`);
+      if (!m.strength.trim()) return setError(`Medication ${i + 1}: strength is required`);
+      if (!m.dose.trim()) return setError(`Medication ${i + 1}: dose is required`);
+      if (!m.frequency) return setError(`Medication ${i + 1}: frequency is required`);
       if (!m.duration.trim()) return setError(`Medication ${i + 1}: duration is required`);
-      if (!m.quantity.trim()) return setError(`Medication ${i + 1}: quantity is required`);
     }
 
     setSubmitting(true);
@@ -217,10 +217,14 @@ export default function MedicationRequestPage() {
         member_phone: memberPhone.trim(),
         member_email: memberEmail.trim() || null,
         medications: medications.map(m => ({
-          drug_name: m.drug_name.trim(), generic_name: m.generic_name || null,
-          matched_drug_id: m.matched_drug_id || null, strength: m.strength || null,
-          dosage_instruction: m.dosage_instruction.trim(), duration: m.duration.trim(),
-          quantity: m.quantity.trim(), route: m.route || null,
+          drug_name: m.drug_name.trim(),
+          generic_name: m.generic_name || null,
+          matched_drug_id: m.matched_drug_id || null,
+          strength: m.strength.trim(),
+          dosage_instruction: m.dose.trim(),
+          duration: m.duration.trim(),
+          quantity: "as prescribed",
+          route: m.frequency || null,
         })),
       });
       setSuccess(data);
@@ -399,13 +403,13 @@ export default function MedicationRequestPage() {
                   <span className={styles.medLineNumber}>Medication {idx + 1}</span>
                   {medications.length > 1 && <button type="button" className={styles.removeMedBtn} onClick={() => removeMedLine(idx)}>&times;</button>}
                 </div>
-                <div className={styles.formRowFull}>
+                <div className={styles.formRow}>
                   <div className={styles.field}>
                     <label className={styles.label}>Drug Name <span className={styles.required}>*</span></label>
                     <div className={styles.autocompleteWrap}>
                       <input className={styles.input} value={med.drug_name}
                         onChange={(e) => handleDrugSearch(idx, e.target.value)}
-                        onFocus={() => med.drug_name.length >= 2 && setActiveSearch(idx)}
+                        onFocus={() => med.drug_name.length >= 3 && setActiveSearch(idx)}
                         onBlur={() => setTimeout(() => setActiveSearch(null), 200)}
                         placeholder="Type to search medications..." />
                       {activeSearch === idx && drugResults.length > 0 && (
@@ -415,49 +419,38 @@ export default function MedicationRequestPage() {
                               <span className={styles.autocompleteName}>{drug.drug_name || drug.generic_name}</span>
                               {drug.strength && <span className={styles.autocompleteMeta}>{drug.strength}</span>}
                               {drug.dosage_form && <span className={styles.autocompleteMeta}>{drug.dosage_form}</span>}
-                              {drug.brand_name && <span className={styles.autocompleteMeta}>({drug.brand_name})</span>}
                             </div>
                           ))}
                         </div>
                       )}
                     </div>
-                    {med.generic_name && med.generic_name !== med.drug_name && (
-                      <div className={styles.selectedDrugInfo}>Generic: {med.generic_name}{med.strength && ` | ${med.strength}`}{med.dosage_form && ` | ${med.dosage_form}`}</div>
-                    )}
+                  </div>
+                  <div className={styles.field}>
+                    <label className={styles.label}>Strength <span className={styles.required}>*</span></label>
+                    <input className={styles.input} value={med.strength} onChange={(e) => updateMed(idx, "strength", e.target.value)} placeholder="e.g. 500mg, 20/120mg" />
                   </div>
                 </div>
-                <div className={styles.formRow}>
+                <div className={styles.formRowThree}>
                   <div className={styles.field}>
-                    <label className={styles.label}>Dosage <span className={styles.required}>*</span></label>
-                    <input className={styles.input} value={med.dosage_instruction} onChange={(e) => updateMed(idx, "dosage_instruction", e.target.value)} placeholder="e.g. 1 tab twice daily" />
+                    <label className={styles.label}>Dose <span className={styles.required}>*</span></label>
+                    <input className={styles.input} value={med.dose} onChange={(e) => updateMed(idx, "dose", e.target.value)} placeholder="e.g. Tab bd 3/7" />
                   </div>
                   <div className={styles.field}>
                     <label className={styles.label}>Frequency <span className={styles.required}>*</span></label>
                     <select className={styles.select} value={med.frequency} onChange={(e) => updateMed(idx, "frequency", e.target.value)}>
                       <option value="">Select</option>
-                      <option value="OD">Once daily (OD)</option>
-                      <option value="BD">Twice daily (BD)</option>
-                      <option value="TDS">Three times daily (TDS)</option>
-                      <option value="QDS">Four times daily (QDS)</option>
-                      <option value="STAT">Single dose (STAT)</option>
-                      <option value="PRN">As needed (PRN)</option>
-                      <option value="Nocte">At night (Nocte)</option>
-                      <option value="Other">Other</option>
+                      <option value="od">Once daily (OD)</option>
+                      <option value="bd">Twice daily (BD)</option>
+                      <option value="tds">Three times daily (TDS)</option>
+                      <option value="qds">Four times daily (QDS)</option>
+                      <option value="stat">Single dose (STAT)</option>
+                      <option value="prn">As needed (PRN)</option>
+                      <option value="nocte">At night (Nocte)</option>
                     </select>
                   </div>
-                </div>
-                <div className={styles.formRowThree}>
                   <div className={styles.field}>
                     <label className={styles.label}>Duration <span className={styles.required}>*</span></label>
-                    <input className={styles.input} value={med.duration} onChange={(e) => updateMed(idx, "duration", e.target.value)} placeholder="e.g. 5 days" />
-                  </div>
-                  <div className={styles.field}>
-                    <label className={styles.label}>Quantity <span className={styles.required}>*</span></label>
-                    <input className={styles.input} value={med.quantity} onChange={(e) => updateMed(idx, "quantity", e.target.value)} placeholder="e.g. 10 tablets" />
-                  </div>
-                  <div className={styles.field}>
-                    <label className={styles.label}>Notes</label>
-                    <input className={styles.input} value={med.med_notes} onChange={(e) => updateMed(idx, "med_notes", e.target.value)} placeholder="Optional" />
+                    <input className={styles.input} value={med.duration} onChange={(e) => updateMed(idx, "duration", e.target.value)} placeholder="e.g. 3/7, 5/7" />
                   </div>
                 </div>
               </div>

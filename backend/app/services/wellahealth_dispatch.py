@@ -43,7 +43,7 @@ def _build_fulfilment_payload(
         "fulfilmentService": "Acute",
         "diagnosis": request.diagnosis or "",
         "notes": f"From Leadway Rx Portal. Provider: {request.facility_name}",
-        "isDelivery": True,
+        "isDelivery": False,
         "patientData": {
             "firstName": first_name,
             "lastName": last_name,
@@ -59,7 +59,7 @@ def _build_fulfilment_payload(
                 "name": item.drug_name,
                 "dose": item.dosage_instruction or "",
                 "strength": item.strength or "",
-                "frequency": getattr(item, 'route', '') or "",
+                "frequency": item.route or "",
                 "duration": item.duration or "",
             }
             for i, item in enumerate(items)
