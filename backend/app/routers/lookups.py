@@ -451,6 +451,8 @@ async def search_pharmacies(
 ):
     """Search WellaHealth pharmacies by location."""
     results = await wellahealth_client.search_pharmacies(state, lga, area)
+    logger.info("Pharmacy search: state=%s, lga=%s → %d results, data=%s",
+                state, lga, len(results), str(results)[:300])
     return {"pharmacies": results, "total": len(results)}
 
 

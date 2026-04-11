@@ -49,6 +49,11 @@ def _build_fulfilment_payload(
     first_name = name_parts[0]
     last_name = name_parts[1] if len(name_parts) > 1 else ""
 
+    # Use default staging pharmacy if none provided
+    if not pharmacy_code:
+        pharmacy_code = settings.WELLAHEALTH_PARTNER_CODE or "WHPXTest10123"
+        logger.info("No pharmacy code provided, using default: %s", pharmacy_code)
+
     return {
         "refId": request.reference_number,
         "pharmacyCode": pharmacy_code,
