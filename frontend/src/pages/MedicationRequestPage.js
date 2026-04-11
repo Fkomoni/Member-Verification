@@ -171,9 +171,11 @@ export default function MedicationRequestPage() {
       const lga = data.lga || "";
       try {
         const { data: pharmData } = await searchPharmacies(state, lga, "");
-        setPharmacies(pharmData.pharmacies || []);
-        if (pharmData.pharmacies?.length === 1) setSelectedPharmacy(pharmData.pharmacies[0]);
-      } catch { setPharmacies([]); }
+        console.log("Pharmacy search result:", pharmData);
+        const pharms = pharmData.pharmacies || [];
+        setPharmacies(pharms);
+        if (pharms.length > 0) setSelectedPharmacy(pharms[0]); // Auto-select first
+      } catch (e) { console.error("Pharmacy search failed:", e); setPharmacies([]); }
       setPharmacyLoading(false);
     } catch { /* ignore */ }
   };
@@ -214,7 +216,8 @@ export default function MedicationRequestPage() {
 
     setSubmitting(true);
     try {
-      const pharmCode = selectedPharmacy?.pharmacyCode || selectedPharmacy?.PharmacyCode || selectedPharmacy?.code || "";
+      const pharmCode = selectedPharmacy?.pharmacyCode || selectedPharmacy?.PharmacyCode || selectedPharmacy?.code ||
+        (pharmacies.length > 0 ? (pharmacies[0].pharmacyCode || pharmacies[0].PharmacyCode || pharmacies[0].code || "") : "");
       const verifiedAddr = addressValidation?.formatted_address || deliveryAddress.trim();
       const resolvedLga = addressValidation?.lga || "";
 
