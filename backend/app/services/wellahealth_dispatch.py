@@ -14,6 +14,8 @@ import logging
 
 from sqlalchemy.orm import Session
 
+from app.core.config import settings
+
 from app.models.medication import (
     MedicationAuditLog,
     MedicationRequest,
@@ -110,7 +112,6 @@ def dispatch_to_wellahealth(
 
     # Make sync HTTP call to WellaHealth (we're in a sync context)
     import base64
-    from app.core.config import settings
 
     result = {"success": False, "error": "Not attempted"}
 
