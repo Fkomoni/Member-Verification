@@ -7,6 +7,7 @@ import {
   searchMedications,
   getStates,
   createMedicationRequest,
+  getRequestTracking,
   addressAutocomplete,
   getAddressDetails,
   searchPharmacies,
@@ -65,6 +66,7 @@ export default function MedicationRequestPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(null);
+  const [tracking, setTracking] = useState(null);
 
   useEffect(() => {
     getStates().then(({ data }) => setStates(data.states)).catch(() => {});
@@ -239,6 +241,11 @@ export default function MedicationRequestPage() {
         })),
       });
       setSuccess(data);
+      // Fetch tracking info
+      try {
+        const { data: trk } = await getRequestTracking(data.request_id);
+        setTracking(trk);
+      } catch { /* ignore */ }
     } catch (err) {
       setError(err.response?.data?.detail || "Failed to submit request.");
     } finally {
@@ -247,7 +254,7 @@ export default function MedicationRequestPage() {
   };
 
   const resetForm = () => {
-    setSuccess(null); setEnrolleeId(""); setEnrolleeData(null);
+    setSuccess(null); setTracking(null); setEnrolleeId(""); setEnrolleeData(null);
     setMemberPhone(""); setAltPhone(""); setMemberEmail("");
     setDiagnosis(""); setDiagnosisSearch(""); setTreatingDoctor("");
     setProviderNotes(""); setDeliveryState(""); setStateSearch(""); setDeliveryAddress(""); setAddressSearch("");
@@ -300,6 +307,39 @@ export default function MedicationRequestPage() {
               {success.routing.reasoning && <div className={styles.classificationReasoning}>{success.routing.reasoning}</div>}
             </div>
           )}
+
+          {/* Tracking Info */}
+          {tracking && (tracking.wellahealth || tracking.whatsapp) && (
+            <div className={styles.classificationCard}>
+              <h3 className={styles.classificationCardTitle}>Dispatch & Tracking</h3>
+              {tracking.wellahealth && (
+                <div>
+                  <div className={styles.enrolleeDetails}>
+                    <span className={styles.enrolleeDetail}><strong>Channel:</strong> WellaHealth</span>
+                    <span className={styles.enrolleeDetail}><strong>Dispatched:</strong> {tracking.wellahealth.dispatched ? "Yes" : "Failed"}</span>
+                    {tracking.wellahealth.pharmacy_code && <span className={styles.enrolleeDetail}><strong>Pharmacy:</strong> {tracking.wellahealth.pharmacy_code}</span>}
+                    {tracking.wellahealth.tracking_code && <span className={styles.enrolleeDetail}><strong>Tracking Code:</strong> {tracking.wellahealth.tracking_code}</span>}
+                    {tracking.wellahealth.dispatched_at && <span className={styles.enrolleeDetail}><strong>Time:</strong> {new Date(tracking.wellahealth.dispatched_at).toLocaleString()}</span>}
+                  </div>
+                  {tracking.wellahealth.tracking_link && (
+                    <a href={tracking.wellahealth.tracking_link} target="_blank" rel="noreferrer" className={styles.trackingLink}>Track Order</a>
+                  )}
+                </div>
+              )}
+              {tracking.whatsapp && (
+                <div>
+                  <div className={styles.enrolleeDetails}>
+                    <span className={styles.enrolleeDetail}><strong>Channel:</strong> WhatsApp</span>
+                    <span className={styles.enrolleeDetail}><strong>Dispatched:</strong> {tracking.whatsapp.dispatched ? "Yes" : "Failed"}</span>
+                    <span className={styles.enrolleeDetail}><strong>To:</strong> {tracking.whatsapp.destination_number}</span>
+                    {tracking.whatsapp.dispatched_at && <span className={styles.enrolleeDetail}><strong>Time:</strong> {new Date(tracking.whatsapp.dispatched_at).toLocaleString()}</span>}
+                    {tracking.whatsapp.error && <span className={styles.enrolleeDetail} style={{color: "#C61531"}}><strong>Error:</strong> {tracking.whatsapp.error}</span>}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
           <div className={styles.submitArea}>
             <button onClick={resetForm} className={styles.submitBtn}>New Request</button>
             <button onClick={() => navigate("/medication-requests")} className={styles.cancelBtn}>View All Requests</button>

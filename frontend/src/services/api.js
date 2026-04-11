@@ -117,4 +117,7 @@ export const listMedicationRequests = (page = 1, perPage = 20, status) =>
 export const getMedicationRequest = (requestId) =>
   api.get(`/medication-requests/${requestId}`);
 
+export const getRequestTracking = (requestId) =>
+  api.get(`/medication-requests/${requestId}/tracking`);
+
 export default api;

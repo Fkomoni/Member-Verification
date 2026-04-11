@@ -23,6 +23,8 @@ from app.models.medication import (
     MedicationRequest,
     MedicationRequestItem,
     RequestStatusHistory,
+    WellaHealthApiLog,
+    WhatsAppDispatchLog,
 )
 from app.models.models import Provider
 from app.schemas.medication import (
@@ -294,3 +296,79 @@ def get_classification(
         )
 
     return ClassificationResultOut.model_validate(classification)
+
+
+# ── Fulfilment Tracking ──────────────────────────────────────────
+
+@router.get("/medication-requests/{request_id}/tracking")
+def get_tracking(
+    request_id: uuid.UUID,
+    db: Session = Depends(get_db),
+    provider: Provider = Depends(get_current_provider),
+):
+    """Get fulfilment/dispatch tracking info for a request."""
+    req = (
+        db.query(MedicationRequest)
+        .filter(
+            MedicationRequest.request_id == request_id,
+            MedicationRequest.provider_id == provider.provider_id,
+        )
+        .first()
+    )
+    if not req:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Request not found")
+
+    # Check WellaHealth logs
+    wh_log = (
+        db.query(WellaHealthApiLog)
+        .filter(WellaHealthApiLog.request_id == request_id)
+        .order_by(WellaHealthApiLog.created_at.desc())
+        .first()
+    )
+
+    # Check WhatsApp logs
+    wa_log = (
+        db.query(WhatsAppDispatchLog)
+        .filter(WhatsAppDispatchLog.request_id == request_id)
+        .order_by(WhatsAppDispatchLog.created_at.desc())
+        .first()
+    )
+
+    tracking = {
+        "request_id": str(request_id),
+        "reference": req.reference_number,
+        "status": req.status,
+    }
+
+    if wh_log:
+        import json
+        response_data = {}
+        try:
+            response_data = json.loads(wh_log.response_body) if wh_log.response_body else {}
+        except Exception:
+            pass
+        tracking["wellahealth"] = {
+            "dispatched": wh_log.success,
+            "tracking_code": wh_log.external_reference or response_data.get("trackingCode", ""),
+            "tracking_link": response_data.get("trackingLink", ""),
+            "pharmacy_code": "",
+            "dispatched_at": wh_log.created_at.isoformat() if wh_log.created_at else "",
+            "response": response_data,
+        }
+        # Extract pharmacy from request payload
+        try:
+            req_payload = json.loads(wh_log.request_payload) if wh_log.request_payload else {}
+            tracking["wellahealth"]["pharmacy_code"] = req_payload.get("pharmacyCode", "")
+        except Exception:
+            pass
+
+    if wa_log:
+        tracking["whatsapp"] = {
+            "dispatched": wa_log.success,
+            "destination_number": wa_log.destination_number,
+            "message_id": wa_log.message_id,
+            "dispatched_at": wa_log.created_at.isoformat() if wa_log.created_at else "",
+            "error": wa_log.error_message,
+        }
+
+    return tracking

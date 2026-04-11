@@ -383,6 +383,19 @@
 .pharmacyAddr { font-size: 0.75rem; color: #777; margin-top: 0.1rem; }
 .pharmacyCode { font-size: 0.7rem; color: #999; margin-top: 0.1rem; }
 
+.trackingLink {
+  display: inline-block;
+  margin-top: 0.5rem;
+  padding: 0.4rem 0.85rem;
+  background: var(--lw-crimson, #C61531);
+  color: #fff;
+  border-radius: 6px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+.trackingLink:hover { background: #A11028; }
+
 .strengthTag {
   display: inline-block;
   padding: 0.1rem 0.4rem;
