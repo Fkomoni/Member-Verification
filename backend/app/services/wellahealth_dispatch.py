@@ -51,10 +51,46 @@ def _build_fulfilment_payload(
     first_name = name_parts[0]
     last_name = name_parts[1] if len(name_parts) > 1 else ""
 
-    # Use default staging pharmacy if none provided
+    # If no pharmacy code, search for one based on delivery address
     if not pharmacy_code:
-        pharmacy_code = getattr(settings, 'WELLAHEALTH_PARTNER_CODE', '') or "WHPXTest10123"
-        logger.info("No pharmacy code provided, using default: %s", pharmacy_code)
+        import asyncio
+        try:
+            from app.utils.nigerian_locations import normalize_state
+            state = request.delivery_state or "Lagos"
+            lga = request.delivery_lga or ""
+            # Search pharmacy using sync HTTP
+            import httpx
+            import base64 as b64
+            creds = f"{settings.WELLAHEALTH_CLIENT_ID}:{settings.WELLAHEALTH_CLIENT_SECRET}"
+            auth_header = b64.b64encode(creds.encode()).decode()
+            with httpx.Client(timeout=15.0) as hc:
+                pharm_resp = hc.get(
+                    f"{settings.WELLAHEALTH_BASE_URL.rstrip('/')}/Pharmacies/search",
+                    params={"stateName": state, "lgaName": lga},
+                    headers={"Authorization": f"Basic {auth_header}", "X-Partner-Code": settings.WELLAHEALTH_PARTNER_CODE},
+                )
+            if pharm_resp.status_code == 200:
+                pharm_data = pharm_resp.json()
+                pharm_list = pharm_data.get("data", pharm_data) if isinstance(pharm_data, dict) else pharm_data
+                if isinstance(pharm_list, list) and len(pharm_list) > 0:
+                    pharmacy_code = pharm_list[0].get("pharmacyCode") or pharm_list[0].get("PharmacyCode") or ""
+                    logger.info("Auto-selected pharmacy: %s from %d results", pharmacy_code, len(pharm_list))
+        except Exception as e:
+            logger.warning("Pharmacy auto-search failed: %s", e)
+
+    if not pharmacy_code:
+        logger.error("No pharmacy code available — cannot dispatch to WellaHealth")
+        # Still log the attempt
+        api_log = WellaHealthApiLog(
+            request_id=request_id, endpoint="/v1/fulfilments", method="POST",
+            request_payload=json.dumps(payload), response_code=0,
+            success=False, error_message="No pharmacy code available",
+        )
+        db.add(api_log)
+        db.flush()
+        return api_log
+
+    logger.info("Using pharmacy code: %s", pharmacy_code)
 
     return {
         "refId": request.reference_number,
