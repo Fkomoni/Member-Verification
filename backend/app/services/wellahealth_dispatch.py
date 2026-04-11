@@ -1,125 +1,70 @@
 """
 WellaHealth Dispatch — sends acute-only requests via fulfilment API.
-
-Flow:
-1. Validate address via Google Maps
-2. Search pharmacy via WellaHealth by verified location
-3. Submit fulfilment with pharmacy code, patient data, drugs
-4. Store tracking code and link
-5. Log everything
 """
 
+import base64
 import json
 import logging
 
+import httpx
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
-
 from app.models.medication import (
     MedicationAuditLog,
     MedicationRequest,
     MedicationRequestItem,
     WellaHealthApiLog,
 )
-from app.services.wellahealth_client import wellahealth_client
 
 logger = logging.getLogger(__name__)
 
-
-def _convert_duration_to_wella(duration: str) -> str:
-    """Convert layman duration to WellaHealth format (X/7)."""
-    d = (duration or "").lower().strip()
-    mapping = {
-        "3 days": "3/7", "5 days": "5/7", "7 days": "7/7",
-        "10 days": "10/7", "14 days": "14/7", "21 days": "21/7",
-        "30 days": "30/7", "60 days": "60/7", "90 days": "90/7",
-        "ongoing": "continuous",
-    }
-    return mapping.get(d, d)
+DURATION_MAP = {
+    "3 days": "3/7", "5 days": "5/7", "7 days": "7/7",
+    "10 days": "10/7", "14 days": "14/7", "21 days": "21/7",
+    "30 days": "30/7", "60 days": "60/7", "90 days": "90/7",
+    "ongoing": "continuous",
+}
 
 
-def _build_fulfilment_payload(
-    request: MedicationRequest,
-    items: list[MedicationRequestItem],
-    pharmacy_code: str = "",
-    verified_address: str = "",
-) -> dict:
-    """Build the WellaHealth fulfilment payload."""
-    # Split enrollee name into first/last
-    name_parts = (request.enrollee_name or "Unknown").split(" ", 1)
-    first_name = name_parts[0]
-    last_name = name_parts[1] if len(name_parts) > 1 else ""
-
-    # If no pharmacy code, search for one based on delivery address
-    if not pharmacy_code:
-        import asyncio
-        try:
-            from app.utils.nigerian_locations import normalize_state
-            state = request.delivery_state or "Lagos"
-            lga = request.delivery_lga or ""
-            # Search pharmacy using sync HTTP
-            import httpx
-            import base64 as b64
-            creds = f"{settings.WELLAHEALTH_CLIENT_ID}:{settings.WELLAHEALTH_CLIENT_SECRET}"
-            auth_header = b64.b64encode(creds.encode()).decode()
-            with httpx.Client(timeout=15.0) as hc:
-                pharm_resp = hc.get(
-                    f"{settings.WELLAHEALTH_BASE_URL.rstrip('/')}/Pharmacies/search",
-                    params={"stateName": state, "lgaName": lga},
-                    headers={"Authorization": f"Basic {auth_header}", "X-Partner-Code": settings.WELLAHEALTH_PARTNER_CODE},
+def _search_pharmacy(state: str, lga: str = "") -> str:
+    """Search WellaHealth for a pharmacy by state+LGA. Returns pharmacyCode or empty."""
+    if not settings.WELLAHEALTH_CLIENT_ID:
+        return ""
+    try:
+        creds = f"{settings.WELLAHEALTH_CLIENT_ID}:{settings.WELLAHEALTH_CLIENT_SECRET}"
+        auth = base64.b64encode(creds.encode()).decode()
+        url = f"{settings.WELLAHEALTH_BASE_URL.rstrip('/')}/Pharmacies/search"
+        with httpx.Client(timeout=15.0) as client:
+            resp = client.get(url,
+                params={"stateName": state, "lgaName": lga},
+                headers={"Authorization": f"Basic {auth}", "X-Partner-Code": settings.WELLAHEALTH_PARTNER_CODE},
+            )
+        if resp.status_code == 200:
+            data = resp.json()
+            items = data.get("data", data) if isinstance(data, dict) else data
+            if isinstance(items, list) and len(items) > 0:
+                code = items[0].get("pharmacyCode") or items[0].get("PharmacyCode") or ""
+                name = items[0].get("pharmacyName") or items[0].get("PharmacyName") or ""
+                logger.info("Pharmacy found: %s (%s) from %d results", code, name, len(items))
+                return code
+        # Try with state only (no LGA) if LGA search returned nothing
+        if lga:
+            with httpx.Client(timeout=15.0) as client:
+                resp = client.get(url,
+                    params={"stateName": state},
+                    headers={"Authorization": f"Basic {auth}", "X-Partner-Code": settings.WELLAHEALTH_PARTNER_CODE},
                 )
-            if pharm_resp.status_code == 200:
-                pharm_data = pharm_resp.json()
-                pharm_list = pharm_data.get("data", pharm_data) if isinstance(pharm_data, dict) else pharm_data
-                if isinstance(pharm_list, list) and len(pharm_list) > 0:
-                    pharmacy_code = pharm_list[0].get("pharmacyCode") or pharm_list[0].get("PharmacyCode") or ""
-                    logger.info("Auto-selected pharmacy: %s from %d results", pharmacy_code, len(pharm_list))
-        except Exception as e:
-            logger.warning("Pharmacy auto-search failed: %s", e)
-
-    if not pharmacy_code:
-        logger.error("No pharmacy code available — cannot dispatch to WellaHealth")
-        # Still log the attempt
-        api_log = WellaHealthApiLog(
-            request_id=request_id, endpoint="/v1/fulfilments", method="POST",
-            request_payload=json.dumps(payload), response_code=0,
-            success=False, error_message="No pharmacy code available",
-        )
-        db.add(api_log)
-        db.flush()
-        return api_log
-
-    logger.info("Using pharmacy code: %s", pharmacy_code)
-
-    return {
-        "refId": request.reference_number,
-        "pharmacyCode": pharmacy_code,
-        "fulfilmentService": "Acute",
-        "diagnosis": request.diagnosis or "",
-        "notes": f"From Leadway Rx Portal. Provider: {request.facility_name}",
-        "isDelivery": False,
-        "patientData": {
-            "firstName": first_name,
-            "lastName": last_name,
-            "hmoId": request.enrollee_id,
-            "phoneNumber": request.member_phone or "",
-            "gender": request.enrollee_gender or "",
-            "dateOfBirth": str(request.enrollee_dob) if request.enrollee_dob else "",
-            "address": verified_address or request.delivery_address or "",
-        },
-        "drugs": [
-            {
-                "refId": str(i + 1),
-                "name": item.drug_name,
-                "dose": f"{item.dosage_instruction or ''} {item.route or ''} {_convert_duration_to_wella(item.duration)}".strip(),
-                "strength": item.strength or "",
-                "frequency": item.route or "",
-                "duration": _convert_duration_to_wella(item.duration),
-            }
-            for i, item in enumerate(items)
-        ],
-    }
+            if resp.status_code == 200:
+                data = resp.json()
+                items = data.get("data", data) if isinstance(data, dict) else data
+                if isinstance(items, list) and len(items) > 0:
+                    code = items[0].get("pharmacyCode") or items[0].get("PharmacyCode") or ""
+                    logger.info("Pharmacy found (state-only): %s from %d results", code, len(items))
+                    return code
+    except Exception as e:
+        logger.warning("Pharmacy search failed: %s", e)
+    return ""
 
 
 def dispatch_to_wellahealth(
@@ -130,85 +75,110 @@ def dispatch_to_wellahealth(
     verified_address: str = "",
 ) -> WellaHealthApiLog:
     """Dispatch an acute medication request to WellaHealth fulfilment API."""
-    request = (
-        db.query(MedicationRequest)
-        .filter(MedicationRequest.request_id == request_id)
-        .first()
-    )
-    if not request:
+    req = db.query(MedicationRequest).filter(MedicationRequest.request_id == request_id).first()
+    if not req:
         raise ValueError(f"Request {request_id} not found")
 
-    items = (
-        db.query(MedicationRequestItem)
-        .filter(MedicationRequestItem.request_id == request_id)
-        .all()
-    )
+    items = db.query(MedicationRequestItem).filter(MedicationRequestItem.request_id == request_id).all()
 
-    payload = _build_fulfilment_payload(request, items, pharmacy_code, verified_address)
+    # Step 1: Get pharmacy code
+    if not pharmacy_code:
+        pharmacy_code = _search_pharmacy(req.delivery_state or "Lagos", req.delivery_lga or "")
 
-    # Make sync HTTP call to WellaHealth (we're in a sync context)
-    import base64
+    if not pharmacy_code:
+        logger.error("No pharmacy found for %s, %s — sending to manual review", req.delivery_state, req.delivery_lga)
+        api_log = WellaHealthApiLog(
+            request_id=request_id, endpoint="/v1/fulfilments", method="POST",
+            request_payload="", response_code=0, success=False,
+            error_message=f"No pharmacy found for {req.delivery_state}, {req.delivery_lga}",
+        )
+        db.add(api_log)
+        db.add(MedicationAuditLog(
+            event_type="wellahealth_dispatch_failed", request_id=request_id, actor=actor,
+            detail=f"No pharmacy found for {req.delivery_state}",
+        ))
+        db.flush()
+        return api_log
 
+    # Step 2: Build payload
+    name_parts = (req.enrollee_name or "Unknown").split(" ", 1)
+    address = verified_address or req.delivery_address or ""
+
+    payload = {
+        "refId": req.reference_number,
+        "pharmacyCode": pharmacy_code,
+        "fulfilmentService": "Acute",
+        "diagnosis": req.diagnosis or "",
+        "notes": f"From Leadway Rx Portal. Provider: {req.facility_name}",
+        "isDelivery": False,
+        "patientData": {
+            "firstName": name_parts[0],
+            "lastName": name_parts[1] if len(name_parts) > 1 else "",
+            "hmoId": req.enrollee_id,
+            "phoneNumber": req.member_phone or "",
+            "gender": req.enrollee_gender or "",
+            "dateOfBirth": str(req.enrollee_dob) if req.enrollee_dob else "",
+            "address": address,
+        },
+        "drugs": [
+            {
+                "refId": str(i + 1),
+                "name": item.drug_name,
+                "dose": f"{item.dosage_instruction or ''} {item.route or ''} {DURATION_MAP.get((item.duration or '').lower(), item.duration or '')}".strip(),
+                "strength": item.strength or "",
+                "frequency": item.route or "",
+                "duration": DURATION_MAP.get((item.duration or "").lower(), item.duration or ""),
+            }
+            for i, item in enumerate(items)
+        ],
+    }
+
+    # Step 3: Send to WellaHealth
     result = {"success": False, "error": "Not attempted"}
 
-    if not settings.WELLAHEALTH_CLIENT_ID or not settings.WELLAHEALTH_CLIENT_SECRET:
-        # Mock mode
-        result = {
-            "success": True, "mock": True,
-            "trackingCode": "MOCK-TRK-" + request.reference_number,
-        }
+    if not settings.WELLAHEALTH_CLIENT_ID:
+        result = {"success": True, "mock": True, "trackingCode": "MOCK-TRK-" + req.reference_number}
     else:
         creds = f"{settings.WELLAHEALTH_CLIENT_ID}:{settings.WELLAHEALTH_CLIENT_SECRET}"
         encoded = base64.b64encode(creds.encode()).decode()
+        url = f"{settings.WELLAHEALTH_BASE_URL.rstrip('/')}/fulfilments"
         headers = {
             "Authorization": f"Basic {encoded}",
             "Content-Type": "application/json",
             "X-Partner-Code": settings.WELLAHEALTH_PARTNER_CODE,
         }
-        url = f"{settings.WELLAHEALTH_BASE_URL.rstrip('/')}/fulfilments"
-
         try:
-            import httpx
-            logger.info("WellaHealth fulfilment URL: %s", url)
-            logger.info("WellaHealth fulfilment payload: %s", json.dumps(payload)[:500])
+            logger.info("WellaHealth POST %s pharmacy=%s", url, pharmacy_code)
             with httpx.Client(timeout=30.0) as client:
                 resp = client.post(url, json=payload, headers=headers)
-            logger.info("WellaHealth fulfilment response: %d %s", resp.status_code, resp.text[:500])
+            logger.info("WellaHealth response: %d %s", resp.status_code, resp.text[:500])
             if resp.status_code in (200, 201):
                 result = {"success": True, **resp.json()}
             else:
                 result = {"success": False, "error": f"HTTP {resp.status_code}: {resp.text[:200]}"}
         except Exception as e:
-            logger.error("WellaHealth fulfilment call failed: %s", e)
+            logger.error("WellaHealth call failed: %s", e)
             result = {"success": False, "error": str(e)}
 
-    success = result.get("success", False)
-    tracking_code = result.get("trackingCode") or result.get("tracking_code") or ""
-    tracking_link = result.get("trackingLink") or result.get("tracking_link") or ""
-
+    # Step 4: Log
     api_log = WellaHealthApiLog(
         request_id=request_id,
         endpoint="/v1/fulfilments",
         method="POST",
         request_payload=json.dumps(payload),
-        response_code=200 if success else 500,
+        response_code=200 if result.get("success") else 500,
         response_body=json.dumps(result),
-        external_reference=tracking_code,
-        success=success,
+        external_reference=result.get("trackingCode", ""),
+        success=result.get("success", False),
         retry_count=0,
-        error_message=result.get("error") if not success else None,
+        error_message=result.get("error") if not result.get("success") else None,
     )
     db.add(api_log)
-
     db.add(MedicationAuditLog(
         event_type="wellahealth_dispatched",
         request_id=request_id,
         actor=actor,
-        detail=f"Fulfilment {'sent' if success else 'FAILED'}. Tracking: {tracking_code}. Pharmacy: {pharmacy_code}",
+        detail=f"Pharmacy: {pharmacy_code}. {'Success' if result.get('success') else 'Failed'}: {result.get('trackingCode', result.get('error', ''))}",
     ))
-
     db.flush()
-    logger.info("WellaHealth dispatch: request=%s, success=%s, tracking=%s",
-                request_id, success, tracking_code)
-
     return api_log
