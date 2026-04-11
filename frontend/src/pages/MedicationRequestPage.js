@@ -193,10 +193,9 @@ export default function MedicationRequestPage() {
     for (let i = 0; i < medications.length; i++) {
       const m = medications[i];
       if (!m.drug_name.trim()) return setError(`Medication ${i + 1}: drug name is required`);
-      if (!m.strength.trim()) return setError(`Medication ${i + 1}: strength is required`);
-      if (!m.dose.trim()) return setError(`Medication ${i + 1}: dose is required`);
+      if (!m.dose) return setError(`Medication ${i + 1}: dose is required`);
       if (!m.frequency) return setError(`Medication ${i + 1}: frequency is required`);
-      if (!m.duration.trim()) return setError(`Medication ${i + 1}: duration is required`);
+      if (!m.duration) return setError(`Medication ${i + 1}: duration is required`);
     }
 
     setSubmitting(true);
@@ -426,31 +425,59 @@ export default function MedicationRequestPage() {
                     </div>
                   </div>
                   <div className={styles.field}>
-                    <label className={styles.label}>Strength <span className={styles.required}>*</span></label>
-                    <input className={styles.input} value={med.strength} onChange={(e) => updateMed(idx, "strength", e.target.value)} placeholder="e.g. 500mg, 20/120mg" />
+                    <label className={styles.label}>Strength</label>
+                    <input className={styles.input} value={med.strength} readOnly={!!med.strength && !!med.matched_drug_id}
+                      onChange={(e) => updateMed(idx, "strength", e.target.value)}
+                      placeholder="Auto-filled from drug selection" style={med.strength && med.matched_drug_id ? {background: "#f0f8f0"} : {}} />
                   </div>
                 </div>
                 <div className={styles.formRowThree}>
                   <div className={styles.field}>
                     <label className={styles.label}>Dose <span className={styles.required}>*</span></label>
-                    <input className={styles.input} value={med.dose} onChange={(e) => updateMed(idx, "dose", e.target.value)} placeholder="e.g. Tab bd 3/7" />
+                    <select className={styles.select} value={med.dose} onChange={(e) => updateMed(idx, "dose", e.target.value)}>
+                      <option value="">Select dose</option>
+                      <option value="1 tablet">1 Tablet</option>
+                      <option value="2 tablets">2 Tablets</option>
+                      <option value="1 capsule">1 Capsule</option>
+                      <option value="2 capsules">2 Capsules</option>
+                      <option value="5ml">5ml (1 teaspoon)</option>
+                      <option value="10ml">10ml (2 teaspoons)</option>
+                      <option value="1 sachet">1 Sachet</option>
+                      <option value="1 application">1 Application</option>
+                      <option value="1 puff">1 Puff</option>
+                      <option value="2 puffs">2 Puffs</option>
+                      <option value="1 drop">1 Drop</option>
+                      <option value="2 drops">2 Drops</option>
+                    </select>
                   </div>
                   <div className={styles.field}>
                     <label className={styles.label}>Frequency <span className={styles.required}>*</span></label>
                     <select className={styles.select} value={med.frequency} onChange={(e) => updateMed(idx, "frequency", e.target.value)}>
                       <option value="">Select</option>
-                      <option value="od">Once daily (OD)</option>
-                      <option value="bd">Twice daily (BD)</option>
-                      <option value="tds">Three times daily (TDS)</option>
-                      <option value="qds">Four times daily (QDS)</option>
-                      <option value="stat">Single dose (STAT)</option>
-                      <option value="prn">As needed (PRN)</option>
-                      <option value="nocte">At night (Nocte)</option>
+                      <option value="od">Once daily</option>
+                      <option value="bd">Twice daily</option>
+                      <option value="tds">3 times daily</option>
+                      <option value="qds">4 times daily</option>
+                      <option value="stat">Single dose</option>
+                      <option value="prn">As needed</option>
+                      <option value="nocte">At night</option>
                     </select>
                   </div>
                   <div className={styles.field}>
                     <label className={styles.label}>Duration <span className={styles.required}>*</span></label>
-                    <input className={styles.input} value={med.duration} onChange={(e) => updateMed(idx, "duration", e.target.value)} placeholder="e.g. 3/7, 5/7" />
+                    <select className={styles.select} value={med.duration} onChange={(e) => updateMed(idx, "duration", e.target.value)}>
+                      <option value="">Select</option>
+                      <option value="3 days">3 Days</option>
+                      <option value="5 days">5 Days</option>
+                      <option value="7 days">7 Days (1 week)</option>
+                      <option value="10 days">10 Days</option>
+                      <option value="14 days">14 Days (2 weeks)</option>
+                      <option value="21 days">21 Days (3 weeks)</option>
+                      <option value="30 days">30 Days (1 month)</option>
+                      <option value="60 days">60 Days (2 months)</option>
+                      <option value="90 days">90 Days (3 months)</option>
+                      <option value="ongoing">Ongoing / Continuous</option>
+                    </select>
                   </div>
                 </div>
               </div>

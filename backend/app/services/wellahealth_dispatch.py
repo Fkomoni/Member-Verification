@@ -25,6 +25,18 @@ from app.services.wellahealth_client import wellahealth_client
 logger = logging.getLogger(__name__)
 
 
+def _convert_duration_to_wella(duration: str) -> str:
+    """Convert layman duration to WellaHealth format (X/7)."""
+    d = (duration or "").lower().strip()
+    mapping = {
+        "3 days": "3/7", "5 days": "5/7", "7 days": "7/7",
+        "10 days": "10/7", "14 days": "14/7", "21 days": "21/7",
+        "30 days": "30/7", "60 days": "60/7", "90 days": "90/7",
+        "ongoing": "continuous",
+    }
+    return mapping.get(d, d)
+
+
 def _build_fulfilment_payload(
     request: MedicationRequest,
     items: list[MedicationRequestItem],
@@ -57,10 +69,10 @@ def _build_fulfilment_payload(
             {
                 "refId": str(i + 1),
                 "name": item.drug_name,
-                "dose": item.dosage_instruction or "",
+                "dose": f"{item.dosage_instruction or ''} {item.route or ''} {_convert_duration_to_wella(item.duration)}".strip(),
                 "strength": item.strength or "",
                 "frequency": item.route or "",
-                "duration": item.duration or "",
+                "duration": _convert_duration_to_wella(item.duration),
             }
             for i, item in enumerate(items)
         ],
