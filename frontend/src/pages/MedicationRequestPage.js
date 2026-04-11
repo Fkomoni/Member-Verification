@@ -214,6 +214,10 @@ export default function MedicationRequestPage() {
 
     setSubmitting(true);
     try {
+      const pharmCode = selectedPharmacy?.pharmacyCode || selectedPharmacy?.PharmacyCode || selectedPharmacy?.code || "";
+      const verifiedAddr = addressValidation?.formatted_address || deliveryAddress.trim();
+      const resolvedLga = addressValidation?.lga || "";
+
       const { data } = await createMedicationRequest({
         enrollee_id: enrolleeId.trim(),
         enrollee_name: enrolleeData.name,
@@ -222,13 +226,14 @@ export default function MedicationRequestPage() {
         treating_doctor: treatingDoctor.trim() || "Not specified",
         provider_notes: providerNotes || null,
         delivery_state: deliveryState,
-        delivery_lga: deliveryState, // state used as LGA placeholder
-        delivery_address: deliveryAddress.trim(),
+        delivery_lga: resolvedLga || null,
+        delivery_address: verifiedAddr,
         urgency,
         facility_name: provider?.provider_name || "Unknown Facility",
         facility_branch: null,
         member_phone: memberPhone.trim(),
         member_email: memberEmail.trim() || null,
+        pharmacy_code: pharmCode || null,
         medications: medications.map(m => ({
           drug_name: m.drug_name.trim(),
           generic_name: m.generic_name || null,

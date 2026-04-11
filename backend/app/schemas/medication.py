@@ -140,6 +140,7 @@ class MedicationRequestIn(BaseModel):
     urgency: str = Field(default="routine")
     facility_name: str = Field(..., min_length=1, max_length=300)
     facility_branch: str | None = None
+    pharmacy_code: str | None = None
 
     # Medication lines — at least one required
     medications: list[MedicationItemIn] = Field(..., min_length=1)
