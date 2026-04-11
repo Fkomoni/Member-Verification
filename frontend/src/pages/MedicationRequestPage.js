@@ -7,7 +7,8 @@ import {
   searchMedications,
   getStates,
   createMedicationRequest,
-  validateAddress,
+  addressAutocomplete,
+  getAddressDetails,
   searchPharmacies,
 } from "../services/api";
 import logo from "../assets/logos/leadway-logo.png.jpeg";
@@ -41,11 +42,13 @@ export default function MedicationRequestPage() {
   const [providerNotes, setProviderNotes] = useState("");
   const [deliveryState, setDeliveryState] = useState("");
   const [deliveryAddress, setDeliveryAddress] = useState("");
+  const [addressSearch, setAddressSearch] = useState("");
+  const [addressSuggestions, setAddressSuggestions] = useState([]);
   const [addressValidation, setAddressValidation] = useState(null);
-  const [addressValidating, setAddressValidating] = useState(false);
   const [pharmacies, setPharmacies] = useState([]);
   const [selectedPharmacy, setSelectedPharmacy] = useState(null);
   const [pharmacyLoading, setPharmacyLoading] = useState(false);
+  const addressTimeout = useRef(null);
   const [urgency, setUrgency] = useState("routine");
   const [medications, setMedications] = useState([{ ...EMPTY_MED }]);
 
@@ -134,34 +137,42 @@ export default function MedicationRequestPage() {
     setDrugResults([]);
   };
 
-  // ── Address validation ───────────────────────────
-  const handleValidateAddress = async () => {
-    if (!deliveryAddress.trim()) return;
-    setAddressValidating(true);
+  // ── Address autocomplete (like Uber) ─────────────
+  const handleAddressInput = (value) => {
+    setAddressSearch(value);
+    setDeliveryAddress("");
     setAddressValidation(null);
     setPharmacies([]);
     setSelectedPharmacy(null);
+    if (addressTimeout.current) clearTimeout(addressTimeout.current);
+    if (value.length < 3) { setAddressSuggestions([]); return; }
+    addressTimeout.current = setTimeout(() => {
+      addressAutocomplete(value)
+        .then(({ data }) => setAddressSuggestions(data.predictions || []))
+        .catch(() => setAddressSuggestions([]));
+    }, 300);
+  };
+
+  const selectAddress = async (prediction) => {
+    setAddressSearch(prediction.description);
+    setDeliveryAddress(prediction.description);
+    setAddressSuggestions([]);
+    // Get full details from Google
     try {
-      const { data } = await validateAddress(deliveryAddress.trim(), deliveryState);
+      const { data } = await getAddressDetails(prediction.place_id);
       setAddressValidation(data);
-      if (data.validated) {
-        if (data.state && !deliveryState) setDeliveryState(data.state);
-        // Auto-search pharmacies near verified address
-        setPharmacyLoading(true);
-        try {
-          const state = data.state || deliveryState;
-          const lga = data.lga || "";
-          const { data: pharmData } = await searchPharmacies(state, lga, "");
-          setPharmacies(pharmData.pharmacies || []);
-          // Auto-select first pharmacy if only one
-          if (pharmData.pharmacies?.length === 1) {
-            setSelectedPharmacy(pharmData.pharmacies[0]);
-          }
-        } catch { setPharmacies([]); }
-        setPharmacyLoading(false);
-      }
-    } catch { setAddressValidation({ validated: false, reason: "Validation failed" }); }
-    setAddressValidating(false);
+      if (data.state && !deliveryState) setDeliveryState(data.state);
+      // Auto-search pharmacies
+      setPharmacyLoading(true);
+      const state = data.state || deliveryState;
+      const lga = data.lga || "";
+      try {
+        const { data: pharmData } = await searchPharmacies(state, lga, "");
+        setPharmacies(pharmData.pharmacies || []);
+        if (pharmData.pharmacies?.length === 1) setSelectedPharmacy(pharmData.pharmacies[0]);
+      } catch { setPharmacies([]); }
+      setPharmacyLoading(false);
+    } catch { /* ignore */ }
   };
 
   const addMedLine = () => setMedications([...medications, { ...EMPTY_MED }]);
@@ -238,8 +249,8 @@ export default function MedicationRequestPage() {
     setSuccess(null); setEnrolleeId(""); setEnrolleeData(null);
     setMemberPhone(""); setAltPhone(""); setMemberEmail("");
     setDiagnosis(""); setDiagnosisSearch(""); setTreatingDoctor("");
-    setProviderNotes(""); setDeliveryState(""); setDeliveryAddress("");
-    setAddressValidation(null); setPharmacies([]); setSelectedPharmacy(null);
+    setProviderNotes(""); setDeliveryState(""); setDeliveryAddress(""); setAddressSearch("");
+    setAddressSuggestions([]); setAddressValidation(null); setPharmacies([]); setSelectedPharmacy(null);
     setUrgency("routine"); setMedications([{ ...EMPTY_MED }]); setError("");
   };
 
@@ -504,23 +515,27 @@ export default function MedicationRequestPage() {
             <div className={styles.formRowFull}>
               <div className={styles.field}>
                 <label className={styles.label}>Delivery Address <span className={styles.required}>*</span></label>
-                <div className={styles.lookupRow}>
-                  <textarea className={styles.textarea} style={{flex: 1}} value={deliveryAddress} onChange={(e) => { setDeliveryAddress(e.target.value); setAddressValidation(null); }}
-                    placeholder="Enter full delivery address" rows={2} />
-                  <button type="button" className={styles.lookupBtn} onClick={handleValidateAddress}
-                    disabled={addressValidating || !deliveryAddress.trim()} style={{alignSelf: "flex-start", marginTop: "2px"}}>
-                    {addressValidating ? "Verifying..." : "Verify"}
-                  </button>
+                <div className={styles.autocompleteWrap}>
+                  <input className={styles.input} value={deliveryAddress || addressSearch}
+                    onChange={(e) => handleAddressInput(e.target.value)}
+                    placeholder="Start typing address..."
+                  />
+                  {addressSuggestions.length > 0 && (
+                    <div className={styles.autocompleteDropdown}>
+                      {addressSuggestions.map((p, i) => (
+                        <div key={i} className={styles.autocompleteItem} onMouseDown={() => selectAddress(p)}>
+                          <span className={styles.autocompleteName}>{p.description}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
-                {addressValidation && addressValidation.validated && (
+                {addressValidation && addressValidation.formatted_address && (
                   <div className={styles.addressValid}>
                     <strong>Verified:</strong> {addressValidation.formatted_address}
-                    {addressValidation.state && <> &middot; State: {addressValidation.state}</>}
+                    {addressValidation.state && <> &middot; {addressValidation.state}</>}
                     {addressValidation.is_lagos !== null && <> &middot; {addressValidation.is_lagos ? "Lagos" : "Outside Lagos"}</>}
                   </div>
-                )}
-                {addressValidation && !addressValidation.validated && (
-                  <div className={styles.fieldError}>Address could not be verified: {addressValidation.reason}</div>
                 )}
               </div>
             </div>

@@ -88,6 +88,12 @@ export const searchMedications = (query, limit = 15) =>
 export const validateAddress = (address, state) =>
   api.get("/lookup/validate-address", { params: { address, state } });
 
+export const addressAutocomplete = (input) =>
+  api.get("/lookup/address-autocomplete", { params: { input } });
+
+export const getAddressDetails = (placeId) =>
+  api.get("/lookup/address-details", { params: { place_id: placeId } });
+
 export const searchPharmacies = (state, lga, area) =>
   api.get("/lookup/pharmacies", { params: { state, lga, area } });
 

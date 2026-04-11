@@ -26,6 +26,13 @@ router = APIRouter(tags=["Lookups"])
 _TIMEOUT = httpx.Timeout(15.0)
 
 
+def _extract_strength(drug_name: str) -> str:
+    """Extract strength from drug name like 'PARACETAMOL 500MG TABLET' → '500MG'."""
+    import re
+    match = re.search(r'(\d+(?:\.\d+)?(?:/\d+)?(?:mg|mcg|ml|g|iu|%|mg/\d+ml))', drug_name, re.IGNORECASE)
+    return match.group(1).upper() if match else ""
+
+
 # ── Enrollee Lookup ──────────────────────────────────────────────
 
 @router.get("/lookup/enrollee")
@@ -422,7 +429,7 @@ def search_medications(
                 "drug_name": r[1] or r[2] or "",
                 "generic_name": r[2] or "",
                 "brand_name": r[3] or "",
-                "strength": r[4] or "",
+                "strength": r[4] or _extract_strength(r[1] or r[2] or ""),
                 "dosage_form": r[5] or "",
                 "category": r[7] or "unknown",
             }
@@ -445,6 +452,96 @@ async def search_pharmacies(
     """Search WellaHealth pharmacies by location."""
     results = await wellahealth_client.search_pharmacies(state, lga, area)
     return {"pharmacies": results, "total": len(results)}
+
+
+# ── Google Places Address Autocomplete ────────────────────────────
+
+@router.get("/lookup/address-autocomplete")
+async def address_autocomplete(
+    input: str = Query(..., min_length=3),
+    _provider=Depends(get_current_provider),
+):
+    """
+    Google Places Autocomplete — returns address suggestions as user types.
+    Like Uber's address bar.
+    """
+    if not settings.GOOGLE_MAPS_API_KEY:
+        return {"predictions": []}
+
+    try:
+        async with httpx.AsyncClient(timeout=_TIMEOUT) as client:
+            resp = await client.get(
+                "https://maps.googleapis.com/maps/api/place/autocomplete/json",
+                params={
+                    "input": input,
+                    "components": "country:ng",
+                    "types": "address",
+                    "key": settings.GOOGLE_MAPS_API_KEY,
+                },
+            )
+        if resp.status_code == 200:
+            data = resp.json()
+            return {
+                "predictions": [
+                    {
+                        "description": p.get("description", ""),
+                        "place_id": p.get("place_id", ""),
+                    }
+                    for p in data.get("predictions", [])[:5]
+                ]
+            }
+    except Exception as e:
+        logger.error("Places autocomplete error: %s", e)
+
+    return {"predictions": []}
+
+
+@router.get("/lookup/address-details")
+async def address_details(
+    place_id: str = Query(...),
+    _provider=Depends(get_current_provider),
+):
+    """Get full address details from a Google Place ID."""
+    if not settings.GOOGLE_MAPS_API_KEY:
+        return {"error": "Google Maps not configured"}
+
+    try:
+        async with httpx.AsyncClient(timeout=_TIMEOUT) as client:
+            resp = await client.get(
+                "https://maps.googleapis.com/maps/api/geocode/json",
+                params={"place_id": place_id, "key": settings.GOOGLE_MAPS_API_KEY},
+            )
+        if resp.status_code == 200:
+            data = resp.json()
+            if data.get("results"):
+                result = data["results"][0]
+                components = result.get("address_components", [])
+                location = result.get("geometry", {}).get("location", {})
+
+                state = ""
+                lga = ""
+                for comp in components:
+                    types = comp.get("types", [])
+                    if "administrative_area_level_1" in types:
+                        state = comp.get("long_name", "")
+                    if "administrative_area_level_2" in types:
+                        lga = comp.get("long_name", "")
+
+                from app.utils.nigerian_locations import is_lagos_location
+                is_lagos = is_lagos_location(state)
+
+                return {
+                    "formatted_address": result.get("formatted_address", ""),
+                    "state": state,
+                    "lga": lga,
+                    "is_lagos": is_lagos,
+                    "lat": location.get("lat"),
+                    "lng": location.get("lng"),
+                }
+    except Exception as e:
+        logger.error("Address details error: %s", e)
+
+    return {"error": "Could not resolve address"}
 
 
 # ── Google Maps Address Validation ───────────────────────────────
