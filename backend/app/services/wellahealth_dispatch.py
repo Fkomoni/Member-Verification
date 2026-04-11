@@ -127,9 +127,11 @@ def dispatch_to_wellahealth(
 
         try:
             import httpx
+            logger.info("WellaHealth fulfilment URL: %s", url)
+            logger.info("WellaHealth fulfilment payload: %s", json.dumps(payload)[:500])
             with httpx.Client(timeout=30.0) as client:
                 resp = client.post(url, json=payload, headers=headers)
-            logger.info("WellaHealth fulfilment response: %d %s", resp.status_code, resp.text[:300])
+            logger.info("WellaHealth fulfilment response: %d %s", resp.status_code, resp.text[:500])
             if resp.status_code in (200, 201):
                 result = {"success": True, **resp.json()}
             else:
