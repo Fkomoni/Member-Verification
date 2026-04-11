@@ -17,6 +17,7 @@ from sqlalchemy.orm import Session
 from app.core.config import settings
 from app.core.database import get_db
 from app.core.deps import get_current_provider
+from app.services.prognosis_client import _get_prognosis_token
 from app.services.wellahealth_client import wellahealth_client
 
 logger = logging.getLogger(__name__)
