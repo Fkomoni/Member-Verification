@@ -51,7 +51,7 @@ def _build_fulfilment_payload(
 
     # Use default staging pharmacy if none provided
     if not pharmacy_code:
-        pharmacy_code = settings.WELLAHEALTH_PARTNER_CODE or "WHPXTest10123"
+        pharmacy_code = getattr(settings, 'WELLAHEALTH_PARTNER_CODE', '') or "WHPXTest10123"
         logger.info("No pharmacy code provided, using default: %s", pharmacy_code)
 
     return {

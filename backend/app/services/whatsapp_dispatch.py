@@ -82,10 +82,13 @@ def dispatch_to_whatsapp(
     )
 
     # Determine destination number
-    if destination == "whatsapp_lagos":
-        number = settings.WHATSAPP_LAGOS_NUMBER or "LAGOS_NUMBER_NOT_SET"
-    else:
-        number = settings.WHATSAPP_OUTSIDE_LAGOS_NUMBER or "OUTSIDE_LAGOS_NUMBER_NOT_SET"
+    try:
+        if destination == "whatsapp_lagos":
+            number = getattr(settings, 'WHATSAPP_LAGOS_NUMBER', '') or "+2348188626141"
+        else:
+            number = getattr(settings, 'WHATSAPP_OUTSIDE_LAGOS_NUMBER', '') or "+2348188626141"
+    except Exception:
+        number = "+2348188626141"
 
     # Build message
     message = _build_whatsapp_message(request, items)
@@ -95,7 +98,8 @@ def dispatch_to_whatsapp(
     webhook_message_id = None
     error_msg = None
 
-    webhook_url = settings.WHATSAPP_WEBHOOK_URL
+    webhook_url = getattr(settings, 'WHATSAPP_WEBHOOK_URL', '') or ""
+    verify_token = getattr(settings, 'WHATSAPP_VERIFY_TOKEN', '') or ""
     if webhook_url:
         import httpx
         webhook_payload = {
@@ -118,7 +122,7 @@ def dispatch_to_whatsapp(
                     json=webhook_payload,
                     headers={
                         "Content-Type": "application/json",
-                        "X-Verify-Token": settings.WHATSAPP_VERIFY_TOKEN,
+                        "X-Verify-Token": verify_token,
                     },
                 )
             if resp.status_code in (200, 201, 202):
