@@ -625,6 +625,57 @@ SEED_DRUGS: list[dict] = [
         "therapeutic_class": "vitamin supplement",
         "aliases": ["Neurobion", "Becosules", "Vit B"],
     },
+
+    # ── Hormonal / Fertility (chronic — route to Leadway WhatsApp) ─
+    {
+        "generic_name": "Progesterone",
+        "category": "chronic",
+        "common_brand_names": "Cyclogest, Utrogestan",
+        "therapeutic_class": "hormonal",
+        "aliases": ["Cyclogest", "Utrogestan", "Gestone"],
+    },
+    {
+        "generic_name": "Dydrogesterone",
+        "category": "chronic",
+        "common_brand_names": "Duphaston",
+        "therapeutic_class": "hormonal",
+        "aliases": ["Duphaston"],
+    },
+    {
+        "generic_name": "Hydroxyprogesterone",
+        "category": "chronic",
+        "common_brand_names": "Gestone",
+        "therapeutic_class": "hormonal",
+        "aliases": ["Gestone"],
+    },
+    {
+        "generic_name": "Medroxyprogesterone",
+        "category": "chronic",
+        "common_brand_names": "Provera, Depo-Provera",
+        "therapeutic_class": "hormonal",
+        "aliases": ["Provera", "Depo-Provera"],
+    },
+    {
+        "generic_name": "Estradiol",
+        "category": "chronic",
+        "common_brand_names": "Progynova",
+        "therapeutic_class": "hormonal",
+        "aliases": ["Progynova"],
+    },
+    {
+        "generic_name": "Clomiphene",
+        "category": "chronic",
+        "common_brand_names": "Clomid, Serophene",
+        "therapeutic_class": "hormonal/fertility",
+        "aliases": ["Clomid", "Serophene"],
+    },
+    {
+        "generic_name": "Letrozole",
+        "category": "chronic",
+        "common_brand_names": "Femara",
+        "therapeutic_class": "hormonal/fertility",
+        "aliases": ["Femara"],
+    },
 ]
 
 

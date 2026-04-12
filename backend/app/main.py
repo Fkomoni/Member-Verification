@@ -110,10 +110,13 @@ async def on_startup():
             count_with_strength = row or 0
         except Exception:
             count_with_strength = 0
-        if count_with_strength < 50:
-            logger.info("Drug master has %d records with strength — starting tariff sync...", count_with_strength)
-            result = await run_tariff_sync(db)
-            logger.info("Tariff sync result: %s", result)
+        if count_with_strength < 10:
+            logger.info("Drug master has %d records with strength — starting tariff sync (background)...", count_with_strength)
+            try:
+                result = await run_tariff_sync(db)
+                logger.info("Tariff sync result: %s", result)
+            except Exception as sync_err:
+                logger.error("Tariff sync error (non-blocking): %s", sync_err)
         else:
             logger.info("Drug master has %d records with strength — skipping sync", count_with_strength)
         db.close()
