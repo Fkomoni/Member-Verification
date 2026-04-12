@@ -39,9 +39,10 @@ def _search_pharmacy(state: str, lga: str = "") -> str:
         state_name = state.strip().title() if state else "Lagos"
         lga_name = lga.strip().title() if lga else ""
         logger.info("Pharmacy search: state=%s, lga=%s", state_name, lga_name)
+        # Search state only first (WellaHealth staging has limited LGA data)
         with httpx.Client(timeout=15.0) as client:
             resp = client.get(url,
-                params={"stateName": state_name, "lgaName": lga_name} if lga_name else {"stateName": state_name},
+                params={"stateName": state_name},
                 headers={"Authorization": f"Basic {auth}", "X-Partner-Code": settings.WELLAHEALTH_PARTNER_CODE},
             )
         logger.info("Pharmacy search response: %d %s", resp.status_code, resp.text[:300])
