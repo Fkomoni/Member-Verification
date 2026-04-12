@@ -35,10 +35,20 @@ from app.services.supplement_rules import check_supplement_eligibility
 
 logger = logging.getLogger(__name__)
 
-# Controlled substances — entire request routes to Leadway WhatsApp
-CONTROLLED_DRUGS = [
-    "CODEINE", "CO-CODAMOL", "TRAMADOL", "MORPHINE", "DIAZEPAM",
-    "MIDAZOLAM", "NITRAZEPAM", "PHENOBARBITAL", "PENTAZOCINE",
+# Hormonal + Cancer drugs — entire request routes to Leadway WhatsApp
+LEADWAY_WHATSAPP_DRUGS = [
+    # Hormonal / Fertility
+    "PROGESTERONE", "CYCLOGEST", "UTROGESTAN", "DUPHASTON", "DYDROGESTERONE",
+    "GESTONE", "HYDROXYPROGESTERONE", "MEDROXYPROGESTERONE", "PROVERA",
+    "DEPO-PROVERA", "ESTRADIOL", "PROGYNOVA", "CLOMIPHENE", "CLOMID",
+    "LETROZOLE", "FEMARA", "GOSERELIN", "ZOLADEX", "LEUPROLIDE", "LUPRON",
+    "TAMOXIFEN", "ANASTROZOLE", "ARIMIDEX", "EXEMESTANE",
+    # Cancer / Oncology
+    "METHOTREXATE", "CYCLOPHOSPHAMIDE", "DOXORUBICIN", "CISPLATIN",
+    "CARBOPLATIN", "PACLITAXEL", "DOCETAXEL", "VINCRISTINE", "IMATINIB",
+    "RITUXIMAB", "TRASTUZUMAB", "BEVACIZUMAB", "CAPECITABINE", "XELODA",
+    "FLUOROURACIL", "5-FU", "ETOPOSIDE", "GEMCITABINE", "ERLOTINIB",
+    "SORAFENIB", "SUNITINIB", "BICALUTAMIDE", "FLUTAMIDE",
 ]
 
 
@@ -69,7 +79,7 @@ class RequestClassification:
     confidence: float
     reasoning: str
     items: list[ItemClassification]
-    contains_controlled: bool = False
+    contains_whatsapp_only: bool = False
 
 
 def classify_item(
@@ -212,11 +222,11 @@ def classify_item(
     )
 
 
-def _is_controlled_drug(drug_name: str) -> bool:
-    """Check if a drug is a controlled substance."""
+def _is_whatsapp_only_drug(drug_name: str) -> bool:
+    """Check if a drug is hormonal or cancer — routes to Leadway WhatsApp."""
     name_upper = (drug_name or "").upper().strip()
-    for controlled in CONTROLLED_DRUGS:
-        if controlled in name_upper:
+    for drug in LEADWAY_WHATSAPP_DRUGS:
+        if drug in name_upper:
             return True
     return False
 
@@ -236,7 +246,7 @@ def classify_request(
     5. Determine request-level classification
     """
     item_results: list[ItemClassification] = []
-    contains_controlled = False
+    contains_whatsapp_only = False
 
     # Retrieve member plan for supplement checks
     member_plan = getattr(request, "member_plan", "") or ""
@@ -250,9 +260,9 @@ def classify_request(
             result.supplement_blocked = True
             result.supplement_reason = supplement_check["reason"]
 
-        # Controlled substance check
-        if _is_controlled_drug(item.drug_name):
-            contains_controlled = True
+        # Hormonal / Cancer drug check
+        if _is_whatsapp_only_drug(item.drug_name):
+            contains_whatsapp_only = True
 
         item_results.append(result)
 
@@ -319,11 +329,11 @@ def classify_request(
     # If any individual item requires review, flag the whole request
     review_required = has_unknown or any_review
 
-    # Controlled substance override: force entire request to chronic
-    if contains_controlled:
+    # Hormonal / Cancer drug override: force entire request to chronic (Leadway WhatsApp)
+    if contains_whatsapp_only:
         classification = "chronic"
         reasoning = (
-            "Contains controlled substance — requires Leadway direct handling. "
+            "Contains hormonal or cancer medication — requires Leadway direct handling. "
             f"Original counts: acute={acute_count}, chronic={chronic_count}. "
             "Entire request routed to Leadway WhatsApp."
         )
@@ -349,7 +359,7 @@ def classify_request(
         confidence=round(avg_confidence, 2),
         reasoning=reasoning,
         items=item_results,
-        contains_controlled=contains_controlled,
+        contains_whatsapp_only=contains_whatsapp_only,
     )
 
 
