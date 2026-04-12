@@ -603,31 +603,7 @@ export default function MedicationRequestPage() {
               </div>
             </div>
 
-            {/* Pharmacy Selection */}
-            {pharmacyLoading && <div className={styles.enrolleeMeta}>Searching pharmacies...</div>}
-            {pharmacies.length > 0 && (
-              <div className={styles.formRowFull}>
-                <div className={styles.field}>
-                  <label className={styles.label}>Nearest Pharmacy</label>
-                  <div className={styles.pharmacyList}>
-                    {pharmacies.slice(0, 5).map((p, i) => {
-                      const code = p.pharmacyCode || p.PharmacyCode || p.code || "";
-                      const name = p.pharmacyName || p.PharmacyName || p.name || `Pharmacy ${i + 1}`;
-                      const addr = p.address || p.Address || "";
-                      const isSelected = selectedPharmacy && (selectedPharmacy.pharmacyCode || selectedPharmacy.code) === code;
-                      return (
-                        <div key={i} className={`${styles.pharmacyItem} ${isSelected ? styles.pharmacySelected : ""}`}
-                          onClick={() => setSelectedPharmacy(p)}>
-                          <div className={styles.pharmacyName}>{name}</div>
-                          {addr && <div className={styles.pharmacyAddr}>{addr}</div>}
-                          <div className={styles.pharmacyCode}>Code: {code}</div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              </div>
-            )}
+            {/* Pharmacy selection removed — backend handles pharmacy assignment automatically during dispatch */}
           </div>
 
           {/* ── 5. Additional ──────────────────── */}

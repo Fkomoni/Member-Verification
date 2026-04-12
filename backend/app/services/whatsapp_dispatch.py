@@ -4,6 +4,7 @@ WhatsApp Dispatch — sends chronic/mixed requests via Leadway WhatsApp bot.
 Uses: POST /api/send-message on the Leadway WhatsApp bot
 """
 
+import asyncio
 import json
 import logging
 
@@ -17,6 +18,7 @@ from app.models.medication import (
     MedicationRequestItem,
     WhatsAppDispatchLog,
 )
+from app.services.member_notification import send_chronic_member_email
 
 logger = logging.getLogger(__name__)
 
@@ -127,4 +129,19 @@ def dispatch_to_whatsapp(
     db.flush()
 
     logger.info("WhatsApp dispatch: request=%s, to=%s, success=%s", request_id, number, dispatch_success)
+
+    # Send chronic member email if dispatch succeeded and member has email
+    if dispatch_success and req.member_email:
+        try:
+            loop = asyncio.get_event_loop()
+            if loop.is_running():
+                asyncio.ensure_future(send_chronic_member_email(request_id, db))
+            else:
+                loop.run_until_complete(send_chronic_member_email(request_id, db))
+        except RuntimeError:
+            # No event loop — create one
+            asyncio.run(send_chronic_member_email(request_id, db))
+        except Exception as e:
+            logger.error("Failed to send chronic member email: %s", e)
+
     return log

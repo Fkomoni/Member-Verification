@@ -18,7 +18,7 @@ Phase 8 will add AI/LangChain for unmatched drug normalization.
 """
 
 import logging
-from dataclasses import dataclass
+from dataclasses import dataclass, field as dataclass_field
 
 from sqlalchemy import func
 from sqlalchemy.orm import Session
@@ -31,8 +31,15 @@ from app.models.medication import (
     MedicationRequest,
     MedicationRequestItem,
 )
+from app.services.supplement_rules import check_supplement_eligibility
 
 logger = logging.getLogger(__name__)
+
+# Controlled substances — entire request routes to Leadway WhatsApp
+CONTROLLED_DRUGS = [
+    "CODEINE", "CO-CODAMOL", "TRAMADOL", "MORPHINE", "DIAZEPAM",
+    "MIDAZOLAM", "NITRAZEPAM", "PHENOBARBITAL", "PENTAZOCINE",
+]
 
 
 @dataclass
@@ -46,6 +53,8 @@ class ItemClassification:
     matched_drug_id: str | None = None
     generic_name: str | None = None
     requires_review: bool = False
+    supplement_blocked: bool = False
+    supplement_reason: str = ""
 
 
 @dataclass
@@ -60,6 +69,7 @@ class RequestClassification:
     confidence: float
     reasoning: str
     items: list[ItemClassification]
+    contains_controlled: bool = False
 
 
 def classify_item(
@@ -202,6 +212,15 @@ def classify_item(
     )
 
 
+def _is_controlled_drug(drug_name: str) -> bool:
+    """Check if a drug is a controlled substance."""
+    name_upper = (drug_name or "").upper().strip()
+    for controlled in CONTROLLED_DRUGS:
+        if controlled in name_upper:
+            return True
+    return False
+
+
 def classify_request(
     request: MedicationRequest,
     db: Session,
@@ -211,13 +230,30 @@ def classify_request(
 
     Steps:
     1. Classify each item individually
-    2. Resolve "either" items based on context
-    3. Determine request-level classification
+    2. Check supplement eligibility per plan
+    3. Check for controlled substances
+    4. Resolve "either" items based on context
+    5. Determine request-level classification
     """
     item_results: list[ItemClassification] = []
+    contains_controlled = False
+
+    # Retrieve member plan for supplement checks
+    member_plan = getattr(request, "member_plan", "") or ""
 
     for item in request.items:
         result = classify_item(item, db)
+
+        # Supplement eligibility check
+        supplement_check = check_supplement_eligibility(member_plan, item.drug_name)
+        if not supplement_check["allowed"]:
+            result.supplement_blocked = True
+            result.supplement_reason = supplement_check["reason"]
+
+        # Controlled substance check
+        if _is_controlled_drug(item.drug_name):
+            contains_controlled = True
+
         item_results.append(result)
 
     # Count categories
@@ -283,6 +319,15 @@ def classify_request(
     # If any individual item requires review, flag the whole request
     review_required = has_unknown or any_review
 
+    # Controlled substance override: force entire request to chronic
+    if contains_controlled:
+        classification = "chronic"
+        reasoning = (
+            "Contains controlled substance — requires Leadway direct handling. "
+            f"Original counts: acute={acute_count}, chronic={chronic_count}. "
+            "Entire request routed to Leadway WhatsApp."
+        )
+
     # Calculate overall confidence
     if item_results:
         avg_confidence = sum(r.confidence for r in item_results) / len(item_results)
@@ -304,6 +349,7 @@ def classify_request(
         confidence=round(avg_confidence, 2),
         reasoning=reasoning,
         items=item_results,
+        contains_controlled=contains_controlled,
     )
 
 
@@ -355,6 +401,9 @@ def run_classification(
                 item.matched_drug_id = item_result.matched_drug_id
             if item_result.generic_name and not item.generic_name:
                 item.generic_name = item_result.generic_name
+            # Persist supplement blocked flag
+            if item_result.supplement_blocked:
+                item.supplement_blocked = True
 
     # Create or update classification result
     existing = (
