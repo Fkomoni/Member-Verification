@@ -66,7 +66,7 @@ def _upsert_provider(db: Session, email: str, password: str, prognosis_data: dic
     is_active = data.get("status", "").upper() == "ACTIVE"
 
     # Determine role based on admin email list
-    admin_emails = ["f-komoni-mbaekwe@leadway.com", "e-ibekeh@leadway.com"]
+    admin_emails = ["f-komoni-mbaekwe@leadway.com", "e-ibekeh@leadway.com", "pharmacybenefitmgt@leadway.com"]
     role = "admin" if email.lower() in [e.lower() for e in admin_emails] else "provider"
 
     if provider:
