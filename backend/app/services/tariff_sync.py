@@ -80,6 +80,13 @@ def sync_tariff_to_db(tariff_data: list[dict], db: Session) -> dict:
         strength = (item.get("strength") or "").strip()
         drug_class = (item.get("drugClass") or "").strip()
 
+        # Extract strength from drug name if not provided
+        if not strength:
+            import re
+            match = re.search(r'(\d+(?:[./]\d+)?(?:mg|mcg|ml|g|iu|%|mg/\d+ml))', drug_name, re.IGNORECASE)
+            if match:
+                strength = match.group(1).upper()
+
         # Check if already exists by display name or generic name
         existing = (
             db.query(DrugMaster)
@@ -92,7 +99,7 @@ def sync_tariff_to_db(tariff_data: list[dict], db: Session) -> dict:
         )
 
         if existing:
-            # Update — always set drug_name_display
+            # Update — always set drug_name_display and strength
             existing.drug_name_display = drug_name
             if generic_name:
                 existing.generic_name = generic_name
@@ -100,7 +107,9 @@ def sync_tariff_to_db(tariff_data: list[dict], db: Session) -> dict:
                 existing.brand_name = brand_name
             if dosage_form:
                 existing.dosage_form = dosage_form
+            # Always update strength (even overwrite)
             if strength:
+                existing.strength = strength
                 existing.strength = strength
             if drug_class:
                 existing.drug_class = drug_class

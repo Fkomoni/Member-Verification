@@ -105,17 +105,17 @@ async def on_startup():
         from sqlalchemy import text as sql_text
         try:
             row = db.execute(sql_text(
-                "SELECT COUNT(*) FROM drug_master WHERE drug_name_display IS NOT NULL AND source = 'wellahealth'"
+                "SELECT COUNT(*) FROM drug_master WHERE drug_name_display IS NOT NULL AND strength IS NOT NULL AND strength != '' AND source = 'wellahealth'"
             )).scalar()
-            count_display = row or 0
+            count_with_strength = row or 0
         except Exception:
-            count_display = 0
-        if count_display < 50:
-            logger.info("Drug master has %d searchable WellaHealth records — starting tariff sync...", count_display)
+            count_with_strength = 0
+        if count_with_strength < 50:
+            logger.info("Drug master has %d records with strength — starting tariff sync...", count_with_strength)
             result = await run_tariff_sync(db)
             logger.info("Tariff sync result: %s", result)
         else:
-            logger.info("Drug master has %d searchable WellaHealth records — skipping sync", count_display)
+            logger.info("Drug master has %d records with strength — skipping sync", count_with_strength)
         db.close()
     except Exception as e:
         logger.error("Startup tariff sync failed (non-blocking): %s", e)
