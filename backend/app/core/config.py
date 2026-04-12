@@ -18,9 +18,9 @@ class Settings(BaseSettings):
     BIOMETRIC_ENCRYPTION_KEY: str = "CHANGE-THIS-GENERATE-WITH-Fernet.generate_key()"
 
     # Futronic FS80H configuration
-    FUTRONIC_SDK_AVAILABLE: str = "true"  # set "false" for dev/CI without scanner
-    FUTRONIC_MATCH_THRESHOLD: int = 800   # 0-10000, higher = stricter
-    REQUIRE_LFD: bool = True              # enforce Live Finger Detection
+    FUTRONIC_SDK_AVAILABLE: str = "true"
+    FUTRONIC_MATCH_THRESHOLD: int = 800
+    REQUIRE_LFD: bool = True
 
     # Prognosis core system integration (Leadway Health)
     PROGNOSIS_BASE_URL: str = "https://prognosis-api.leadwayhealth.com"
@@ -36,16 +36,13 @@ class Settings(BaseSettings):
     # Google Maps / Geolocation API
     GOOGLE_MAPS_API_KEY: str = ""
 
-    # Leadway WhatsApp routing numbers
+    # WhatsApp Bot API (Leadway bot on Render)
+    WHATSAPP_BOT_URL: str = "https://leadway-whatsapp-bot.onrender.com/api"
+    WHATSAPP_BOT_API_KEY: str = ""
     WHATSAPP_LAGOS_NUMBER: str = "+2348188626141"
     WHATSAPP_OUTSIDE_LAGOS_NUMBER: str = "+2348188626141"
 
-    # WhatsApp Bot Webhook (existing Leadway bot)
-    WHATSAPP_WEBHOOK_URL: str = ""
-    WHATSAPP_VERIFY_TOKEN: str = ""
-    WHATSAPP_APP_SECRET: str = ""
-
-    # Anthropic API (LangChain AI drug classification)
+    # Anthropic API (AI drug classification)
     ANTHROPIC_API_KEY: str = ""
 
     model_config = {"env_file": ".env"}
