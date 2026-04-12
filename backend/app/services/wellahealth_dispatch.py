@@ -39,12 +39,24 @@ def _search_pharmacy(state: str, lga: str = "") -> str:
         state_name = state.strip().title() if state else "Lagos"
         lga_name = lga.strip().title() if lga else ""
         logger.info("Pharmacy search: state=%s, lga=%s", state_name, lga_name)
-        # Search state only first (WellaHealth staging has limited LGA data)
+        headers = {"Authorization": f"Basic {auth}", "X-Partner-Code": settings.WELLAHEALTH_PARTNER_CODE}
+
+        # Priority 1: Search by state + LGA (closest pharmacy)
+        if lga_name:
+            with httpx.Client(timeout=15.0) as client:
+                resp = client.get(url, params={"stateName": state_name, "lgaName": lga_name}, headers=headers)
+            if resp.status_code == 200:
+                data = resp.json()
+                items = data.get("data", []) if isinstance(data, dict) else []
+                if isinstance(items, list) and len(items) > 0:
+                    code = items[0].get("pharmacyCode") or ""
+                    logger.info("Pharmacy found by LGA: %s from %d results", code, len(items))
+                    return code
+            logger.info("No pharmacy in %s %s, trying state only", state_name, lga_name)
+
+        # Priority 2: Search by state only (fallback)
         with httpx.Client(timeout=15.0) as client:
-            resp = client.get(url,
-                params={"stateName": state_name},
-                headers={"Authorization": f"Basic {auth}", "X-Partner-Code": settings.WELLAHEALTH_PARTNER_CODE},
-            )
+            resp = client.get(url, params={"stateName": state_name}, headers=headers)
         logger.info("Pharmacy search response: %d %s", resp.status_code, resp.text[:300])
         if resp.status_code == 200:
             data = resp.json()
