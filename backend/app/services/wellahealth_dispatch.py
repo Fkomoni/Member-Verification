@@ -189,21 +189,27 @@ def dispatch_to_wellahealth(
     # Send member notification on success
     if result.get("success"):
         try:
-            from app.services.member_notification import send_member_notification
-            # Get pharmacy details
-            pharm_name = ""
-            pharm_addr = ""
-            for item in (resp.json() if hasattr(resp, 'json') else {}).get("data", [{}]):
-                pass  # Response doesn't include pharmacy details
-            send_member_notification(
-                request_id=request_id,
-                db=db,
-                pharmacy_name=pharmacy_code,
-                pharmacy_address=req.delivery_address or "",
-                tracking_code=result.get("trackingCode", ""),
-                tracking_link=result.get("trackingLink", ""),
+            from app.services.member_notification import send_member_email
+            import asyncio
+            asyncio.get_event_loop().create_task(
+                send_member_email(
+                    request_id=request_id, db=db,
+                    pharmacy_name=pharmacy_code,
+                    tracking_code=result.get("trackingCode", ""),
+                    tracking_link=result.get("trackingLink", ""),
+                )
             )
         except Exception as e:
-            logger.warning("Member notification failed: %s", e)
+            # Fallback: try sync
+            try:
+                import asyncio as aio
+                aio.run(send_member_email(
+                    request_id=request_id, db=db,
+                    pharmacy_name=pharmacy_code,
+                    tracking_code=result.get("trackingCode", ""),
+                    tracking_link=result.get("trackingLink", ""),
+                ))
+            except Exception:
+                logger.warning("Member email notification failed: %s", e)
 
     return api_log
