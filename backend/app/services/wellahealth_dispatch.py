@@ -35,35 +35,26 @@ def _search_pharmacy(state: str, lga: str = "") -> str:
         creds = f"{settings.WELLAHEALTH_CLIENT_ID}:{settings.WELLAHEALTH_CLIENT_SECRET}"
         auth = base64.b64encode(creds.encode()).decode()
         url = f"{settings.WELLAHEALTH_BASE_URL.rstrip('/')}/Pharmacies/search"
+        # Capitalize state name — WellaHealth is case-sensitive
+        state_name = state.strip().title() if state else "Lagos"
+        lga_name = lga.strip().title() if lga else ""
+        logger.info("Pharmacy search: state=%s, lga=%s", state_name, lga_name)
         with httpx.Client(timeout=15.0) as client:
             resp = client.get(url,
-                params={"stateName": state, "lgaName": lga},
+                params={"stateName": state_name, "lgaName": lga_name} if lga_name else {"stateName": state_name},
                 headers={"Authorization": f"Basic {auth}", "X-Partner-Code": settings.WELLAHEALTH_PARTNER_CODE},
             )
+        logger.info("Pharmacy search response: %d %s", resp.status_code, resp.text[:300])
         if resp.status_code == 200:
             data = resp.json()
-            items = data.get("data", data) if isinstance(data, dict) else data
+            items = data.get("data", []) if isinstance(data, dict) else []
             if isinstance(items, list) and len(items) > 0:
-                code = items[0].get("pharmacyCode") or items[0].get("PharmacyCode") or ""
-                name = items[0].get("pharmacyName") or items[0].get("PharmacyName") or ""
-                logger.info("Pharmacy found: %s (%s) from %d results", code, name, len(items))
+                code = items[0].get("pharmacyCode") or ""
+                name = items[0].get("pharmacyName") or ""
+                logger.info("Pharmacy selected: %s (%s) from %d results", code, name, len(items))
                 return code
-        # Try with state only (no LGA) if LGA search returned nothing
-        if lga:
-            with httpx.Client(timeout=15.0) as client:
-                resp = client.get(url,
-                    params={"stateName": state},
-                    headers={"Authorization": f"Basic {auth}", "X-Partner-Code": settings.WELLAHEALTH_PARTNER_CODE},
-                )
-            if resp.status_code == 200:
-                data = resp.json()
-                items = data.get("data", data) if isinstance(data, dict) else data
-                if isinstance(items, list) and len(items) > 0:
-                    code = items[0].get("pharmacyCode") or items[0].get("PharmacyCode") or ""
-                    logger.info("Pharmacy found (state-only): %s from %d results", code, len(items))
-                    return code
     except Exception as e:
-        logger.warning("Pharmacy search failed: %s", e)
+        logger.error("Pharmacy search failed: %s", e)
     return ""
 
 
