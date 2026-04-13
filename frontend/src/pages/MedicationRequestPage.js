@@ -281,7 +281,7 @@ export default function MedicationRequestPage() {
     return (
       <div className={styles.page}>
         <Header provider={provider} logout={logout} />
-        <NavBar active="new-request" />
+        <NavBar active="new-request" role={provider?.role} />
         <main className={styles.main}>
           <div className={styles.successBanner}>
             <div className={styles.successTitle}>Request Submitted Successfully</div>
@@ -360,7 +360,7 @@ export default function MedicationRequestPage() {
   return (
     <div className={styles.page}>
       <Header provider={provider} logout={logout} />
-      <NavBar active="new-request" />
+      <NavBar active="new-request" role={provider?.role} />
       <main className={styles.main}>
         <h1 className={styles.pageTitle}>New Medication Request</h1>
         <p className={styles.pageSubtitle}>Submit a prescription for an enrolled member.</p>
@@ -658,11 +658,14 @@ function Header({ provider, logout }) {
   );
 }
 
-function NavBar({ active }) {
+function NavBar({ active, role }) {
+  const isAdmin = role === "admin";
   return (
     <nav className={styles.navBar}>
       <Link to="/medication-request" className={active === "new-request" ? styles.navLinkActive : styles.navLink}>New Rx Request</Link>
       <Link to="/medication-requests" className={active === "history" ? styles.navLinkActive : styles.navLink}>Request History</Link>
+      {isAdmin && <Link to="/admin/review" className={active === "admin" ? styles.navLinkActive : styles.navLink}>Review Queue</Link>}
+      {isAdmin && <Link to="/reports" className={active === "reports" ? styles.navLinkActive : styles.navLink}>Reports</Link>}
     </nav>
   );
 }
