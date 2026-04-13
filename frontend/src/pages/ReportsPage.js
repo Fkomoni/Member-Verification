@@ -50,7 +50,6 @@ export default function ReportsPage() {
       </header>
 
       <nav className={styles.navBar}>
-        
         <Link to="/medication-request" className={styles.navLink}>New Rx Request</Link>
         <Link to="/medication-requests" className={styles.navLink}>Request History</Link>
         <Link to="/admin/review" className={styles.navLink}>Review Queue</Link>
@@ -60,12 +59,42 @@ export default function ReportsPage() {
       <main className={styles.main}>
         <div className={styles.titleRow}>
           <h1 className={styles.pageTitle}>Reports & Analytics</h1>
-          <select className={styles.periodSelect} value={days} onChange={(e) => setDays(e.target.value)}>
-            <option value="">All Time</option>
-            <option value="7">Last 7 Days</option>
-            <option value="30">Last 30 Days</option>
-            <option value="90">Last 90 Days</option>
-          </select>
+          <div style={{display:"flex",gap:"0.75rem",alignItems:"center"}}>
+            <select className={styles.periodSelect} value={days} onChange={(e) => setDays(e.target.value)}>
+              <option value="">All Time</option>
+              <option value="1">Today</option>
+              <option value="7">Last 7 Days</option>
+              <option value="14">Last 14 Days</option>
+              <option value="30">Last 30 Days</option>
+              <option value="60">Last 60 Days</option>
+              <option value="90">Last 90 Days</option>
+              <option value="180">Last 6 Months</option>
+              <option value="365">Last 1 Year</option>
+            </select>
+            <button className={styles.periodSelect} style={{background:"#C61531",color:"#fff",border:"none",fontWeight:700,cursor:"pointer"}} onClick={() => {
+              const csvRows = ["Reference,Enrollee,Facility,Classification,Route,Status,Date"];
+              // Use request history for CSV
+              api.get("/medication-requests", {params:{per_page:1000}}).then(({data}) => {
+                (data.requests||[]).forEach(r => {
+                  csvRows.push([
+                    r.reference_number,
+                    `"${r.enrollee_name}"`,
+                    `"${r.facility_name}"`,
+                    r.classification?.classification||"",
+                    r.routing?.destination||"",
+                    r.status,
+                    r.created_at?.split("T")[0]||""
+                  ].join(","));
+                });
+                const blob = new Blob([csvRows.join("\n")], {type:"text/csv"});
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = `leadway-rx-report-${new Date().toISOString().split("T")[0]}.csv`;
+                a.click();
+              }).catch(() => alert("Download failed"));
+            }}>Download CSV</button>
+          </div>
         </div>
 
         {loading ? <div className={styles.loading}>Loading...</div> : (

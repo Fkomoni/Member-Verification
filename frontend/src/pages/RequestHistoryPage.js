@@ -96,6 +96,8 @@ export default function RequestHistoryPage() {
       <nav className={styles.navBar}>
         <Link to="/medication-request" className={styles.navLink}>New Rx Request</Link>
         <Link to="/medication-requests" className={styles.navLinkActive}>Request History</Link>
+        {provider?.role === "admin" && <Link to="/admin/review" className={styles.navLink}>Review Queue</Link>}
+        {provider?.role === "admin" && <Link to="/reports" className={styles.navLink}>Reports</Link>}
       </nav>
 
       <main className={styles.main}>
