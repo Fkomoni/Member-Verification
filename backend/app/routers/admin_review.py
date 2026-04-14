@@ -347,6 +347,36 @@ async def sync_tariff(
     return result
 
 
+# ── All Requests (admin — no provider filter) ───────────────────
+
+@router.get("/admin/all-requests", response_model=MedicationRequestListOut)
+def get_all_requests(
+    page: int = Query(1, ge=1),
+    per_page: int = Query(20, ge=1, le=5000),
+    db: Session = Depends(get_db),
+    _provider=Depends(get_admin_provider),
+):
+    """Get ALL medication requests (admin only, for CSV export)."""
+    query = db.query(MedicationRequest)
+    total = query.count()
+    requests = (
+        query
+        .options(
+            joinedload(MedicationRequest.items),
+            joinedload(MedicationRequest.classification),
+            joinedload(MedicationRequest.routing),
+        )
+        .order_by(MedicationRequest.created_at.desc())
+        .offset((page - 1) * per_page)
+        .limit(per_page)
+        .all()
+    )
+    return MedicationRequestListOut(
+        total=total, page=page, per_page=per_page,
+        requests=[MedicationRequestOut.model_validate(r) for r in requests],
+    )
+
+
 # ── Get Audit Trail ──────────────────────────────────────────────
 
 @router.get("/admin/requests/{request_id}/audit")

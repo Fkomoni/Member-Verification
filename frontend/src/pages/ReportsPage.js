@@ -93,16 +93,20 @@ export default function ReportsPage() {
               </>
             )}
             <button className={styles.periodSelect} style={{background:"#263626",color:"#fff",border:"none",fontWeight:700,cursor:"pointer"}} onClick={() => {
-              const csvRows = ["Reference,Enrollee,Facility,Classification,Route,Status,Date"];
-              api.get("/medication-requests", {params:{per_page:1000}}).then(({data}) => {
+              const csvRows = ["Reference,Enrollee,Enrollee ID,Facility,Diagnosis,Classification,Route,Status,Phone,Address,Date"];
+              api.get("/admin/all-requests", {params:{per_page:5000}}).then(({data}) => {
                 (data.requests||[]).forEach(r => {
                   csvRows.push([
                     r.reference_number,
                     `"${r.enrollee_name}"`,
+                    r.enrollee_id,
                     `"${r.facility_name}"`,
+                    `"${(r.diagnosis||"").replace(/"/g,"'")}"`,
                     r.classification?.classification||"",
                     r.routing?.destination||"",
                     r.status,
+                    r.member_phone||"",
+                    `"${(r.delivery_address||"").replace(/"/g,"'")}"`,
                     r.created_at?.split("T")[0]||""
                   ].join(","));
                 });
@@ -112,7 +116,7 @@ export default function ReportsPage() {
                 a.href = url;
                 a.download = `leadway-rx-report-${new Date().toISOString().split("T")[0]}.csv`;
                 a.click();
-              }).catch(() => alert("Download failed"));
+              }).catch((e) => { console.error("CSV error:", e); alert("Download failed — check admin access"); });
             }}>Download CSV</button>
           </div>
         </div>
