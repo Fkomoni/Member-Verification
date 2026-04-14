@@ -11,6 +11,9 @@ const CLS_LABELS = { acute: "Acute", chronic: "Chronic", mixed: "Mixed", review_
 export default function ReportsPage() {
   const { provider, logout } = useAuth();
   const [days, setDays] = useState("");
+  const [showCustom, setShowCustom] = useState(false);
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
   const [summary, setSummary] = useState(null);
   const [byProvider, setByProvider] = useState([]);
   const [byRoute, setByRoute] = useState([]);
@@ -59,8 +62,11 @@ export default function ReportsPage() {
       <main className={styles.main}>
         <div className={styles.titleRow}>
           <h1 className={styles.pageTitle}>Reports & Analytics</h1>
-          <div style={{display:"flex",gap:"0.75rem",alignItems:"center"}}>
-            <select className={styles.periodSelect} value={days} onChange={(e) => setDays(e.target.value)}>
+          <div style={{display:"flex",gap:"0.5rem",alignItems:"center",flexWrap:"wrap"}}>
+            <select className={styles.periodSelect} value={showCustom ? "custom" : days} onChange={(e) => {
+              if (e.target.value === "custom") { setShowCustom(true); setDays(""); }
+              else { setShowCustom(false); setDays(e.target.value); }
+            }}>
               <option value="">All Time</option>
               <option value="1">Today</option>
               <option value="7">Last 7 Days</option>
@@ -70,10 +76,24 @@ export default function ReportsPage() {
               <option value="90">Last 90 Days</option>
               <option value="180">Last 6 Months</option>
               <option value="365">Last 1 Year</option>
+              <option value="custom">Custom Range</option>
             </select>
-            <button className={styles.periodSelect} style={{background:"#C61531",color:"#fff",border:"none",fontWeight:700,cursor:"pointer"}} onClick={() => {
+            {showCustom && (
+              <>
+                <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className={styles.periodSelect} />
+                <span style={{color:"#777"}}>to</span>
+                <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className={styles.periodSelect} />
+                <button className={styles.periodSelect} style={{background:"#C61531",color:"#fff",border:"none",fontWeight:700,cursor:"pointer"}} onClick={() => {
+                  if (startDate && endDate) {
+                    const diffMs = new Date(endDate) - new Date(startDate);
+                    const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+                    if (diffDays > 0) setDays(String(diffDays));
+                  }
+                }}>Apply</button>
+              </>
+            )}
+            <button className={styles.periodSelect} style={{background:"#263626",color:"#fff",border:"none",fontWeight:700,cursor:"pointer"}} onClick={() => {
               const csvRows = ["Reference,Enrollee,Facility,Classification,Route,Status,Date"];
-              // Use request history for CSV
               api.get("/medication-requests", {params:{per_page:1000}}).then(({data}) => {
                 (data.requests||[]).forEach(r => {
                   csvRows.push([
