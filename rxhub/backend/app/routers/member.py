@@ -1,0 +1,381 @@
+from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel
+from sqlalchemy.orm import Session
+from typing import Optional
+
+from app.core.database import get_db
+from app.core.deps import get_current_member
+from app.models.member import Member
+from app.models.medication import Medication
+from app.models.request import Request, RequestLog
+from app.models.notification import Notification
+from app.schemas.member import MemberProfile, MemberDashboard
+from app.schemas.medication import MedicationOut
+from app.services.refill_intelligence import get_refill_intelligence, calculate_days_remaining
+from app.services.pbm_client import prognosis_client
+from app.services.sync_service import push_approved_request_to_pbm
+import logging
+
+_logger = logging.getLogger(__name__)
+
+router = APIRouter(prefix="/member", tags=["Member"])
+
+
+# ── Profile Update Schema ────────────────────────────────────
+
+class ProfileUpdateRequest(BaseModel):
+    new_phone: Optional[str] = None
+    new_email: Optional[str] = None
+    new_address: Optional[str] = None
+    comment: Optional[str] = None
+
+
+# ── Endpoints ─────────────────────────────────────────────────
+
+@router.get("/profile", response_model=MemberProfile)
+async def get_profile(member: Member = Depends(get_current_member)):
+    """Get current member profile (read-only from PBM)."""
+    return member
+
+
+@router.get("/dashboard", response_model=MemberDashboard)
+async def get_dashboard(
+    member: Member = Depends(get_current_member),
+    db: Session = Depends(get_db),
+):
+    """Get member dashboard with alerts and summary."""
+    med_count = db.query(Medication).filter(
+        Medication.member_id == member.member_id, Medication.status == "ACTIVE"
+    ).count()
+
+    pending_count = db.query(Request).filter(
+        Request.member_id == member.member_id, Request.status == "PENDING"
+    ).count()
+
+    unread_count = db.query(Notification).filter(
+        Notification.member_id == member.member_id, Notification.is_read.is_(False)
+    ).count()
+
+    # Build alerts from refill intelligence
+    intelligence = get_refill_intelligence(member.member_id, db)
+    alerts = [
+        {
+            "type": "REFILL",
+            "medication": ri.drug_name,
+            "message": ri.alert,
+            "days_remaining": ri.days_remaining,
+            "next_refill_due": str(ri.next_refill_due) if ri.next_refill_due else None,
+        }
+        for ri in intelligence if ri.alert
+    ]
+
+    return MemberDashboard(
+        profile=MemberProfile.model_validate(member),
+        medications_count=med_count,
+        pending_requests=pending_count,
+        unread_notifications=unread_count,
+        alerts=alerts,
+    )
+
+
+@router.get("/medications", response_model=list[MedicationOut])
+async def get_medications(
+    member: Member = Depends(get_current_member),
+    db: Session = Depends(get_db),
+):
+    """Get current member medications."""
+    meds = (
+        db.query(Medication)
+        .filter(Medication.member_id == member.member_id)
+        .order_by(Medication.drug_name)
+        .all()
+    )
+
+    results = []
+    for med in meds:
+        med_out = MedicationOut.model_validate(med)
+        med_out.days_until_runout = calculate_days_remaining(med)
+        results.append(med_out)
+
+    return results
+
+
+@router.post("/profile/update-request")
+async def request_profile_update(
+    body: ProfileUpdateRequest,
+    member: Member = Depends(get_current_member),
+    db: Session = Depends(get_db),
+):
+    """
+    Quick endpoint: submit a profile update request (phone, email, address).
+    Goes through the approval workflow — does NOT directly edit the member record.
+    """
+    changes = {}
+    if body.new_phone:
+        changes["phone"] = {"current": member.phone, "requested": body.new_phone}
+    if body.new_email:
+        changes["email"] = {"current": member.email or "", "requested": body.new_email}
+    if body.new_address:
+        changes["address"] = {"requested": body.new_address}
+
+    if not changes:
+        raise HTTPException(status_code=400, detail="No changes provided. Enter at least one field to update.")
+
+    req = Request(
+        member_id=member.member_id,
+        request_type="PROFILE_UPDATE",
+        action="MODIFY",
+        payload=changes,
+        comment=body.comment,
+        status="APPROVED",  # Auto-approve
+    )
+    db.add(req)
+    db.flush()
+
+    log = RequestLog(
+        request_id=req.id,
+        actor_type="SYSTEM",
+        actor_id="auto-approve",
+        action="AUTO_APPROVED",
+        before_state={k: v.get("current", "") for k, v in changes.items() if isinstance(v, dict)},
+        after_state={k: v.get("requested", "") for k, v in changes.items() if isinstance(v, dict)},
+        notes="Auto-approved and pushed to Prognosis",
+    )
+    db.add(log)
+    db.commit()
+
+    # Auto-push to Prognosis
+    try:
+        await push_approved_request_to_pbm(str(req.id), db)
+        _logger.info(f"Profile update auto-pushed to Prognosis for {member.member_id}")
+    except Exception as e:
+        _logger.error(f"Failed to push profile update to Prognosis: {e}")
+
+    return {
+        "message": "Profile updated successfully and synced to Prognosis.",
+        "request_id": str(req.id),
+        "changes_requested": list(changes.keys()),
+    }
+
+
+@router.get("/notifications")
+async def get_notifications(
+    member: Member = Depends(get_current_member),
+    db: Session = Depends(get_db),
+    unread_only: bool = False,
+):
+    """Get member notifications."""
+    query = db.query(Notification).filter(Notification.member_id == member.member_id)
+    if unread_only:
+        query = query.filter(Notification.is_read.is_(False))
+
+    notifications = query.order_by(Notification.created_at.desc()).limit(50).all()
+    return notifications
+
+
+@router.post("/notifications/{notification_id}/read")
+async def mark_notification_read(
+    notification_id: str,
+    member: Member = Depends(get_current_member),
+    db: Session = Depends(get_db),
+):
+    """Mark a notification as read."""
+    notification = (
+        db.query(Notification)
+        .filter(Notification.id == notification_id, Notification.member_id == member.member_id)
+        .first()
+    )
+    if notification:
+        notification.is_read = True
+        db.commit()
+    return {"status": "ok"}
+
+
+@router.get("/search-medications")
+async def search_medications(
+    q: str = "",
+    member: Member = Depends(get_current_member),
+    db: Session = Depends(get_db),
+):
+    """
+    Search Prognosis drug database by name.
+    Returns list of matching medications with ProcedureId and ProcedureName.
+    User starts typing and results populate.
+    """
+    if len(q) < 2:
+        return []
+
+    results = await prognosis_client.search_medications(q, db=db)
+
+    # Map Prognosis fields: tariff_desc, tariff_code, cost
+    meds = []
+    for r in results[:20]:
+        name = (r.get("tariff_desc") or r.get("TariffDesc") or
+                r.get("ProcedureName") or r.get("procedureName") or
+                r.get("Name") or r.get("name") or
+                r.get("DrugName") or r.get("drugName") or "")
+        proc_id = (r.get("tariff_code") or r.get("TariffCode") or
+                   r.get("ProcedureId") or r.get("procedureId") or
+                   r.get("Code") or r.get("code") or "")
+        cost = r.get("cost") or r.get("Cost") or ""
+        if name:
+            meds.append({
+                "procedure_id": str(proc_id),
+                "procedure_name": str(name),
+                "cost": str(cost) if cost else None,
+            })
+
+    return meds
+
+
+@router.get("/search-diagnoses")
+async def search_diagnoses(
+    q: str = "",
+    member: Member = Depends(get_current_member),
+    db: Session = Depends(get_db),
+):
+    """Search Prognosis diagnosis list by name."""
+    if len(q) < 2:
+        return []
+
+    _logger.info(f"Diagnosis search request: q='{q}'")
+    results = await prognosis_client.search_diagnoses(q, db=db)
+    _logger.info(f"Diagnosis search got {len(results)} results for '{q}'")
+
+    # If results have items, log first one to discover field names
+    if results:
+        first = results[0]
+        _logger.info(f"First diagnosis result keys: {list(first.keys())}")
+        for k, v in first.items():
+            _logger.info(f"  {k} = {str(v)[:60]}")
+
+    diagnoses = []
+    for r in results[:20]:
+        # Get all values as dict for flexible mapping
+        keys = list(r.keys())
+        vals = {k: str(v).strip() for k, v in r.items() if v is not None}
+
+        # Find description (longest text field, likely the diagnosis name/description)
+        # Find code (shortest, likely ICD code like I10)
+        text_fields = []
+        code_fields = []
+        for k, v in vals.items():
+            if not v:
+                continue
+            k_lower = k.lower()
+            if any(x in k_lower for x in ["desc", "description", "name", "title", "diagnosis"]):
+                text_fields.append((k, v))
+            if any(x in k_lower for x in ["id", "code"]):
+                code_fields.append((k, v))
+
+        # Pick the longest text as description, shortest as code
+        name = max(text_fields, key=lambda x: len(x[1]))[1] if text_fields else ""
+        code = min(code_fields, key=lambda x: len(x[1]))[1] if code_fields else ""
+
+        # If name equals code, it means both fields have the same value — try to find a different field
+        if name == code and len(vals) > 1:
+            # Use any field that's longer than the code as the name
+            for k, v in vals.items():
+                if v != code and len(v) > len(code):
+                    name = v
+                    break
+
+        if name or code:
+            diagnoses.append({"diagnosis_name": name or code, "diagnosis_id": code or name})
+
+    _logger.info(f"Returning {len(diagnoses)} diagnoses for '{q}'")
+    return diagnoses
+
+
+@router.post("/medications/{medication_id}/delete")
+async def delete_medication(
+    medication_id: str,
+    member: Member = Depends(get_current_member),
+    db: Session = Depends(get_db),
+):
+    """Delete a medication from the member's list and push to Prognosis."""
+    from pydantic import BaseModel
+    # We'll parse the body manually since FastAPI needs the model
+
+    med = (
+        db.query(Medication)
+        .filter(Medication.id == medication_id, Medication.member_id == member.member_id)
+        .first()
+    )
+    if not med:
+        raise HTTPException(status_code=404, detail="Medication not found")
+
+    return {"medication_id": str(med.id), "drug_name": med.drug_name, "pbm_drug_id": med.pbm_drug_id}
+
+
+@router.post("/medications/delete-with-reason")
+async def delete_medication_with_reason(
+    body: dict,
+    member: Member = Depends(get_current_member),
+    db: Session = Depends(get_db),
+):
+    """
+    Delete a medication and push to Prognosis DeletedByMember API.
+    Body: {"medication_id": "uuid", "comment": "reason for deletion"}
+    """
+    medication_id = body.get("medication_id")
+    comment = body.get("comment", "Deleted by member")
+
+    med = (
+        db.query(Medication)
+        .filter(Medication.id == medication_id, Medication.member_id == member.member_id)
+        .first()
+    )
+    if not med:
+        raise HTTPException(status_code=404, detail="Medication not found")
+
+    # Get EntryNo from pbm_drug_id (Prognosis uses this as the entry identifier)
+    entry_no = med.pbm_drug_id
+    drug_name = med.drug_name
+
+    _logger.info(f"DELETE medication: drug={drug_name}, pbm_drug_id={entry_no}, medication_id={medication_id}")
+    _logger.info(f"  Member: {member.member_id}, Comment: {comment}")
+
+    # Push deletion to Prognosis
+    try:
+        if entry_no and str(entry_no).strip().isdigit():
+            result = await prognosis_client.delete_member_medication(int(entry_no), comment, db=db)
+            _logger.info(f"  Prognosis delete result: {result}")
+        else:
+            _logger.warning(f"  pbm_drug_id '{entry_no}' is not a valid EntryNo — trying as-is")
+            # Try sending it anyway in case Prognosis accepts non-numeric IDs
+            try:
+                result = await prognosis_client.delete_member_medication(entry_no, comment, db=db)
+                _logger.info(f"  Prognosis delete result (non-numeric): {result}")
+            except Exception as e2:
+                _logger.error(f"  Also failed with non-numeric: {e2}")
+    except Exception as e:
+        _logger.error(f"  Failed to push delete to Prognosis: {e}")
+
+    # Delete locally
+    db.delete(med)
+
+    # Audit log — flush Request first so req.id is populated
+    req = Request(
+        member_id=member.member_id,
+        request_type="MEDICATION_CHANGE",
+        action="REMOVE",
+        payload={"drug_name": drug_name, "entry_no": str(entry_no), "comment": comment},
+        comment=comment,
+        status="APPROVED",
+    )
+    db.add(req)
+    db.flush()  # Get req.id before creating log
+
+    log = RequestLog(
+        request_id=req.id,
+        actor_type="SYSTEM",
+        actor_id="auto-approve",
+        action="MEDICATION_DELETED",
+        after_state={"drug_name": drug_name, "entry_no": str(entry_no)},
+        notes=f"Deleted by member: {comment}",
+    )
+    db.add(log)
+    db.commit()
+
+    return {"message": f"{drug_name} has been deleted from your list of medications."}

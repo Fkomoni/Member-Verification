@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Leadway Health — Spondylosis Newsletter</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+<style>
+
+  /* === LEADWAY HEALTH BRAND TOKENS === */
+  :root {
+    --lw-navy:    #1A1A2E;
+    --lw-crimson: #C8102E;
+    --lw-orange:  #E87722;
+    --lw-light:   #F7F8FA;
+    --lw-white:   #FFFFFF;
+    --lw-muted:   #6B7280;
+    --lw-border:  #E5E7EB;
+    --lw-text:    #1C1C1C;
+    --accent:     var(--lw-crimson); /* override per file */
+    --accent-bg:  #FEE2E2;           /* override per file */
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--lw-light);
+    color: var(--lw-text);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* === HEADER === */
+  .lw-header {
+    background: var(--lw-navy);
+    padding: 20px 40px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .lw-header__logo { height: 52px; width: auto; object-fit: contain; }
+  .lw-header__badge {
+    background: var(--accent);
+    color: #fff;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 5px 14px;
+    border-radius: 20px;
+  }
+
+  /* === HERO BAND === */
+  .lw-hero {
+    background: var(--lw-navy);
+    border-top: 3px solid var(--accent);
+    padding: 40px 40px 36px;
+    color: #fff;
+  }
+  .lw-hero__label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--lw-orange);
+    margin-bottom: 10px;
+  }
+  .lw-hero__title {
+    font-family: 'Playfair Display', serif;
+    font-size: 2rem;
+    line-height: 1.2;
+    color: #fff;
+    max-width: 620px;
+    margin-bottom: 14px;
+  }
+  .lw-hero__intro {
+    font-size: 0.95rem;
+    line-height: 1.7;
+    color: rgba(255,255,255,0.72);
+    max-width: 580px;
+  }
+
+  /* === BODY === */
+  .lw-body { max-width: 800px; margin: 0 auto; padding: 40px 24px 60px; }
+
+  /* === SECTION HEADING === */
+  .lw-section-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--lw-muted);
+    margin: 32px 0 14px;
+  }
+  .lw-section-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--lw-border);
+  }
+
+  /* === TIPS GRID === */
+  .lw-tips {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 12px;
+  }
+  .lw-tip {
+    background: var(--lw-white);
+    border: 1px solid var(--lw-border);
+    border-left: 3px solid var(--accent);
+    border-radius: 8px;
+    padding: 14px 16px;
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    font-size: 0.875rem;
+    line-height: 1.55;
+  }
+  .lw-tip__icon { font-size: 1.1rem; flex-shrink: 0; margin-top: 1px; }
+  .lw-tip strong { color: var(--lw-navy); display: block; margin-bottom: 2px; }
+
+  /* === FOOD CHIPS === */
+  .lw-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .lw-chip {
+    background: var(--lw-white);
+    border: 1px solid var(--lw-border);
+    border-radius: 20px;
+    padding: 5px 14px;
+    font-size: 0.82rem;
+  }
+  .lw-chip--avoid {
+    background: #FFF1F1;
+    border-color: #FECACA;
+    color: #B91C1C;
+  }
+
+  /* === CALLOUT BOX === */
+  .lw-callout {
+    background: #FFFBEB;
+    border: 1px solid #FDE68A;
+    border-left: 4px solid var(--lw-orange);
+    border-radius: 8px;
+    padding: 16px 18px;
+    font-size: 0.875rem;
+    line-height: 1.6;
+    color: #92400E;
+    margin-top: 32px;
+  }
+  .lw-callout strong { color: #78350F; }
+
+  /* === INTRO TEXT === */
+  .lw-body-text {
+    font-size: 0.92rem;
+    line-height: 1.75;
+    color: #374151;
+  }
+
+  /* === FOOTER === */
+  .lw-footer {
+    background: var(--lw-navy);
+    color: rgba(255,255,255,0.5);
+    font-size: 0.78rem;
+    padding: 22px 40px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .lw-footer__brand { color: rgba(255,255,255,0.9); font-weight: 600; }
+  .lw-footer__tag {
+    background: var(--accent);
+    color: #fff;
+    padding: 3px 12px;
+    border-radius: 12px;
+    font-size: 0.72rem;
+    font-weight: 600;
+  }
+
+  @media(max-width:600px){
+    .lw-hero { padding: 28px 20px; }
+    .lw-hero__title { font-size: 1.5rem; }
+    .lw-header { padding: 16px 20px; }
+    .lw-footer { padding: 16px 20px; }
+  }
+
+:root { --accent: #059669; --accent-bg: #D1FAE5; }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="lw-header">
+  <img class="lw-header__logo" src="https://raw.githubusercontent.com/Fkomoni/datadump/main/leadway%20health%20logo%2020266.jpg" alt="Leadway Health HMO" />
+  <span class="lw-header__badge">Newsletter</span>
+</header>
+
+<!-- HERO -->
+<section class="lw-hero">
+  <div class="lw-hero__label">Health Newsletter — Spondylosis</div>
+  <h1 class="lw-hero__title">Spondylosis and Back Pain: Managing Your Spine Every Day</h1>
+  <p class="lw-hero__intro">Spondylosis refers to the natural wear and tear of the spine — affecting the neck (cervical), mid-back (thoracic), or lower back (lumbar). It is extremely common in adults over 40 and, with the right approach, is very manageable without limiting your daily activities.</p>
+</section>
+
+<!-- BODY -->
+<main class="lw-body">
+
+  <div class="lw-section-label">Understanding Your Condition</div>
+  <p class="lw-body-text">As we age, the discs between vertebrae gradually lose their cushioning ability. This can cause stiffness, aching, or nerve pain that radiates to the arms or legs. Poor posture, prolonged sitting, and heavy lifting all accelerate symptoms. The core goal is to reduce pressure on the spine and progressively strengthen the muscles that support it.</p>
+
+  <div class="lw-section-label">Lifestyle Tips</div>
+  <div class="lw-tips">
+<div class="lw-tip"><span class="lw-tip__icon">🪑</span><div><strong>Correct your sitting posture.</strong>Sit upright with both feet flat on the floor. If you work at a desk, your screen should be at eye level — not tilted down.</div></div>
+<div class="lw-tip"><span class="lw-tip__icon">🧘</span><div><strong>Stretch every morning.</strong>Gentle spinal stretches on waking ease morning stiffness significantly. Ask your physiotherapist to design a 5-minute safe routine.</div></div>
+<div class="lw-tip"><span class="lw-tip__icon">🏊</span><div><strong>Prioritise low-impact exercise.</strong>Swimming and walking are excellent for spondylosis — they strengthen the spine without compressing the affected discs.</div></div>
+<div class="lw-tip"><span class="lw-tip__icon">🛏️</span><div><strong>Sleep on a medium-firm mattress.</strong>Very soft mattresses allow the spine to curve unnaturally overnight and worsen symptoms by morning.</div></div>
+<div class="lw-tip"><span class="lw-tip__icon">📱</span><div><strong>Reduce text neck.</strong>Avoid looking down at your phone for long periods. Hold it at eye level. Text neck accelerates cervical spondylosis.</div></div>
+<div class="lw-tip"><span class="lw-tip__icon">🏋️</span><div><strong>Lift correctly, always.</strong>Bend your knees, not your back, when lifting anything from the ground. Avoid carrying heavy bags on one shoulder only.</div></div>
+  </div>
+
+  <div class="lw-section-label">What to Eat More Of</div>
+  <div class="lw-chips"><span class="lw-chip">🐟 Oily fish (omega-3)</span>
+<span class="lw-chip">🫚 Ginger & turmeric</span>
+<span class="lw-chip">🥬 Green leafy vegetables</span>
+<span class="lw-chip">🍊 Citrus fruits (Vitamin C)</span>
+<span class="lw-chip">🥛 Low-fat dairy (calcium)</span>
+<span class="lw-chip">🌰 Sesame seeds</span>
+<span class="lw-chip">💧 Water (for disc hydration)</span></div>
+
+  <div class="lw-section-label">Limit or Avoid</div>
+  <div class="lw-chips"><span class="lw-chip lw-chip--avoid">Processed & packaged foods</span>
+<span class="lw-chip lw-chip--avoid">Excess red meat</span>
+<span class="lw-chip lw-chip--avoid">Alcohol</span>
+<span class="lw-chip lw-chip--avoid">Sugary drinks</span>
+<span class="lw-chip lw-chip--avoid">Deep fried foods</span></div>
+
+  <div class="lw-callout">⚠️ <strong>See your doctor promptly if you notice:</strong> numbness or weakness in the arms or legs, loss of bladder or bowel control, sudden severe worsening of pain, or pain that consistently wakes you from sleep. These may indicate a more serious spinal complication that needs urgent attention.</div>
+
+</main>
+
+<!-- FOOTER -->
+<footer class="lw-footer">
+  <div>
+    <span class="lw-footer__brand">Leadway Health HMO</span>
+    &nbsp;&bull;&nbsp; RxHub Member Resource Centre &nbsp;&bull;&nbsp; April 2026
+  </div>
+  <span class="lw-footer__tag">Spondylosis</span>
+</footer>
+
+</body>
+</html>
